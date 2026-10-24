@@ -7,6 +7,8 @@
 - 機体と地形の見た目は、ユーザーが用意した画像（`assets/sprites/`）を使う。画像の元は `docs/ref/` の設定画で、設定画どおりの見た目にすることが目標。
   - 設定画から切り抜くときは、背景・ラベル文字・枠線を取り除き、背景が透明なPNGにする。
   - 画像が読み込めないときだけ、Canvas の図形（`drawMech`）で代わりに描く。
+  - 切り抜きは `python3 tools/extract_sprites.py`（切り抜く範囲はスクリプト内の `UNITS` / `TILES`）。機体は `grand.png`（戦闘用の大きい絵）、`grand_up/down/left/right.png`（背面／正面／左／右）、味方は `_idle/_walk/_attack`（待機／歩行／攻撃）、地形は `tile_*.png`（立体タイル）。
+  - マップ背景 `assets/stage1_map.png` は `python3 tools/build_map.py` で作る（`MAP` を読み、設定画のマップから森・山・市街・城・基地を貼り、海と平地は設定画の色で生成）。`MAP` を変えたら作り直す。
 - 機体デザインは既存作品に似せない。特に、頭部の V字アンテナや、ガンダム風の「二つ目＋マスク状の口元」の顔は使わない。グランヴァルドは一本角とバイザー型の目、シルフィードは後ろへ流れる耳型センサーとゴーグル型の目、カイザー・ネメシスは王冠状の角、を基本形にする。
 - スマホ縦画面が基準（幅400px前後）。
 - BGMはユーザーが用意したフリー素材（`assets/bgm/`、クレジットは README）。2曲とも −16 LUFS に音量をそろえて 128kbps で再エンコード済み。曲を足すときも同じようにそろえる（iOS ではページ側の音量変更が効かないため）。
@@ -19,12 +21,12 @@
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
-| MECH DRAWING | `drawMech(ctx, unit, t)`：単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss |
-| MAP RENDER | 地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行 |
+| MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないときの代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss |
+| MAP RENDER | `SPR`（機体画像）、`TER_IMG`（地形タイル）、`STAGE_IMG`（マップ背景）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
 | BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
-| UI | 下部コンソール（`renderConsole`）、ボトムシート（武器・精神・予測・設定）、`dialog()`、`banner()` |
+| UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog()`、`banner()` |
 | COMBAT | `combat()`（攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkEnd`） |
-| BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右 |
+| BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵、足元にそのマスの地形タイル |
 | TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価）、`startOfPhase` |
 
 ## 計算式
