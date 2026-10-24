@@ -71,7 +71,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .wtab.on{border-color:var(--amber);box-shadow:inset 0 0 0 1px var(--amber)}
 .hint{font-size:13px;color:var(--mute);line-height:1.55}
 /* sheets */
-#sheet{position:fixed;inset:auto 0 0 0;z-index:40;display:flex;justify-content:center;pointer-events:none}
+#sheet{position:fixed;inset:auto 0 0 0;z-index:65;display:flex;justify-content:center;pointer-events:none}
 #sheet .in{pointer-events:auto;width:100%;max-width:600px;background:var(--panel);border:1px solid var(--line);border-bottom:none;border-radius:12px 12px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));max-height:72vh;overflow:auto;box-shadow:0 -10px 40px #000a;animation:up .18s ease-out}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
 .sh-title{font-family:var(--disp);font-size:16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
@@ -95,6 +95,12 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .sh-actions .btn{flex:1}
 .toggle{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;gap:12px}
 .toggle small{display:block;color:var(--mute);font-size:12px}
+.slots{display:flex;flex-direction:column;gap:6px}
+.slot{display:flex;gap:6px;align-items:stretch}
+.slot .wrow{flex:1}
+.slot .del{flex:none;min-width:58px}
+.slot .ng{color:var(--foe)}
+.confirm{font-size:15px;line-height:1.7;margin:4px 0 2px}
 /* overlays */
 .ov{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050910ee;padding:16px}
 #battle,#dialog{justify-content:flex-start;padding-top:max(12vh,env(safe-area-inset-top,0px))}
@@ -148,6 +154,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
   <div class="logo"><small>STAGE 01 · 鋼の目覚め</small>機甲戦線<br>グランヴァルド</div>
   <div class="sub">帝国軍の機動兵器部隊が港湾都市に迫る。<br>4機の小隊で迎え撃ち、司令機カイザー・ネメシスを撃破せよ。</div>
   <button class="btn pri" id="btnStart" style="min-width:180px;font-size:16px">出撃</button>
+  <button class="btn" id="btnContinue" style="min-width:180px;font-size:16px;margin-top:10px">続きから</button>
   <div class="skip">BGM：まんぼう二等兵 ほか（フリー素材）</div>
 </div>
 
@@ -248,8 +255,9 @@ const TPL={
 /* ================= STATE ================= */
 let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,bossTalked=false,uid=0,over=false;
 const settings={anim:true,manualDef:false,sound:true,bgmVol:2};
-try{Object.assign(settings,JSON.parse(localStorage.getItem('gv-settings')||'{}'))}catch(e){}
-function saveSettings(){try{localStorage.setItem('gv-settings',JSON.stringify(settings))}catch(e){}}
+// localStorage のキーは必ず「granvald-」で始める（GitHub Pages では同じドメインの他のページと保存領域を共有するため）
+try{Object.assign(settings,JSON.parse(localStorage.getItem('granvald-settings')||localStorage.getItem('gv-settings')||'{}'))}catch(e){}
+function saveSettings(){try{localStorage.setItem('granvald-settings',JSON.stringify(settings))}catch(e){}}
 
 function mk(key,team,x,y,extra={}){
   const t=TPL[key];
@@ -257,14 +265,18 @@ function mk(key,team,x,y,extra={}){
     pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
   units.push(u);return u;
 }
+// 初期配置 [機体, 陣営, x, y, 追加の値]。セーブデータのユニットはこの順番で並ぶ
+const STAGE_NAME='第1話 鋼の目覚め';
+const ROSTER=[
+  // 味方は設定画どおり市街の最下段に並ぶ
+  ['grand','ally',3,11],['sylph','ally',4,11],['bulwark','ally',5,11],['raven','ally',6,11],
+  // 城の前に横一列（設定画の並び）、両岸に先行のゼクト
+  ['zekt','foe',3,2],['golm','foe',4,2],['golm','foe',5,2],['vespa','foe',6,2],['vespa','foe',7,2],
+  ['zekt','foe',1,4],['zekt','foe',8,4],
+  ['nemesis','foe',5,1,{will:110,guard:true}]];
 function setup(){
   units=[];uid=0;turn=1;phase='player';sel=null;reach=null;info=null;floats=[];mapFx=[];bossTalked=false;over=false;
-  // 味方は設定画どおり市街の最下段に並ぶ
-  mk('grand','ally',3,11);mk('sylph','ally',4,11);mk('bulwark','ally',5,11);mk('raven','ally',6,11);
-  // 城の前に横一列（設定画の並び）、両岸に先行のゼクト
-  mk('zekt','foe',3,2);mk('golm','foe',4,2);mk('golm','foe',5,2);mk('vespa','foe',6,2);mk('vespa','foe',7,2);
-  mk('zekt','foe',1,4);mk('zekt','foe',8,4);
-  mk('nemesis','foe',5,1,{will:110,guard:true});
+  for(const r of ROSTER)mk(...r);
 }
 const alive=t=>units.filter(u=>!u.dead&&(!t||u.team===t));
 const unitAt=(x,y)=>units.find(u=>!u.dead&&u.x===x&&u.y===y);
@@ -772,7 +784,8 @@ function onAction(e){
 consoleEl.addEventListener('click',onAction);
 pop.addEventListener('click',onAction);
 function finishUnit(u){u.acted=true;sel=null;reach=null;targets=null;mode='idle';info=null;closeSheet();renderConsole();
-  if(!over&&alive('ally').every(a=>a.acted))setTimeout(()=>{if(phase==='player'&&!busy&&!over)endPlayerPhase()},400)}
+  // 400ms の間にロードされることもあるので、実行時にもう一度確かめる
+  if(!over&&alive('ally').every(a=>a.acted))setTimeout(()=>{if(phase==='player'&&!busy&&!over&&alive('ally').every(a=>a.acted))endPlayerPhase()},400)}
 function spiritSheet(u){
   snd('sel');
   const rows=u.pilot.spirits.map(n=>{const s=SPIRITS[n];let ng='';
@@ -798,6 +811,10 @@ function forecast(a,d,w){
 }
 sheet.addEventListener('click',async e=>{
   const x=e.target.closest('[data-x]'),sp=e.target.closest('[data-sp]'),fw=e.target.closest('[data-fw]'),df=e.target.closest('[data-def]'),tg=e.target.closest('[data-set]');
+  const sl=e.target.closest('[data-slot]');
+  if(sl&&!sl.disabled&&sheet._slot){sheet._slot(sl.dataset.slot,sl.dataset.act);return}
+  if(x&&!x.disabled&&['save','load','yes','no'].includes(x.dataset.x)){const k=x.dataset.x;
+    if(k==='save'){snd('sel');saveSheet()}else if(k==='load'){snd('sel');loadSheet()}else{const f=k==='yes'?sheet._yes:sheet._no;sheet._yes=sheet._no=null;f&&f()}return}
   if(x){if(x.dataset.x==='close'){snd('cancel');closeSheet();if(mode==='target'&&tgtKind==='attack'){mode='menu';targets=null}renderConsole()}else if(x.dataset.x==='go'&&sheet._go){const g=sheet._go;sheet._go=null;g()}return}
   if(fw&&sheet._fw){sheet._fw(+fw.dataset.fw);return}
   if(sp&&!sp.disabled){const n=sp.dataset.sp,s=SPIRITS[n],u=sel;u.sp-=s.cost;snd('spirit');
@@ -811,6 +828,8 @@ sheet.addEventListener('click',async e=>{
 function settingsSheet(){
   const row=(k,t,d)=>`<div class="toggle"><div>${t}<small>${d}</small></div><button class="btn sm ${settings[k]?'pri':''}" data-set="${k}">${settings[k]?'ON':'OFF'}</button></div>`;
   openSheet(`<div class="sh-title"><span>設定</span></div>${row('anim','戦闘アニメ','OFFにするとマップ上で結果だけ表示')}${row('manualDef','反撃を手動で選ぶ','敵の攻撃ごとに 反撃／防御／回避 を選択')}${row('sound','効果音','')}<div class="toggle"><div>BGM音量<small>タップで OFF／小／中／大 を切り替え</small></div><button class="btn sm ${settings.bgmVol?'pri':''}" data-set="bgmVol">${BGM_LBL[settings.bgmVol]}</button></div>
+  <div class="sh-actions"><button class="btn" data-x="save" ${canSave()?'':'disabled'}>セーブ</button><button class="btn" data-x="load">ロード</button></div>
+  ${canSave()?'':'<div class="hint" style="margin-top:6px">セーブは味方フェイズで、誰も選んでいないときだけできます</div>'}
   <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">最初からやり直す</button><button class="btn" data-x="close">閉じる</button></div>`);
   $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(true)};
 }
@@ -849,8 +868,10 @@ function result(win){
   bgm(null);
   const el=document.createElement('div');el.className='ov';el.innerHTML=`<div class="logo" style="font-family:var(--disp);font-size:clamp(32px,9vw,52px);letter-spacing:.12em;color:${win?'var(--amber)':'var(--foe)'}">${win?'MISSION CLEAR':'GAME OVER'}</div>
   <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}`:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'}</div>
-  <button class="btn pri" style="min-width:180px">${win?'もう一度プレイ':'リトライ'}</button>`;
-  document.body.appendChild(el);el.querySelector('button').onclick=()=>{el.remove();startGame(true)};
+  <button class="btn pri" style="min-width:180px">${win?'もう一度プレイ':'リトライ'}</button>
+  <button class="btn" data-r="load" style="min-width:180px;margin-top:10px" ${hasSave()?'':'disabled'}>ロード</button>`;
+  el.id='result';document.body.appendChild(el);el.querySelector('.pri').onclick=()=>{el.remove();startGame(true)};
+  el.querySelector('[data-r=load]').onclick=()=>{snd('sel');loadSheet()};
 }
 
 /* ================= BATTLE SCENE ================= */
@@ -956,6 +977,7 @@ async function endPlayerPhase(){
   await banner('PLAYER PHASE','TURN '+turn,'#45aaff');
   startOfPhase('ally');
   mode='idle';busy=false;renderConsole();
+  autoSave();
 }
 function startOfPhase(team){
   for(const u of alive(team)){
@@ -1003,6 +1025,98 @@ function defenseChoice(a,d,w){
   });
 }
 
+/* ================= SAVE / LOAD ================= */
+// localStorage の granvald-save-1〜3（手動）と granvald-save-auto（味方フェイズ開始時に自動）。
+// 形式が変わったら SAVE_VER を上げる。バージョンが違うデータは壊れたデータとして扱う
+const SAVE_VER=1,SAVE_KEY='granvald-save-',SLOTS=['auto','1','2','3'];
+const SLOT_NAME=id=>id==='auto'?'オートセーブ':'スロット'+id;
+const BUF_KEYS=Object.values(SPIRITS).map(s=>s.key).filter(Boolean);
+// 読み書きは必ず try/catch で（プライベートブラウズなどで localStorage が使えなくても止まらないように）
+function storeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function storeSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function storeDel(k){try{localStorage.removeItem(k)}catch(e){}}
+function snapshot(){
+  return{ver:SAVE_VER,stage:STAGE_NAME,savedAt:Date.now(),turn,phase,bossTalked,
+    units:units.map(u=>({key:u.key,team:u.team,x:u.x,y:u.y,dir:u.dir,hp:u.hp,en:u.en,will:u.will,sp:u.sp,
+      ammo:u.weapons.map(w=>w.ammo),acted:u.acted,moved:u.moved,dead:u.dead,buf:{...u.buf},guard:!!u.guard}))};
+}
+// 中身を1項目ずつ確かめる。どこかおかしければ壊れたデータ
+function validSave(d){
+  const int=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b,bool=v=>typeof v==='boolean';
+  if(!d||typeof d!=='object'||d.ver!==SAVE_VER||d.stage!==STAGE_NAME||!int(d.turn,1,999)||d.phase!=='player'||!bool(d.bossTalked)||!Number.isFinite(d.savedAt))return false;
+  if(!Array.isArray(d.units)||d.units.length!==ROSTER.length)return false;
+  return d.units.every((s,i)=>{
+    const[key,team]=ROSTER[i],t=TPL[key];
+    return s&&s.key===key&&s.team===team&&int(s.x,0,COLS-1)&&int(s.y,0,ROWS-1)&&['up','down','left','right'].includes(s.dir)&&
+      int(s.hp,0,t.hp)&&int(s.en,0,t.en)&&int(s.will,0,150)&&int(s.sp,0,t.pilot.sp)&&bool(s.acted)&&bool(s.moved)&&bool(s.dead)&&bool(s.guard)&&
+      Array.isArray(s.ammo)&&s.ammo.length===t.weapons.length&&s.ammo.every((a,j)=>int(a,0,t.weapons[j].ammo||0))&&
+      s.buf&&typeof s.buf==='object'&&!Array.isArray(s.buf)&&Object.entries(s.buf).every(([k,v])=>BUF_KEYS.includes(k)&&v===1)&&(s.dead||s.hp>0);
+  });
+}
+// null＝データなし、{broken:true}＝壊れている、それ以外＝読み込めるデータ
+function readSlot(id){
+  const raw=storeGet(SAVE_KEY+id);if(raw==null)return null;
+  try{const d=JSON.parse(raw);return validSave(d)?d:{broken:true}}catch(e){return{broken:true}}
+}
+const hasSave=()=>SLOTS.some(id=>{const d=readSlot(id);return d&&!d.broken});
+function refreshContinue(){$('btnContinue').disabled=!hasSave()}
+function writeSlot(id){const ok=storeSet(SAVE_KEY+id,JSON.stringify(snapshot()));refreshContinue();return ok}
+const canSave=()=>phase==='player'&&!busy&&!over&&(mode==='idle'||mode==='peek')&&!sel;
+function autoSave(){if(canSave())writeSlot('auto')}
+function restore(d){
+  setup();
+  units.forEach((u,i)=>{const s=d.units[i];
+    Object.assign(u,{x:s.x,y:s.y,dir:s.dir,hp:s.hp,en:s.en,will:s.will,sp:s.sp,acted:s.acted,moved:s.moved,dead:s.dead,buf:{...s.buf}});
+    if(s.guard)u.guard=true;else delete u.guard;
+    u.weapons.forEach((w,j)=>w.ammo=s.ammo[j]);
+  });
+  turn=d.turn;phase=d.phase;bossTalked=d.bossTalked;
+  sel=null;reach=null;info=null;targets=null;mode='idle';busy=false;over=false;
+}
+function fmtDate(t){const d=new Date(t),z=n=>String(n).padStart(2,'0');return`${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
+function slotRow(id,act){
+  const d=readSlot(id);let body,ok=true;
+  if(!d){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d">データなし</span>`;ok=act==='save'}
+  else if(d.broken){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d"><span class="ng">壊れたデータ（読み込めません）</span></span>`;ok=act==='save'}
+  else{const al=d.units.filter(u=>u.team==='ally'),left=al.filter(u=>!u.dead).length;
+    body=`<span class="n">${SLOT_NAME(id)}　${d.stage}</span><span class="p">TURN ${d.turn}</span><span class="d">${fmtDate(d.savedAt)}　味方 残り ${left}/${al.length} 機</span>`}
+  const del=d?`<button class="btn del" data-slot="${id}" data-act="del">削除</button>`:'';
+  return`<div class="slot"><button class="wrow" data-slot="${id}" data-act="${act}" ${ok?'':'disabled'}>${body}</button>${del}</div>`;
+}
+// ページ内の確認（confirm() は使わない）
+function confirmSheet(msg,yesLabel,onYes,onNo){
+  openSheet(`<div class="sh-title"><span>確認</span></div><div class="confirm">${msg}</div><div class="sh-actions"><button class="btn warn" data-x="yes">${yesLabel}</button><button class="btn" data-x="no">やめる</button></div>`);
+  sheet._yes=onYes;sheet._no=onNo;
+}
+function deleteFlow(id,back){
+  confirmSheet(`${SLOT_NAME(id)}のデータを削除しますか？<br><small style="color:var(--mute)">削除したデータは元に戻せません。</small>`,'削除する',()=>{storeDel(SAVE_KEY+id);refreshContinue();snd('cancel');toast(`${SLOT_NAME(id)}を削除しました`);back()},back);
+}
+function saveSheet(){
+  if(!canSave()){toast('今はセーブできません');return}
+  openSheet(`<div class="sh-title"><span>セーブ</span><span style="color:var(--mute);font-size:12px">TURN ${turn}</span></div><div class="slots">${['1','2','3'].map(id=>slotRow(id,'save')).join('')}</div>
+  <div class="hint" style="margin-top:8px">オートセーブは味方フェイズの開始時に自動で上書きされます</div><div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+  sheet._slot=(id,act)=>{
+    if(act==='del')return deleteFlow(id,saveSheet);
+    const doSave=()=>{if(writeSlot(id)){snd('ok');toast(`${SLOT_NAME(id)}にセーブしました`);closeSheet()}else{snd('cancel');toast('セーブできませんでした（ブラウザの保存領域が使えません）');saveSheet()}};
+    if(readSlot(id))confirmSheet(`${SLOT_NAME(id)}に上書きしますか？<br><small style="color:var(--mute)">前のデータは消えます。</small>`,'上書きする',doSave,saveSheet);
+    else doSave();
+  };
+}
+function loadSheet(){
+  const inGame=$('title').hidden&&!$('result');
+  openSheet(`<div class="sh-title"><span>ロード</span></div><div class="slots">${SLOTS.map(id=>slotRow(id,'load')).join('')}</div>
+  <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+  sheet._slot=(id,act)=>{
+    if(act==='del')return deleteFlow(id,loadSheet);
+    const d=readSlot(id);if(!d||d.broken){toast('このデータは読み込めません');loadSheet();return}
+    const doLoad=()=>{closeSheet();restore(d);$('title').hidden=true;$('result')?.remove();resize();buildTerrain();renderConsole();
+      bgm('player');snd('ok');toast(`${SLOT_NAME(id)}をロードしました（TURN ${d.turn}）`)};
+    // 遊んでいる途中なら、今の進行が消えることを確かめてから
+    if(inGame)confirmSheet(`${SLOT_NAME(id)}（TURN ${d.turn}）をロードしますか？<br><small style="color:var(--mute)">セーブしていない今の進行は失われます。</small>`,'ロードする',doLoad,loadSheet);
+    else doLoad();
+  };
+}
+
 /* ================= TITLE / START ================= */
 function titleArt(){
   const c=$('tcv'),dpr=Math.min(2,window.devicePixelRatio||1),W_=c.clientWidth||400;c.width=W_*dpr;c.height=W_*.5*dpr;const x=c.getContext('2d'),w=c.width,h=c.height;
@@ -1028,9 +1142,11 @@ async function startGame(skipTitle){
     {who:'作戦目標',text:'勝利条件：敵の全滅、またはカイザー・ネメシスの撃破。敗北条件：グランヴァルドの撃墜。'}]);
   await banner('PLAYER PHASE','TURN 1','#45aaff');
   mode='idle';busy=false;renderConsole();
+  autoSave();
 }
 $('btnStart').onclick=()=>{snd('ok');unlockBgm();$('title').hidden=true;startGame()};
+$('btnContinue').onclick=()=>{snd('sel');unlockBgm();loadSheet()};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
-setup();resize();renderConsole();titleArt();requestAnimationFrame(loop);
+setup();resize();renderConsole();titleArt();refreshContinue();requestAnimationFrame(loop);
 </script>

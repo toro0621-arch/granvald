@@ -11,6 +11,7 @@
   - マップ背景 `assets/stage1_map.png` は `python3 tools/build_map.py` で作る（`MAP` を読み、設定画のマップから森・山・市街・城・基地を貼り、海と平地は設定画の色で生成）。`MAP` を変えたら作り直す。
 - 機体デザインは既存作品に似せない。特に、頭部の V字アンテナや、ガンダム風の「二つ目＋マスク状の口元」の顔は使わない。グランヴァルドは一本角とバイザー型の目、シルフィードは後ろへ流れる耳型センサーとゴーグル型の目、カイザー・ネメシスは王冠状の角、を基本形にする。
 - スマホ縦画面が基準（幅400px前後）。
+- localStorage のキーは必ず `granvald-` で始める（GitHub Pages では toro0621-arch.github.io の他のページと保存領域を共有するため）。設定は `granvald-settings`、セーブデータは `granvald-save-*`。セーブデータの形式を変えたら `SAVE_VER` を上げる。
 - BGMはユーザーが用意したフリー素材（`assets/bgm/`、クレジットは README）。2曲とも −16 LUFS に音量をそろえて 128kbps で再エンコード済み。曲を足すときも同じようにそろえる（iOS ではページ側の音量変更が効かないため）。
 - 機体・地形のデザインと数値の元は `docs/ref/` の設定画。内容は `SETTING.md` にまとめてある。
 
@@ -27,6 +28,7 @@
 | UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog()`、`banner()` |
 | COMBAT | `combat()`（攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkEnd`） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵、足元にそのマスの地形タイル |
+| SAVE / LOAD | localStorage の `granvald-save-1〜3`（手動）と `granvald-save-auto`（味方フェイズ開始時に `autoSave`）。`snapshot` で保存、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 壊れたデータ）、`restore` で `setup` 後に `ROSTER` の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。セーブできるのは `canSave()`（味方フェイズで誰も選んでいないとき）だけ。上書き・削除・ゲーム中のロードは `confirmSheet` で確認 |
 | TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価）、`startOfPhase` |
 
 ## 計算式
