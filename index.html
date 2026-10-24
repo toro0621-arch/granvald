@@ -47,6 +47,26 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #pop .btn:disabled{opacity:1;background:#141c29;color:#56647a;border-color:var(--line)}
 #console{flex:none;height:124px;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 .uhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.btn.xs{padding:2px 8px;min-height:24px;font-size:11px;margin-left:auto;align-self:center}
+.st-top{display:flex;gap:12px;align-items:center}
+.st-top img{width:84px;height:84px;object-fit:contain;flex:none;image-rendering:pixelated}
+.st-sec{font-family:var(--disp);font-size:13px;color:var(--mute);margin:12px 0 6px;letter-spacing:.06em}
+.st-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;font-size:12px;font-variant-numeric:tabular-nums}
+.st-grid div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--line);padding:3px 0;color:var(--mute)}
+.st-grid em{font-style:normal;font-family:var(--disp);color:var(--fg)}
+.wtab{overflow-x:auto}
+.wtab table{width:100%;border-collapse:collapse;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wtab th{color:var(--mute);font-weight:400;text-align:left;padding:4px 6px;border-bottom:1px solid var(--line)}
+.wtab td{padding:5px 6px;border-bottom:1px solid var(--line)}
+.wtab tr.ng td{opacity:.45}
+.roster{display:flex;flex-direction:column;gap:6px}
+.rrow{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;align-items:center;text-align:left;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--ally);border-radius:6px;padding:6px 10px;cursor:pointer;width:100%}
+.rrow.foe{border-left-color:var(--foe)}
+.rrow.dead{opacity:.4}
+.rrow img{width:36px;height:36px;object-fit:contain;grid-row:span 2;image-rendering:pixelated}
+.rrow .n{font-weight:700;font-size:13px}
+.rrow .h{font-family:var(--disp);font-size:12px;text-align:right}
+.rrow .d{font-size:11px;color:var(--mute)}
 .uname{font-family:var(--disp);font-size:16px}
 .upil{color:var(--mute);font-size:13px}
 .tag{font-size:11px;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--mute)}
@@ -122,6 +142,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
     <span class="turn" id="turnLbl">TURN 1</span>
     <span class="phase" id="phaseLbl">PLAYER</span>
     <span class="sp"></span>
+    <button class="btn sm" id="btnRoster" aria-label="部隊一覧">部隊</button>
     <button class="btn sm" id="btnCfg" aria-label="設定">設定</button>
     <button class="btn sm pri" id="btnEnd">ターン終了</button>
   </div>
@@ -647,7 +668,7 @@ function unitCard(u,compact){
   if(!u)return'';
   const chips=Object.keys(u.buf).map(k=>Object.entries(SPIRITS).find(([,s])=>s.key===k)?.[0]).filter(Boolean).map(n=>`<span class="chip">${n}</span>`).join('');
   const t=terOf(u.x,u.y),ter=`<span>${u.air?'':`<img class="ticon" src="assets/sprites/tile_${TER_FILE[MAP[u.y][u.x]]}.png" alt="" onerror="this.remove()">`}地形 <em>${u.air?'空中':t.n}</em>${!u.air&&(t.d||t.e)?` 防${Math.round(t.d*100)}% 回${t.e>0?'+':''}${t.e}`:''}</span>`;
-  return`<div class="uhead"><span class="uname">${u.name}</span><span class="upil">${u.pilot.name}</span><span class="tag ${u.team}">${u.team==='ally'?'味方':'敵'}${u.air?'・空':''}</span>${u.acted?'<span class="tag">行動済</span>':''}${chips}</div>
+  return`<div class="uhead"><span class="uname">${u.name}</span><span class="upil">${u.pilot.name}</span><span class="tag ${u.team}">${u.team==='ally'?'味方':'敵'}${u.air?'・空':''}</span>${u.acted?'<span class="tag">行動済</span>':''}${chips}<button class="btn xs" data-a="status" data-uid="${u.id}">詳細</button></div>
   <div class="stats">${meter('HP',u.hp,u.maxHp,u.hp/u.maxHp>.5?'var(--good)':u.hp/u.maxHp>.25?'var(--amber)':'var(--foe)')}${meter('EN',u.en,u.maxEn,'var(--ally)')}</div>
   ${compact?'':`<div class="kv"><span>気力 <em>${u.will}</em></span>${u.team==='ally'?`<span>SP <em>${u.sp}</em>/${u.maxSp}</span><span>移動 <em>${u.move}</em></span>`:`<span>運動 <em>${u.mob}</em></span><span>装甲 <em>${u.armor}</em></span>`}${ter}</div>`}`;
 }
@@ -773,6 +794,7 @@ function onAction(e){
   else if(a==='wait')finishUnit(sel);
   else if(a==='undo'){snd('cancel');sel.x=origin.x;sel.y=origin.y;sel.moved=false;if(sel._accel)sel.buf.accel=1;reach=computeReach(sel);mode='select';renderConsole()}
   else if(a==='backmenu'){snd('cancel');targets=null;mode='menu';renderConsole()}
+  else if(a==='status'){const u=units.find(v=>v.id===+b.dataset.uid);if(u)statusSheet(u)}
 }
 consoleEl.addEventListener('click',onAction);
 pop.addEventListener('click',onAction);
@@ -805,6 +827,8 @@ sheet.addEventListener('click',async e=>{
   const x=e.target.closest('[data-x]'),sp=e.target.closest('[data-sp]'),fw=e.target.closest('[data-fw]'),df=e.target.closest('[data-def]'),tg=e.target.closest('[data-set]');
   if(x){if(x.dataset.x==='close'){snd('cancel');closeSheet();if(mode==='target'&&tgtKind==='attack'){mode='menu';targets=null}renderConsole()}else if(x.dataset.x==='go'&&sheet._go){const g=sheet._go;sheet._go=null;g()}return}
   if(fw&&sheet._fw){sheet._fw(+fw.dataset.fw);return}
+  const st=e.target.closest('[data-st]');if(st){const u=units.find(v=>v.id===+st.dataset.st);if(u)statusSheet(u,true);return}
+  if(e.target.closest('[data-roster]')){rosterSheet();return}
   if(sp&&!sp.disabled){const n=sp.dataset.sp,s=SPIRITS[n],u=sel;u.sp-=s.cost;snd('spirit');
     if(s.key)u.buf[s.key]=1;if(n==='根性')u.hp=Math.min(u.maxHp,u.hp+Math.round(u.maxHp*.3));if(n==='気合')u.will=Math.min(150,u.will+10);
     floats.push({x:u.x,y:u.y,text:n,color:'#ffc23d',t0:performance.now()});
@@ -820,6 +844,44 @@ function settingsSheet(){
   $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(true)};
 }
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
+/* ================= STATUS ================= */
+// ユニットの詳細ステータス（敵味方どちらも見られる）
+function sprSrc(u){return`assets/sprites/${u.key}.png`}
+function statusSheet(u,fromRoster){
+  snd('sel');
+  const t=terOf(u.x,u.y),P=u.pilot,ally=u.team==='ally';
+  const g=(k,v)=>`<div>${k}<em>${v}</em></div>`;
+  const abil=[u.repair?'修理装置（隣の味方のHPを最大2000回復）':'',u.repair?'補給装置（隣の味方の弾数とENを全回復／相手の気力−10）':'',u.boss?'指揮官機':''].filter(Boolean);
+  const buffs=Object.keys(u.buf).map(k=>Object.entries(SPIRITS).find(([,s])=>s.key===k)?.[0]).filter(Boolean);
+  const wrows=u.weapons.map(w=>{const ng=usable(u,w);return`<tr class="${ng?'ng':''}"><td>${w.name}</td><td>${w.type==='格'?'格闘':'射撃'}</td><td>${w.pow}</td><td>${w.min===w.max?w.min:w.min+'〜'+w.max}</td><td>${w.hit>=0?'+':''}${w.hit}</td><td>${w.maxAmmo?`弾 ${w.ammo}/${w.maxAmmo}`:w.en?`EN ${w.en}`:'—'}</td><td>${w.will||'—'}</td></tr>`}).join('');
+  openSheet(`<div class="sh-title"><span>ステータス</span>${fromRoster?'<button class="btn sm" data-roster="1">部隊一覧へ</button>':''}</div>
+  <div class="st-top"><img src="${sprSrc(u)}" alt="" onerror="this.remove()"><div style="flex:1;min-width:0">
+    <div class="uhead"><span class="uname">${u.name}</span><span class="tag ${u.team}">${ally?'味方':'敵'}・${u.air?'空':'陸'}</span>${u.dead?'<span class="tag">撃墜</span>':u.acted?'<span class="tag">行動済</span>':''}</div>
+    <div class="upil">パイロット：${P.name}</div>
+    <div class="stats" style="grid-template-columns:1fr;margin-top:6px">${meter('HP',u.hp,u.maxHp,u.hp/u.maxHp>.5?'var(--good)':u.hp/u.maxHp>.25?'var(--amber)':'var(--foe)')}${meter('EN',u.en,u.maxEn,'var(--ally)')}</div>
+  </div></div>
+  <div class="st-sec">機体</div>
+  <div class="st-grid">${g('装甲',u.armor)}${g('運動性',u.mob)}${g('移動',u.move)}${g('タイプ',u.air?'空':'陸')}${g('地形',u.air?'空中':t.n)}${g('位置',`${u.x},${u.y}`)}</div>
+  ${abil.length?`<div class="hint" style="margin-top:6px">特殊能力：${abil.join('／')}</div>`:''}
+  <div class="st-sec">パイロット</div>
+  <div class="st-grid">${g('格闘',P.melee)}${g('射撃',P.shoot)}${g('技量',P.skill)}${g('命中',P.hit)}${g('回避',P.eva)}${g('気力',u.will)}</div>
+  ${ally?`<div class="st-sec">精神コマンド　SP ${u.sp}/${u.maxSp}</div><div class="chips">${P.spirits.map(n=>`<span class="chip" style="${u.sp<SPIRITS[n].cost?'opacity:.45':''}">${n} ${SPIRITS[n].cost}</span>`).join('')}</div>`:''}
+  ${buffs.length?`<div class="hint" style="margin-top:6px">効果中：${buffs.join('、')}</div>`:''}
+  <div class="st-sec">武器</div>
+  <div class="wtab"><table><thead><tr><th>武器</th><th>種類</th><th>攻撃力</th><th>射程</th><th>命中</th><th>消費</th><th>気力</th></tr></thead><tbody>${wrows}</tbody></table></div>
+  <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+}
+// 部隊一覧：敵味方すべてのユニット
+function rosterSheet(){
+  snd('sel');
+  const row=u=>`<button class="rrow ${u.team==='foe'?'foe':''} ${u.dead?'dead':''}" data-st="${u.id}"><img src="${sprSrc(u)}" alt="" onerror="this.remove()"><span class="n">${u.name}</span><span class="h">${u.dead?'撃墜':`${u.hp}/${u.maxHp}`}</span><span class="d">${u.pilot.name}　気力${u.will}</span><span class="d" style="text-align:right">${u.dead?'':u.acted?'行動済':''}</span></button>`;
+  const al=units.filter(u=>u.team==='ally'),fo=units.filter(u=>u.team==='foe');
+  openSheet(`<div class="sh-title"><span>部隊一覧</span></div>
+  <div class="st-sec" style="margin-top:0">味方（${al.filter(u=>!u.dead).length}/${al.length}）</div><div class="roster">${al.map(row).join('')}</div>
+  <div class="st-sec">敵（${fo.filter(u=>!u.dead).length}/${fo.length}）</div><div class="roster">${fo.map(row).join('')}</div>
+  <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+}
+$('btnRoster').onclick=()=>{if(!busy&&!over&&phase==='player'&&mode!=='title')rosterSheet()};
 $('btnEnd').onclick=()=>{if(phase==='player'&&!busy&&!over){closeSheet();endPlayerPhase()}};
 
 function doSupply(a,t){
