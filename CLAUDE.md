@@ -6,11 +6,12 @@
 - 既存ゲームのROM・画像・音楽・セリフ・キャラクター・ロボットは使わない。参考にするのはゲームシステム（気力、精神コマンド、地形効果など）だけ。
 - 機体はすべて Canvas の図形で描く（`drawMech`）。外部画像なし。
 - スマホ縦画面が基準（幅400px前後）。
+- 機体・地形のデザインと数値の元は `docs/ref/` の設定画。内容は `SETTING.md` にまとめてある。
 
 ## コード構成（index.html の <script> 内、上から順）
 | セクション | 内容 |
 |---|---|
-| DATA | `MAP`（10×12の地形文字列）、`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（精神コマンド）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
+| DATA | `MAP`（10×12の地形文字列）、`ROAD`（見た目だけの道路）、`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（精神コマンド）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
