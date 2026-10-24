@@ -899,6 +899,16 @@ function playBattle(att,def,strikes){
       if(shake>0){c.translate((Math.random()-.5)*w*.02*shake,(Math.random()-.5)*h*.02*shake);shake*=.9}
       c.drawImage(bg,-20,-20);
       c.strokeStyle='#ffffff22';c.lineWidth=2*dpr;for(let n=0;n<14;n++){const yy=(n*73%100)/100*h*.6,xx=((n*137+el*.9*(A.f))%(w*1.4))-w*.2;c.beginPath();c.moveTo(xx,yy);c.lineTo(xx-A.f*w*.12,yy);c.stroke()}
+      // 足場：そのユニットがいるマスの地形タイル。回避や突進で機体が動いても地面は動かさない。
+      // 機体より先に両方の足場を描くので、突進した機体が相手の足場に隠れることもない
+      for(const u of[L,R]){
+        const p=sidePos(u),gone=strikes.some((sj,j)=>j<i&&sj.kill&&sj.def===u);
+        const ti=TER_IMG[MAP[u.y][u.x]];
+        c.save();c.translate(p.x,p.y);
+        if(ready(ti)&&!(u.air&&u===s.att&&melee)){const pw=h*.52,ph=pw*ti.naturalHeight/ti.naturalWidth,fy=h*.17+(u.air?h*.08:0);c.drawImage(ti,-pw/2,fy-ph*.3,pw,ph)}
+        else if(!gone){c.fillStyle='#0005';c.beginPath();c.ellipse(0,h*.22,h*.16,h*.03,0,0,7);c.fill()}
+        c.restore();
+      }
       // units
       for(const u of[L,R]){
         const p=sidePos(u);let x=p.x,y=p.y,alpha=1;
@@ -908,10 +918,6 @@ function playBattle(att,def,strikes){
         if(strikes.some((sj,j)=>j<i&&sj.kill&&sj.def===u))alpha=0;
         if(alpha<=0)continue;
         c.save();c.globalAlpha=alpha;c.translate(x,y+(u.air?Math.sin(now/250)*h*.02:0));
-        // 足場：そのユニットがいるマスの地形タイル（空中ユニットは少し下に）
-        const ti=TER_IMG[MAP[u.y][u.x]];
-        if(ready(ti)&&!(u.air&&u===s.att&&melee)){const pw=h*.52,ph=pw*ti.naturalHeight/ti.naturalWidth,fy=h*.17+(u.air?h*.08:0)-(u.air?Math.sin(now/250)*h*.02:0);c.drawImage(ti,-pw/2,fy-ph*.3,pw,ph)}
-        else{c.fillStyle='#0005';c.beginPath();c.ellipse(0,h*.22,h*.16,h*.03,0,0,7);c.fill()}
         // 被弾時は点滅させる（ctx.filter はスマホで非常に重いので使わない）
         if(u===s.def&&s.hit&&k>impactK&&k<impactK+.1&&Math.floor(now/40)%2)c.globalAlpha=alpha*.35;
         const big=SPR[u.key].big;
