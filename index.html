@@ -130,6 +130,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
   <div class="logo"><small>STAGE 01 · 鋼の目覚め</small>機甲戦線<br>グランヴァルド</div>
   <div class="sub">帝国軍の機動兵器部隊が港湾都市に迫る。<br>4機の小隊で迎え撃ち、司令機カイザー・ネメシスを撃破せよ。</div>
   <button class="btn pri" id="btnStart" style="min-width:180px;font-size:16px">出撃</button>
+  <div class="skip">BGM：まんぼう二等兵 ほか（フリー素材）</div>
 </div>
 
 <script>
@@ -228,7 +229,7 @@ const TPL={
 };
 /* ================= STATE ================= */
 let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,curW=null,targets=null,info=null,floats=[],mapFx=[],busy=false,bossTalked=false,uid=0,over=false;
-const settings={anim:true,manualDef:false,sound:true};
+const settings={anim:true,manualDef:false,sound:true,bgmVol:2};
 try{Object.assign(settings,JSON.parse(localStorage.getItem('gv-settings')||'{}'))}catch(e){}
 function saveSettings(){try{localStorage.setItem('gv-settings',JSON.stringify(settings))}catch(e){}}
 
@@ -566,6 +567,25 @@ function snd(type){
   }catch(e){}
 }
 
+/* ================= BGM ================= */
+// 味方フェイズ／敵フェイズで曲を切り替える。曲の続きから再開する。音源は assets/bgm/ で音量をそろえてある
+const BGM={player:new Audio('assets/bgm/player.mp3'),enemy:new Audio('assets/bgm/enemy.mp3')};
+const BGM_VOL=[0,.2,.4,.7],BGM_LBL=['OFF','小','中','大'];
+for(const a of Object.values(BGM)){a.loop=true;a.preload='auto'}
+let bgmCur=null;
+function fadeTo(a,v,ms,done){clearInterval(a._f);const v0=a.volume,t0=performance.now();a._f=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);a.volume=v0+(v-v0)*k;if(k>=1){clearInterval(a._f);done&&done()}},30)}
+function bgm(name){
+  bgmCur=name;const vol=BGM_VOL[settings.bgmVol]??BGM_VOL[2];
+  for(const[k,a]of Object.entries(BGM)){
+    if(k===name&&vol>0&&!document.hidden){if(a.paused){a.volume=0;a.play().catch(()=>{})}fadeTo(a,vol,400)}
+    else if(!a.paused)fadeTo(a,0,400,()=>a.pause());
+  }
+}
+// iOS では曲ごとにタップ中の再生が必要なので、出撃ボタンで両方を一度鳴らしておく
+function unlockBgm(){for(const a of Object.values(BGM)){a.volume=0;a.play().then(()=>{if(bgmCur!==a._name)a.pause()}).catch(()=>{})}}
+for(const[k,a]of Object.entries(BGM))a._name=k;
+document.addEventListener('visibilitychange',()=>{if(bgmCur)bgm(bgmCur)});
+
 /* ================= UI HELPERS ================= */
 const $=id=>document.getElementById(id);
 const consoleEl=$('console'),sheet=$('sheet');
@@ -635,7 +655,7 @@ async function onTile(x,y){
     if(x===sel.x&&y===sel.y){toMenu(false);return}
     if(reach.has(x,y)){
       busy=true;origin={x:sel.x,y:sel.y};const path=reach.path(x,y);reach=null;mode='moving';renderConsole();
-      await animateMove(sel,path);sel.moved=true;delete sel.buf.accel;busy=false;toMenu(true);return;
+      await animateMove(sel,path);sel.moved=true;sel._accel=!!sel.buf.accel;delete sel.buf.accel;busy=false;toMenu(true);return;
     }
     if(u&&u.team==='ally'&&!u.acted){selectUnit(u);return}
     cancelSel();return;
@@ -659,7 +679,7 @@ consoleEl.addEventListener('click',e=>{
   else if(a==='attack')weaponSheet(sel);
   else if(a==='repair'){snd('ok');curW=null;targets=repairTargets(sel);mode='target';renderConsole()}
   else if(a==='wait')finishUnit(sel);
-  else if(a==='undo'){snd('cancel');sel.x=origin.x;sel.y=origin.y;sel.moved=false;reach=computeReach(sel);mode='select';renderConsole()}
+  else if(a==='undo'){snd('cancel');sel.x=origin.x;sel.y=origin.y;sel.moved=false;if(sel._accel)sel.buf.accel=1;reach=computeReach(sel);mode='select';renderConsole()}
   else if(a==='backmenu'){snd('cancel');curW=null;targets=null;mode='menu';renderConsole()}
 });
 function finishUnit(u){u.acted=true;sel=null;reach=null;curW=null;targets=null;mode='idle';info=null;closeSheet();renderConsole();
@@ -701,11 +721,11 @@ sheet.addEventListener('click',async e=>{
     toast(`${u.pilot.name}「${n}！」`);spiritSheet(u);renderConsole();return}
   if(wb&&!wb.disabled){const w=sel.weapons[+wb.dataset.w];curW=w;targets=alive('foe').filter(e=>inRange(w,dist(sel,e)));closeSheet();mode='target';snd('ok');renderConsole();return}
   if(df&&sheet._def){const r=sheet._def;sheet._def=null;closeSheet();r(df.dataset.def);return}
-  if(tg){const k=tg.dataset.set;settings[k]=!settings[k];saveSettings();settingsSheet();return}
+  if(tg){const k=tg.dataset.set;if(k==='bgmVol'){settings.bgmVol=(settings.bgmVol+1)%BGM_VOL.length;if(bgmCur)bgm(bgmCur)}else settings[k]=!settings[k];saveSettings();settingsSheet();return}
 });
 function settingsSheet(){
   const row=(k,t,d)=>`<div class="toggle"><div>${t}<small>${d}</small></div><button class="btn sm ${settings[k]?'pri':''}" data-set="${k}">${settings[k]?'ON':'OFF'}</button></div>`;
-  openSheet(`<div class="sh-title"><span>設定</span></div>${row('anim','戦闘アニメ','OFFにするとマップ上で結果だけ表示')}${row('manualDef','反撃を手動で選ぶ','敵の攻撃ごとに 反撃／防御／回避 を選択')}${row('sound','効果音','')}
+  openSheet(`<div class="sh-title"><span>設定</span></div>${row('anim','戦闘アニメ','OFFにするとマップ上で結果だけ表示')}${row('manualDef','反撃を手動で選ぶ','敵の攻撃ごとに 反撃／防御／回避 を選択')}${row('sound','効果音','')}<div class="toggle"><div>BGM音量<small>タップで OFF／小／中／大 を切り替え</small></div><button class="btn sm ${settings.bgmVol?'pri':''}" data-set="bgmVol">${BGM_LBL[settings.bgmVol]}</button></div>
   <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">最初からやり直す</button><button class="btn" data-x="close">閉じる</button></div>`);
   $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(true)};
 }
@@ -739,6 +759,7 @@ async function checkEnd(){
     result(true)}
 }
 function result(win){
+  bgm(null);
   const el=document.createElement('div');el.className='ov';el.innerHTML=`<div class="logo" style="font-family:var(--disp);font-size:clamp(32px,9vw,52px);letter-spacing:.12em;color:${win?'var(--amber)':'var(--foe)'}">${win?'MISSION CLEAR':'GAME OVER'}</div>
   <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}`:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'}</div>
   <button class="btn pri" style="min-width:180px">${win?'もう一度プレイ':'リトライ'}</button>`;
@@ -761,7 +782,7 @@ function playBattle(att,def,strikes){
     function sidePos(u){return u===L?{x:w*.25,y:h*.58,f:1}:{x:w*.75,y:h*.58,f:-1}}
     function frame(now){
       if(done)return;
-      const el=now-t0;if(el>total){finish();return}
+      const el=Math.max(0,now-t0);if(el>total){finish();return}
       const i=Math.min(strikes.length-1,Math.floor(el/D)),k=(el-i*D)/D,s=strikes[i];
       if(i!==lastI){lastI=i;$('bWho').textContent=s.att.pilot.name;$('bTxt').textContent=`「${s.line}」　${s.w.name}！`;snd(s.w.type==='格'?'slash':'beam')}
       const A=sidePos(s.att),T=sidePos(s.def),melee=s.w.type==='格';
@@ -823,6 +844,7 @@ function playBattle(att,def,strikes){
 async function endPlayerPhase(){
   if(busy||over)return;
   busy=true;sel=null;reach=null;info=null;mode='busy';closeSheet();phase='enemy';renderConsole();
+  bgm('enemy');
   await banner('ENEMY PHASE','TURN '+turn,'#ff5163');
   startOfPhase('foe');
   for(const e of alive('foe')){
@@ -834,6 +856,7 @@ async function endPlayerPhase(){
   turn++;phase='player';
   for(const u of alive('ally')){u.acted=false;u.moved=false;u.buf={...(u.buf.dodge?{dodge:1}:{}),...(u.buf.dbl?{dbl:1}:{})}}
   sel=null;renderConsole();
+  bgm('player');
   await banner('PLAYER PHASE','TURN '+turn,'#45aaff');
   startOfPhase('ally');
   mode='idle';busy=false;renderConsole();
@@ -898,6 +921,8 @@ function titleArt(){
 }
 async function startGame(skipTitle){
   setup();resize();mode='busy';busy=true;renderConsole();
+  for(const a of Object.values(BGM))a.currentTime=0;
+  bgm('player');
   await dialog([
     {who:'天城 ミオ',text:'帝国軍の機動部隊、湾の北岸に展開中。敵影8、帝国基地に大型反応が一つ。'},
     {who:'鷹野 迅',text:'あれが司令機か……。港町には一歩も入れさせない！'},
@@ -908,7 +933,7 @@ async function startGame(skipTitle){
   await banner('PLAYER PHASE','TURN 1','#45aaff');
   mode='idle';busy=false;renderConsole();
 }
-$('btnStart').onclick=()=>{snd('ok');$('title').hidden=true;startGame()};
+$('btnStart').onclick=()=>{snd('ok');unlockBgm();$('title').hidden=true;startGame()};
 window.addEventListener('resize',()=>{resize()});
 setup();resize();renderConsole();titleArt();requestAnimationFrame(loop);
 </script>
