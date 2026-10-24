@@ -14,7 +14,7 @@
 }
 [hidden]{display:none!important}
 *,*::before,*::after{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%;touch-action:manipulation}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);overscroll-behavior:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 button{font-family:var(--body);color:var(--fg)}
 button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
@@ -771,12 +771,14 @@ const bcv=$('bcv'),bctx=bcv.getContext('2d');
 function playBattle(att,def,strikes){
   return new Promise(resolve=>{
     const ov=$('battle');ov.hidden=false;
-    const W_=bcv.clientWidth||640;const dpr=Math.min(2,window.devicePixelRatio||1);bcv.width=W_*dpr;bcv.height=W_*.56*dpr;
+    const W_=bcv.clientWidth||640;const dpr=Math.min(1.5,window.devicePixelRatio||1);bcv.width=Math.round(W_*dpr);bcv.height=Math.round(W_*.56*dpr);
     const w=bcv.width,h=bcv.height;
     const L=att.team==='foe'?att:def,R=L===att?def:att; // enemy left, ally right
     const start={};start[att.id]=strikes.length>1?strikes[1].hpFrom:att.hp;start[def.id]=strikes[0].hpFrom;
     const D=1900;const total=strikes.length*D+500;let t0=performance.now(),done=false,parts=[],flash=0,shake=0,lastI=-1,impacted=-1;
     const terr=terOf(def.x,def.y);const sky=terr===TER.W?['#0f2f5c','#2f74b8','#164a7a']:terr===TER.F?['#0e2a1c','#3c7a4e','#21452c']:terr===TER.M?['#2b2440','#8a6a5a','#4a3c30']:terr===TER.C?['#121a30','#4a5a80','#2a3040']:terr===TER.E?['#1a0a12','#6a2a3a','#3a2a2e']:['#10213a','#4f7fb0','#2f4f2f'];
+    // 背景のグラデーションは戦闘ごとに1回だけ描いておく（毎フレーム作ると端末が重くなる）
+    const bg=document.createElement('canvas');bg.width=w+40;bg.height=h+40;{const bx=bg.getContext('2d'),g=bx.createLinearGradient(0,20,0,h+20);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');bx.fillStyle=g;bx.fillRect(0,0,w+40,h+40)}
     function finish(){if(done)return;done=true;ov.hidden=true;ov.onclick=null;resolve()}
     ov.onclick=finish;
     function sidePos(u){return u===L?{x:w*.25,y:h*.58,f:1}:{x:w*.75,y:h*.58,f:-1}}
@@ -796,7 +798,7 @@ function playBattle(att,def,strikes){
       // background
       const c=bctx;c.save();
       if(shake>0){c.translate((Math.random()-.5)*w*.02*shake,(Math.random()-.5)*h*.02*shake);shake*=.9}
-      const g=c.createLinearGradient(0,0,0,h);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');c.fillStyle=g;c.fillRect(-20,-20,w+40,h+40);
+      c.drawImage(bg,-20,-20);
       c.strokeStyle='#ffffff22';c.lineWidth=2*dpr;for(let n=0;n<14;n++){const yy=(n*73%100)/100*h*.6,xx=((n*137+el*.9*(A.f))%(w*1.4))-w*.2;c.beginPath();c.moveTo(xx,yy);c.lineTo(xx-A.f*w*.12,yy);c.stroke()}
       // units
       for(const u of[L,R]){
@@ -809,7 +811,8 @@ function playBattle(att,def,strikes){
         c.save();c.globalAlpha=alpha;c.translate(x,y+(u.air?Math.sin(now/250)*h*.02:0));
         c.fillStyle='#0005';c.beginPath();c.ellipse(0,h*.22,h*.16,h*.03,0,0,7);c.fill();
         const sc=h*(u.boss?.24:.19);c.scale(p.f*sc*(u.kind==='drone'?1:1),sc);
-        if(u===s.def&&s.hit&&k>impactK&&k<impactK+.08)c.filter='brightness(3)';
+        // 被弾時は点滅させる（ctx.filter はスマホで非常に重いので使わない）
+        if(u===s.def&&s.hit&&k>impactK&&k<impactK+.1&&Math.floor(now/40)%2)c.globalAlpha=alpha*.35;
         drawMech(c,u,now);c.restore();
       }
       // projectiles
@@ -934,6 +937,8 @@ async function startGame(skipTitle){
   mode='idle';busy=false;renderConsole();
 }
 $('btnStart').onclick=()=>{snd('ok');unlockBgm();$('title').hidden=true;startGame()};
-window.addEventListener('resize',()=>{resize()});
-setup();resize();renderConsole();titleArt();requestAnimationFrame(loop);
+// スマホではスクロールでアドレスバーが出入りするたびに resize が来るので、幅が変わったときだけ作り直す
+let lastMapW=0;
+window.addEventListener('resize',()=>{const w=cv.parentElement.clientWidth;if(Math.abs(w-lastMapW)<1)return;lastMapW=w;resize()});
+setup();resize();lastMapW=cv.parentElement.clientWidth;renderConsole();titleArt();requestAnimationFrame(loop);
 </script>
