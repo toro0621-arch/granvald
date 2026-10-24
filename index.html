@@ -662,7 +662,7 @@ function renderConsole(){
   }else if(mode==='menu'&&sel){
     html=unitCard(sel)+`<div class="hint">${attackable(sel).length?'赤い枠の敵をタップでも攻撃できます':'メニューから行動を選んでください'}</div>`;
   }else if(mode==='target'){
-    html=unitCard(sel,true)+`<div class="hint">${tgtKind==='attack'?'攻撃する敵':'修理する味方'}（黄色い枠）をタップ</div><div class="actions"><button class="btn" data-a="backmenu">戻る</button></div>`;
+    html=unitCard(sel,true)+`<div class="hint">${tgtKind==='attack'?'攻撃する敵':tgtKind==='supply'?'補給する味方':'修理する味方'}（黄色い枠）をタップ</div><div class="actions"><button class="btn" data-a="backmenu">戻る</button></div>`;
   }else if(info){
     html=unitCard(info.u)+(info.u.team==='foe'?'<div class="hint">赤い範囲：この敵の移動範囲と攻撃が届くマス</div>':'');
   }else{
@@ -677,7 +677,8 @@ function renderPop(){
   const show=phase==='player'&&mode==='menu'&&sel&&!busy&&!over&&sheet.hidden;
   pop.hidden=!show;if(!show)return;
   const canRep=sel.repair&&repairTargets(sel).length>0;
-  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button>`:''}<button class="btn" data-a="spirit">精神</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
+  const canSup=sel.repair&&supplyTargets(sel).length>0;
+  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button><button class="btn" data-a="supply" ${canSup?'':'disabled'}>補給</button>`:''}<button class="btn" data-a="spirit">精神</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
   placePop();
 }
 function placePop(){
@@ -730,7 +731,7 @@ async function onTile(x,y){
   }
   if(mode==='target'){
     const t=targets&&targets.find(t=>t.x===x&&t.y===y);
-    if(t){if(tgtKind==='attack')forecast(sel,t,bestWeapon(sel,t,dist(sel,t)));else doRepair(sel,t);return}
+    if(t){if(tgtKind==='attack')forecast(sel,t,bestWeapon(sel,t,dist(sel,t)));else if(tgtKind==='supply')doSupply(sel,t);else doRepair(sel,t);return}
     snd('cancel');mode='menu';targets=null;renderConsole();
   }
 }
@@ -756,6 +757,9 @@ async function attackFromSelect(e){
 function selectUnit(u){snd('sel');sel=u;info=null;origin={x:u.x,y:u.y};reach=computeReach(u);mode='select';renderConsole()}
 function cancelSel(){snd('cancel');sel=null;reach=null;mode='idle';info=null;renderConsole()}
 function toMenu(moved){snd('ok');if(!moved)origin={x:sel.x,y:sel.y};reach=null;mode='menu';renderConsole()}
+// 補給：弾数かENが減っている隣の味方
+function needsSupply(a){return a.en<a.maxEn||a.weapons.some(w=>w.maxAmmo&&w.ammo<w.maxAmmo)}
+function supplyTargets(u){return alive('ally').filter(a=>a!==u&&dist(a,u)===1&&needsSupply(a))}
 function repairTargets(u){return alive('ally').filter(a=>a!==u&&dist(a,u)===1&&a.hp<a.maxHp)}
 function onAction(e){
   const b=e.target.closest('[data-a]');if(!b||b.disabled||busy)return;
@@ -765,6 +769,7 @@ function onAction(e){
   else if(a==='spirit')spiritSheet(sel);
   else if(a==='attack'){snd('ok');tgtKind='attack';targets=attackable(sel);mode='target';renderConsole()}
   else if(a==='repair'){snd('ok');tgtKind='repair';targets=repairTargets(sel);mode='target';renderConsole()}
+  else if(a==='supply'){snd('ok');tgtKind='supply';targets=supplyTargets(sel);mode='target';renderConsole()}
   else if(a==='wait')finishUnit(sel);
   else if(a==='undo'){snd('cancel');sel.x=origin.x;sel.y=origin.y;sel.moved=false;if(sel._accel)sel.buf.accel=1;reach=computeReach(sel);mode='select';renderConsole()}
   else if(a==='backmenu'){snd('cancel');targets=null;mode='menu';renderConsole()}
@@ -817,6 +822,13 @@ function settingsSheet(){
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
 $('btnEnd').onclick=()=>{if(phase==='player'&&!busy&&!over){closeSheet();endPlayerPhase()}};
 
+function doSupply(a,t){
+  snd('spirit');const en=t.maxEn-t.en;let ammo=0;
+  t.en=t.maxEn;for(const w of t.weapons)if(w.maxAmmo){ammo+=w.maxAmmo-w.ammo;w.ammo=w.maxAmmo}
+  t.will=Math.max(50,t.will-10);a.will=Math.min(150,a.will+1);
+  floats.push({x:t.x,y:t.y,text:'補給',color:'#45aaff',t0:performance.now()});
+  toast(`${t.name}に補給（EN+${en}${ammo?`・弾+${ammo}`:''}／気力−10）`);finishUnit(a);
+}
 function doRepair(a,t){
   snd('spirit');const amt=Math.min(t.maxHp-t.hp,2000);t.hp+=amt;a.will=Math.min(150,a.will+1);
   floats.push({x:t.x,y:t.y,text:'+'+amt,color:'#5fe08a',t0:performance.now()});toast(`${t.name}を修理（HP+${amt}）`);finishUnit(a);
