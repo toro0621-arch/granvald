@@ -1,21 +1,24 @@
 # 機甲戦線グランヴァルド
 
-スパロボ風のターン制SRPG（オリジナル作品）。現状は `index.html` 1ファイルで完結。ビルド不要、ブラウザで直接開けば動く。
+スパロボ風のターン制SRPG（オリジナル作品）。現状は `index.html` 1ファイル＋BGM（`assets/bgm/`）。ビルド不要、ブラウザで直接開けば動く。
 
 ## 方針
 - 既存ゲームのROM・画像・音楽・セリフ・キャラクター・ロボットは使わない。参考にするのはゲームシステム（気力、精神コマンド、地形効果など）だけ。
 - 機体はすべて Canvas の図形で描く（`drawMech`）。外部画像なし。
 - スマホ縦画面が基準（幅400px前後）。
+- BGMはユーザーが用意したフリー素材（`assets/bgm/`、クレジットは README）。2曲とも −16 LUFS に音量をそろえて 128kbps で再エンコード済み。曲を足すときも同じようにそろえる（iOS ではページ側の音量変更が効かないため）。
+- 機体・地形のデザインと数値の元は `docs/ref/` の設定画。内容は `SETTING.md` にまとめてある。
 
 ## コード構成（index.html の <script> 内、上から順）
 | セクション | 内容 |
 |---|---|
-| DATA | `MAP`（10×12の地形文字列）、`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（精神コマンド）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
+| DATA | `MAP`（10×12の地形文字列）、`ROAD`（見た目だけの道路）、`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（精神コマンド）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
 | MECH DRAWING | `drawMech(ctx, unit, t)`：単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss |
 | MAP RENDER | 地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行 |
+| BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
 | UI | 下部コンソール（`renderConsole`）、ボトムシート（武器・精神・予測・設定）、`dialog()`、`banner()` |
 | COMBAT | `combat()`（攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkEnd`） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右 |
