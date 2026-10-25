@@ -410,9 +410,9 @@ const STAGES={
    ['golmkai','foe',4,1],['golm_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
    ['hound','foe',5,3],['hound','foe',3,4],['hound','foe',6,5]],
   pre:[
-   {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
-   {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1},
+   {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1,bg:'map'},
    {who:'',text:'灰の講和から27年。帝国と共和国は剣を収めたまま睨み合い、国境の村々は、その谷間で静かに痩せ細っていた。',narr:1},
+   {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
    {who:'伝令',text:'申し上げます！　リンデ村より救援要請。盗賊団の襲撃を受けており、機兵を数機確認とのこと！'},
    {who:'カスパー',text:'盗賊ごときに、機兵を出せと？'},
    {who:'エルンスト',text:'機兵を連れた盗賊です、少佐。村の自警団では一刻も持ちません。私の中隊なら、半日で着けます'},
@@ -987,13 +987,15 @@ const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 function setFace(el,name){const f=faceSrc(name);if(f){el.onerror=()=>{el.hidden=true};el.src=f;el.hidden=false}else el.hidden=true}
 // 会話の背景画（assets/bg/）。会話の行に bg:'hq' のように書くと、その行から背景が変わる（マップを隠す solid の会話だけ）。
 // BG にない名前は背景なし（無地）になるので、画像ができたらここに足す
-const BG={hq:'assets/bg/hq.jpg'};
+const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg'};
+// 端を切らずに全体を見せる背景（地図など）。画面の上に寄せ、余白は背景色
+const BG_WHOLE=['map'];
 for(const f of Object.values(BG))new Image().src=f;
 function dialog(lines,o={}){
   return new Promise(res=>{
     const d=$('dialog');let i=0,bg=o.bg||null;
     d.classList.toggle('solid',!!o.solid);
-    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);d.style.backgroundImage=url?`linear-gradient(#0000 45%,#000b),url(${url})`:''};
+    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':''};
     const show=()=>{const l=lines[i];if('bg' in l)bg=l.bg;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
     show();d.hidden=false;
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';res()}else show()};
