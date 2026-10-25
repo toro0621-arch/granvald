@@ -292,10 +292,10 @@ const TPL={
   lines:['空はオレの庭だ！','一気に抜ける！','振り切ってやるぜ。'],
   weapons:[W('バルカン','射',900,1,2,{hit:15,fx:'bullet'}),W('スピアミサイル','射',1700,1,4,{ammo:6,fx:'missile'}),W('ソニックダイブ','格',2300,1,1,{en:30,will:110,fx:'dive'})]},
  zekt:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,
-  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'帝国兵',melee:120,shoot:120,hit:120,eva:110,skill:100,sp:0,spirits:[]},
   lines:['排除する。','標的確認。'],
-  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+  weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  golm:{name:'ゴルム',kind:'heavy',hp:4000,en:100,armor:1200,mob:55,move:3,
   col:{main:'#4a5248',sub:'#2e342e',acc:'#7a8270',eye:'#ff3344'},
   pilot:{name:'帝国重装兵',melee:135,shoot:125,hit:125,eva:95,skill:105,sp:0,spirits:[]},
@@ -320,15 +320,15 @@ const TPL={
   lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
   weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('ホワイトプルーム','格',2800,1,1,{en:30,will:110})]},
  zekt_b:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
-  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['気合','根性']},
   lines:['おらおら、どきな！','へへっ、もらった！'],
-  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+  weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  zekt_o:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
-  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['集中','鉄壁']},
   lines:['ね、狙います……！','落ち着いて、確実に。'],
-  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+  weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,
   col:{main:'#2a2c30',sub:'#e0b42a',acc:'#8f959c',eye:'#ffd24a'},
   pilot:{name:'マティアス',melee:100,shoot:125,hit:130,eva:95,skill:125,sp:45,spirits:['根性','鉄壁']},
@@ -340,10 +340,10 @@ const TPL={
   lines:['ひゃっはー！','金目のもんを出しな！'],
   weapons:[W('ドリルアーム','格',1100,1,1,{fx:'punch'}),W('溶接機銃','射',1000,1,2,{fx:'bullet'})]},
  zekt_x:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
-  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
   lines:['軍の機兵だろうが関係ねえ！','こいつの扱いには慣れてんだよ。'],
-  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+  weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  golm_x:{name:'ゴルム',kind:'heavy',hp:4000,en:100,armor:1200,mob:55,move:3,spr:'golm',
   col:{main:'#4a5248',sub:'#2e342e',acc:'#7a8270',eye:'#ff3344'},
   pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
@@ -765,7 +765,7 @@ function tinted(src,color){
 // 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、SPR_EXTRA の機体は idle / walk / attack（待機／歩行／攻撃）も。
 // TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）。tint で画像に色を重ねられる
 // 待機・歩行・攻撃の絵がある機体
-const SPR_EXTRA=['grand','sylph','bulwark','raven','caladrius','truck','hound','golmkai'];
+const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai'];
 const SPR={};
 for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);

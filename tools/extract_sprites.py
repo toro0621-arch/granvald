@@ -1,5 +1,6 @@
 """docs/ref/sprites-and-tiles.png（設定画「ユニットグラフィック」「マップのマスグラフィック」）と
-docs/ref/empire-01-sprites.png（帝国編 第1話のユニットグラフィック）から機体と地形タイルを切り抜き、
+docs/ref/empire-01-sprites.png（帝国編 第1話のユニットグラフィック）、
+docs/ref/zekt-v2-sprites.png（ゼクト改訂版）から機体と地形タイルを切り抜き、
 背景を透明にして assets/sprites/ に保存する。絵そのものには手を加えない。
 使い方: python3 tools/extract_sprites.py   （numpy, scipy, Pillow が必要）
 """
@@ -23,7 +24,7 @@ UNITS = {
     'raven':   {'big': (974, 96, 1099, 252), 'down': (865, 258, 918, 314), 'up': (928, 258, 984, 314), 'left': (987, 261, 1040, 312), 'right': (1043, 261, 1094, 313),
                 'idle': (867, 351, 925, 407), 'walk': (935, 350, 999, 407), 'attack': (1016, 348, 1093, 405)},
     # 敵の上段のラベルは「正面」「背面」が欠けて「面」になっている
-    'zekt':    {'big': (1120, 136, 1215, 247), 'down': (1121, 260, 1169, 311), 'up': (1171, 259, 1215, 311), 'left': (1120, 349, 1167, 400), 'right': (1171, 348, 1216, 400)},
+    # ゼクトは改訂版（docs/ref/zekt-v2-sprites.png、UNITS_ZEKT）を使うので、ここからは切り抜かない
     'golm':    {'big': (1225, 141, 1318, 245), 'down': (1229, 260, 1274, 309), 'up': (1275, 260, 1318, 309), 'left': (1228, 349, 1273, 398), 'right': (1276, 349, 1318, 397)},
     'vespa':   {'big': (1329, 140, 1417, 247), 'down': (1329, 260, 1375, 312), 'up': (1375, 258, 1416, 312), 'left': (1328, 346, 1374, 403), 'right': (1374, 346, 1416, 402)},
     'nemesis': {'big': (1428, 130, 1520, 249), 'down': (1431, 256, 1476, 312), 'up': (1477, 256, 1518, 312), 'left': (1428, 343, 1474, 402), 'right': (1476, 343, 1518, 402)},
@@ -41,13 +42,20 @@ UNITS_E1 = {
     'golmkai':   {'big': (795, 630, 1038, 843), 'down': (1062, 643, 1172, 775), 'up': (1178, 643, 1292, 775), 'left': (1298, 643, 1402, 775), 'right': (1408, 643, 1500, 775),
                   'idle': (802, 875, 883, 968), 'walk': (915, 873, 987, 970), 'attack': (1248, 850, 1334, 958)},
 }
+# ゼクト（改訂版。docs/ref/zekt-v2-sprites.png）。攻撃はライフルの火を避けた範囲。
+# 装甲の明るい部分が背景の水色に近いので、閉じた背景は大きいもの（脚の間など）だけ抜く
+SRC_ZEKT = 'docs/ref/zekt-v2-sprites.png'
+UNITS_ZEKT = {
+    'zekt': {'big': (318, 125, 805, 534), 'down': (835, 195, 1000, 445), 'up': (1010, 195, 1185, 445), 'left': (1200, 195, 1340, 445), 'right': (1350, 195, 1495, 445),
+             'idle': (90, 655, 295, 895), 'walk': (430, 655, 630, 895), 'attack': (770, 680, 980, 895)},
+}
 # マスグラフィックの立体タイル（左側の絵）
 TILES = {
     'plain': (14, 544, 180, 698), 'forest': (352, 544, 513, 698), 'mountain': (672, 542, 856, 698),
     'sea': (14, 756, 180, 940), 'city': (352, 756, 513, 940), 'base': (672, 754, 856, 940),
 }
 
-def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False):
+def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False, pocket_min=25):
     x0, y0, x1, y1 = box
     a = img[y0:y1, x0:x1].astype(int)
     # 背景はグラデーションなので、行ごとに左右端の中央値を背景色とみなす。
@@ -76,9 +84,9 @@ def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False):
     border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bgset = set(border)
     if pockets:
-        # 腕と体のすき間など、閉じた背景（ある程度の大きさのもの）も背景にする
+        # 腕と体のすき間など、閉じた背景（pocket_min 画素以上のもの）も背景にする
         sizes = ndi.sum(np.ones_like(d), lab, range(1, lab.max() + 1))
-        bgset |= {i + 1 for i, s in enumerate(sizes) if s >= 25}
+        bgset |= {i + 1 for i, s in enumerate(sizes) if s >= pocket_min}
     bg = np.isin(lab, list(bgset))
     # 外周に残る背景色のにじみを1px削る
     halo = ndi.binary_dilation(bg) & ((d < tol * 1.8) | (bglike & ~bg))
@@ -115,6 +123,13 @@ if __name__ == '__main__':
         for kind, box in boxes.items():
             name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
             im = cut(img_e1, box, shadow=True, robust_bg=True)
+            im.save(name, optimize=True)
+            print(name, im.size)
+    img_z = np.asarray(Image.open(SRC_ZEKT).convert('RGB'))
+    for key, boxes in UNITS_ZEKT.items():
+        for kind, box in boxes.items():
+            name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
+            im = cut(img_z, box, tol=24, robust_bg=True, pocket_min=1500)
             im.save(name, optimize=True)
             print(name, im.size)
     for key, box in TILES.items():
