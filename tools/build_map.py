@@ -97,14 +97,15 @@ for y in range(ROWS):
             if is_road(x + dx, y + dy):
                 parts.append((X + (CELL / 2 if dx > 0 else 0 if dx < 0 else m), Y + (CELL / 2 if dy > 0 else 0 if dy < 0 else m),
                               X + (CELL if dx > 0 else CELL / 2 if dx < 0 else m + w), Y + (CELL if dy > 0 else CELL / 2 if dy < 0 else m + w)))
+        # 道はファンタジーの世界に合わせて土の道（白線のある舗装道路にしない）
         for p in parts:
-            dr.rectangle([p[0] - 2, p[1] - 2, p[2] + 2, p[3] + 2], fill=(150, 148, 136))
+            dr.rectangle([p[0] - 2, p[1] - 2, p[2] + 2, p[3] + 2], fill=(104, 116, 40))
         for p in parts:
-            dr.rectangle(p, fill=(88, 86, 82))
-        horiz = is_road(x - 1, y) or is_road(x + 1, y)
-        for i in range(2):
-            if horiz: dr.rectangle([X + CELL * (.1 + i * .5), Y + CELL / 2 - 1, X + CELL * (.34 + i * .5), Y + CELL / 2 + 1], fill=(225, 222, 200))
-            else: dr.rectangle([X + CELL / 2 - 1, Y + CELL * (.1 + i * .5), X + CELL / 2 + 1, Y + CELL * (.34 + i * .5)], fill=(225, 222, 200))
+            dr.rectangle(p, fill=(158, 128, 82))
+        # 轍（わだち）と小石
+        for _ in range(10):
+            px_, py_ = X + rng.integers(int(m), int(m + w)), Y + rng.integers(int(m), int(m + w))
+            dr.rectangle([px_, py_, px_ + 1, py_ + 1], fill=(126, 100, 62) if rng.random() < .6 else (190, 166, 120))
 
 # 森・山・市街・基地を設定画から貼る（山は少し大きめに貼って重ねる）
 order = sorted(((y, x) for y in range(ROWS) for x in range(COLS)), key=lambda p: (MAP[p[0]][p[1]] == 'M', p))
