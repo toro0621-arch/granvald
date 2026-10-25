@@ -1361,6 +1361,9 @@ const BIG_FACE={bulwark:'l',zekt:'l',truck:'l',hound:'l'};
 const ATK_FACE={grand:'r',sylph:'r',bulwark:'l',raven:'r',zekt:'r',caladrius:'l',truck:'f',hound:'r',golmkai:'l'};
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
+// 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
+const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',W:'water',C:'village',B:'fort',E:'fort'};
+const BATTLE_BG={};for(const[t,f]of Object.entries(BATTLE_BG_FILE))if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
 function playBattle(att,def,strikes){
   return new Promise(resolve=>{
     const ov=$('battle');ov.hidden=false;
@@ -1376,7 +1379,13 @@ function playBattle(att,def,strikes){
     const terr=terOf(def.x,def.y);const sky=terr===TER.W?['#0f2f5c','#2f74b8','#164a7a']:terr===TER.F?['#0e2a1c','#3c7a4e','#21452c']:terr===TER.M?['#2b2440','#8a6a5a','#4a3c30']:terr===TER.C?['#121a30','#4a5a80','#2a3040']:terr===TER.E?['#1a0a12','#6a2a3a','#3a2a2e']:['#10213a','#4f7fb0','#2f4f2f'];
     // 背景のグラデーションは戦闘ごとに1回だけ描いておく（毎フレーム作ると端末が重くなる）。カメラで寄っても端が見えないよう大きめに
     const PAD=Math.round(w*.15);
-    const bg=document.createElement('canvas');bg.width=w+PAD*2;bg.height=h+PAD*2;{const bx=bg.getContext('2d'),g=bx.createLinearGradient(0,PAD,0,h+PAD);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');bx.fillStyle=g;bx.fillRect(0,0,bg.width,bg.height)}
+    const bg=document.createElement('canvas');bg.width=w+PAD*2;bg.height=h+PAD*2;{const bx=bg.getContext('2d'),bimg=BATTLE_BG[BATTLE_BG_FILE[MAP[def.y][def.x]]];
+      if(ready(bimg)){
+        // 背景画：横幅いっぱいに広げ、下をそろえる（上の空が少し切れる）。HPの表示が読めるよう上を少し暗く
+        const iw=bimg.naturalWidth,ih=bimg.naturalHeight,k=Math.max(bg.width/iw,bg.height/ih),dw=iw*k,dh=ih*k;
+        bx.drawImage(bimg,(bg.width-dw)/2,bg.height-dh,dw,dh);
+        const g=bx.createLinearGradient(0,0,0,bg.height);g.addColorStop(0,'#000a');g.addColorStop(.3,'#0000');g.addColorStop(.85,'#0000');g.addColorStop(1,'#0006');bx.fillStyle=g;bx.fillRect(0,0,bg.width,bg.height)}
+      else{const g=bx.createLinearGradient(0,PAD,0,h+PAD);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');bx.fillStyle=g;bx.fillRect(0,0,bg.width,bg.height)}}
     function finish(){if(done)return;done=true;ov.hidden=true;ov.onclick=null;resolve()}
     ov.onclick=finish;
     // 足場がないので、機体は少し下げて地面（画面の下の帯）に立たせる
