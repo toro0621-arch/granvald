@@ -139,7 +139,12 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #title .logo small{display:block;font-size:13px;letter-spacing:.4em;color:var(--amber);margin-bottom:8px}
 #title .sub{color:var(--mute);margin:14px 0 22px;text-align:center;font-size:14px;line-height:1.8;max-width:30em}
 #title canvas{width:min(100%,420px);aspect-ratio:2/1;margin-bottom:10px}
+#title .stages{display:flex;flex-direction:column;gap:8px;margin-top:16px;width:min(100%,320px)}
+#title .stages .btn{text-align:left;padding:8px 14px;min-height:52px}
+#title .stages .btn small{display:block;font-weight:400;font-size:11.5px;opacity:.8;margin-top:1px}
 .dlg{cursor:pointer}
+#dialog.solid{background:var(--bg)}
+#dialog.narr .txt{color:#c3cfdf;font-size:14px;line-height:1.8}
 @media (prefers-reduced-motion:reduce){#banner .b,#sheet .in{animation:none}}
 </style>
 
@@ -172,10 +177,9 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 <div id="title" class="ov">
   <canvas id="tcv"></canvas>
-  <div class="logo"><small>STAGE 01 · 鋼の目覚め</small>機甲戦線<br>グランヴァルド</div>
-  <div class="sub">帝国軍の機動兵器部隊が港湾都市に迫る。<br>4機の小隊で迎え撃ち、司令機カイザー・ネメシスを撃破せよ。</div>
-  <button class="btn pri" id="btnStart" style="min-width:180px;font-size:16px">出撃</button>
-  <button class="btn" id="btnContinue" style="min-width:180px;font-size:16px;margin-top:10px">続きから</button>
+  <div class="logo">機甲戦線<br>グランヴァルド</div>
+  <div class="stages" id="stageList"></div>
+  <button class="btn" id="btnContinue" style="min-width:240px;font-size:15px;margin-top:10px">続きから</button>
   <div class="skip">BGM：まんぼう二等兵 ほか（フリー素材）</div>
 </div>
 
@@ -184,7 +188,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 /* ================= DATA ================= */
 const COLS=10, ROWS=12;
 // 設定画「マップ全体のイメージ（例：第1話）」に合わせた配置。北に帝国の城（E、2×2）、中央に湾、南に市街と味方基地（B、2×2）
-const MAP=[
+const MAP_S1=[
  "MMFPEEPPFM",
  "MFPPEEPPMM",
  "MFFPPPPPMM",
@@ -198,7 +202,7 @@ const MAP=[
  "MMCCBBCCFM",
  "MMFCCCCCMM"];
 // 道路（見た目だけ。平地の上に描く）
-const ROAD=[
+const ROAD_S1=[
  "...#..##..",
  "...#...#..",
  "..........",
@@ -211,6 +215,36 @@ const ROAD=[
  "..........",
  "..........",
  ".........."];
+// 帝国編 第1話「国境の村」（STORY.md）。北の峠から盗賊が来て、中央の村（市街）を襲っている。西に湖、南の街道から味方が駆けつける
+const MAP_E1=[
+ "MMMFPPFMMM",
+ "MMFFPPFFMM",
+ "MFFPPPPFFM",
+ "FFPPCCPPFF",
+ "WFPCCCCPFF",
+ "WWPCCCCPPF",
+ "WWFPPPPFFF",
+ "WFFPPPPPFM",
+ "FFPPPPPFFM",
+ "FPPPPPPPFF",
+ "MFPPPPPFMM",
+ "MMFPPPPFMM"];
+// 南の街道と北の峠道（見た目だけ）
+const ROAD_E1=[
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "..........",
+ "..........",
+ "..........",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#....."];
+// 今のステージの地形（loadStage で切り替える）
+let MAP=MAP_S1,ROAD=ROAD_S1;
 const TER={
  P:{n:'平地',c:1,d:0,e:0},
  F:{n:'森',c:2,d:.10,e:10},
@@ -271,10 +305,53 @@ const TPL={
   col:{main:'#1c1418',sub:'#7a1420',acc:'#e0b030',eye:'#ff2a40',cape:'#8a1020'},
   pilot:{name:'総帥ザルグ',melee:150,shoot:150,hit:160,eva:140,skill:150,sp:0,spirits:[]},
   lines:['ひれ伏すがいい！','この程度か、旧式ども。','貴様たちに、帝国の力を思い知らせてやる。'],
-  weapons:[W('マシンガン','射',1800,1,3,{fx:'bullet'}),W('メガビーム','射',4000,1,4,{en:50,will:130,fx:'blast'})]}
+  weapons:[W('マシンガン','射',1800,1,3,{fx:'bullet'}),W('メガビーム','射',4000,1,4,{en:50,will:130,fx:'blast'})]},
+ // ===== 帝国編 第1話「辺境の火」 =====
+ // 数値は STORY.md の表と設定画 docs/ref/empire-01-sheet.png。パイロット能力はエルンストも含めて仮設定（SETTING.md）
+ // spr：使う画像（別の機体の画像を流用するとき）、false＝画像なし（drawMech で描く）。tint：画像に重ねる色
+ caladrius:{name:'カラドリウス',kind:'knight',hp:4000,en:170,armor:1100,mob:100,move:5,spr:false,
+  col:{main:'#1d1f25',sub:'#c9a23a',acc:'#eef0f2',eye:'#ffcf5a'},
+  pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['集中','必中']},
+  lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
+  weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('ホワイトプルーム','格',2800,1,1,{en:30,will:110})]},
+ zekt_b:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
+  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['気合','根性']},
+  lines:['おらおら、どきな！','へへっ、もらった！'],
+  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+ zekt_o:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
+  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['集中','鉄壁']},
+  lines:['ね、狙います……！','落ち着いて、確実に。'],
+  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+ truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,spr:false,
+  col:{main:'#2a2c30',sub:'#e0b42a',acc:'#8f959c',eye:'#ffd24a'},
+  pilot:{name:'マティアス',melee:100,shoot:125,hit:130,eva:95,skill:125,sp:45,spirits:['根性','鉄壁']},
+  lines:['整備屋をなめなさんな。','こいつでも、牽制ぐらいはできますぜ。'],
+  weapons:[W('機銃','射',900,1,2,{fx:'bullet'})]},
+ hound:{name:'ハウンド',kind:'hound',hp:1500,en:60,armor:600,mob:70,move:4,spr:false,
+  col:{main:'#d8a628',sub:'#3b3a3c',acc:'#c0392b',eye:'#ffde59'},
+  pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
+  lines:['ひゃっはー！','金目のもんを出しな！'],
+  weapons:[W('ドリルアーム','格',1100,1,1,{fx:'punch'}),W('溶接機銃','射',1000,1,2,{fx:'bullet'})]},
+ zekt_x:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
+  col:{main:'#5d3a8e',sub:'#3a2862',acc:'#a58ad6',eye:'#ff3344'},
+  pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
+  lines:['軍の機兵だろうが関係ねえ！','こいつの扱いには慣れてんだよ。'],
+  weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
+ golm_x:{name:'ゴルム',kind:'heavy',hp:4000,en:100,armor:1200,mob:55,move:3,spr:'golm',
+  col:{main:'#4a5248',sub:'#2e342e',acc:'#7a8270',eye:'#ff3344'},
+  pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
+  lines:['ぶっ潰せ！','硬さだけは折り紙つきだ！'],
+  weapons:[W('アイアンハンマー','格',1900,1,1,{fx:'punch'}),W('拡散砲','射',1400,2,4,{fx:'shell'})]},
+ golmkai:{name:'ゴルム改',kind:'heavy',hp:5000,en:120,armor:1300,mob:60,move:3,boss:true,spr:'golm',tint:'#ff5a46',
+  col:{main:'#8e2a2a',sub:'#3a3434',acc:'#c9a23a',eye:'#ffdd55'},
+  pilot:{name:'ボルツ',melee:150,shoot:125,hit:135,eva:105,skill:120,sp:0,spirits:[]},
+  lines:['帝国の犬が、なんぼのもんだ！','まとめて叩き潰してやる！'],
+  weapons:[W('ヘビーハンマー','格',2100,1,1,{fx:'punch'}),W('拡散砲','射',1500,2,4,{fx:'shell'})]}
 };
 /* ================= STATE ================= */
-let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,bossTalked=false,uid=0,over=false;
+let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,uid=0,over=false;
 const settings={anim:true,manualDef:false,sound:true,bgmVol:2};
 // localStorage のキーは必ず「granvald-」で始める（GitHub Pages では同じドメインの他のページと保存領域を共有するため）
 try{Object.assign(settings,JSON.parse(localStorage.getItem('granvald-settings')||localStorage.getItem('gv-settings')||'{}'))}catch(e){}
@@ -286,18 +363,143 @@ function mk(key,team,x,y,extra={}){
     pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
   units.push(u);return u;
 }
-// 初期配置 [機体, 陣営, x, y, 追加の値]。セーブデータのユニットはこの順番で並ぶ
-const STAGE_NAME='第1話 鋼の目覚め';
-const ROSTER=[
-  // 味方は設定画どおり市街の最下段に並ぶ
-  ['grand','ally',3,11],['sylph','ally',4,11],['bulwark','ally',5,11],['raven','ally',6,11],
-  // 城の前に横一列（設定画の並び）、両岸に先行のゼクト
-  ['zekt','foe',3,2],['golm','foe',4,2],['golm','foe',5,2],['vespa','foe',6,2],['vespa','foe',7,2],
-  ['zekt','foe',1,4],['zekt','foe',8,4],
-  ['nemesis','foe',5,1,{will:110,guard:true}]];
+/* ================= STAGES ================= */
+// ステージデータ。地形（map/road/bg）、初期配置（roster：[機体, 陣営, x, y, 追加の値]。セーブデータのユニットもこの順）、
+// 敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue）
+const STAGES={
+ s1:{id:'s1',name:'鋼の目覚め',label:'沿岸都市連合',map:MAP_S1,road:ROAD_S1,bg:'assets/stage1_map.png',leader:'grand',
+  goal:'勝利：敵全滅かネメシス撃破／敗北：グランヴァルド撃墜',
+  roster:[
+   // 味方は設定画どおり市街の最下段に並ぶ
+   ['grand','ally',3,11],['sylph','ally',4,11],['bulwark','ally',5,11],['raven','ally',6,11],
+   // 城の前に横一列（設定画の並び）、両岸に先行のゼクト
+   ['zekt','foe',3,2],['golm','foe',4,2],['golm','foe',5,2],['vespa','foe',6,2],['vespa','foe',7,2],
+   ['zekt','foe',1,4],['zekt','foe',8,4],
+   ['nemesis','foe',5,1,{will:110,guard:true}]],
+  start:[
+   {who:'天城 ミオ',text:'帝国軍の機動部隊、湾の北岸に展開中。敵影8、帝国基地に大型反応が一つ。'},
+   {who:'鷹野 迅',text:'あれが司令機か……。港町には一歩も入れさせない！'},
+   {who:'風間 リク',text:'湾の上はオレの空だ。陸戦機は海で足を取られる、岸沿いに回り込めよ。'},
+   {who:'岩瀬 ゴウ',text:'損傷したら俺のところへ来い。ブルワークの修理装置で直してやる。'},
+   {who:'総帥ザルグ',text:'旧式の寄せ集めがよく吠える。全機、蹴散らせ！'},
+   {who:'作戦目標',text:'勝利条件：敵の全滅、またはカイザー・ネメシスの撃破。敗北条件：グランヴァルドの撃墜。'}],
+  talks:[{id:'boss',when:(a,d)=>a.boss||d.boss,lines:(a,d)=>{const p=a.boss?d:a;return[
+   {who:'総帥ザルグ',text:'このネメシスに挑むか。旧式の寄せ集めが……貴様たちに、帝国の力を思い知らせてやる。'},
+   {who:p.pilot.name,text:p.key==='grand'?'沈むのはそっちだ！　行くぞ、グランヴァルド！':'司令機と交戦開始。ここで押し切る！'}]}}],
+  bossDown:[{who:'総帥ザルグ',text:'ば、馬鹿な……！　全軍、撤退せよ！'},{who:'鷹野 迅',text:'見たか。この街は俺たちが守る！'}],
+  allDown:[{who:'鷹野 迅',text:'敵部隊、全機撃破！'},{who:'岩瀬 ゴウ',text:'上出来だ。帰ったら整備班に礼を言っとけよ。'}],
+  lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
+  loseHint:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'},
+ // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
+ e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
+  goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
+  roster:[
+   // 南の街道から駆けつけるファルケン中隊
+   ['zekt_b','ally',3,10],['caladrius','ally',4,10],['zekt_o','ally',5,10],['truck','ally',4,11],
+   // 盗賊団：峠にボス、村にハウンド
+   ['golmkai','foe',4,1],['golm_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
+   ['hound','foe',5,3],['hound','foe',3,4],['hound','foe',6,5]],
+  pre:[
+   {who:'',text:'― 司令部 ―',narr:1},
+   {who:'',text:'大陸暦598年、春。ガルディア帝国の北東、国境地帯。',narr:1},
+   {who:'',text:'灰の講和から27年。帝国と共和国は剣を収めたまま睨み合い、国境の村々は、その谷間で静かに痩せ細っていた。',narr:1},
+   {who:'伝令',text:'申し上げます！　リンデ村より救援要請。盗賊団の襲撃を受けており、機兵を数機確認とのこと！'},
+   {who:'カスパー',text:'盗賊ごときに、機兵を出せと？'},
+   {who:'エルンスト',text:'機兵を連れた盗賊です、少佐。村の自警団では一刻も持ちません。私の中隊なら、半日で着けます'},
+   {who:'カスパー',text:'却下だ。東の荘園に、我が家の荷が届く。中隊はその警備に回せ'},
+   {who:'エルンスト',text:'……少佐の家の荷と、帝国の民の命を、同じ秤にかけろと？'},
+   {who:'カスパー',text:'口を慎め、ファルケン大尉。妃殿下の弟君は、民草にずいぶんとお優しいようだが'},
+   {who:'カスパー',text:'ここは宮廷ではない。軍だ。家柄の順に命令が下りる場所だ。……下がれ'},
+   {who:'エルンスト',text:'……失礼します'},
+   {who:'',text:'― 格納庫 ―',narr:1},
+   {who:'マティアス',text:'お帰りなさい、大尉。……その顔は、却下されましたな'},
+   {who:'エルンスト',text:'荘園の荷のほうが大事だそうだ'},
+   {who:'マティアス',text:'でしょうな。で、行くんでしょう？　カラドリウスは、もう暖めてありますぜ'},
+   {who:'エルンスト',text:'……君には隠し事ができないな、曹長'},
+   {who:'エルンスト',text:'中隊に通達。本日、我が中隊は巡回訓練を行う。訓練の経路は、たまたまリンデ村を通る'},
+   {who:'ブルーノ',text:'へへっ、了解！　ちょうど体がなまってたとこです'},
+   {who:'オットー',text:'た、大尉……それは、命令違反になるのでは……'},
+   {who:'エルンスト',text:'訓練だ、オットー。そして訓練中に何が起きても、責任は中隊長の私が取る'},
+   {who:'オットー',text:'……分かりました。お供します'},
+   {who:'マティアス',text:'整備車両も出しますぜ。訓練には、整備がつきものですからな'}],
+  start:[
+   {who:'',text:'― リンデ村 ―',narr:1},
+   {who:'',text:'村のあちこちから煙が上がっている。',narr:1},
+   {who:'ボルツ',text:'おら、さっさと積め！　食い物も金目のもんも、根こそぎだ！'},
+   {who:'村人',text:'お願いです、それは冬を越すための……！'},
+   {who:'ボルツ',text:'知るか！　恨むなら、助けにも来ねえお上を恨みな！'},
+   {who:'ブルーノ',text:'大尉、村が燃えてます！'},
+   {who:'エルンスト',text:'見えている。ファルケン中隊、これより盗賊団を排除する。村人を巻き込むな'},
+   {who:'マティアス',text:'大尉、若いのに一つずつ確認させておきます。まずは移動。機体を選べば、進める範囲が光ります'},
+   {who:'マティアス',text:'森や山は進みにくい代わりに、身を隠せる。村の建物も盾になりますぜ。奪い返せば、こっちのもんです'},
+   {who:'マティアス',text:'攻撃は、移動のあとでもできます。ただし、撃ったら動けねえ。順番を間違えなさんな'},
+   {who:'マティアス',text:'傷んだ機体は、俺の車両の隣に寄せてください。修理も補給も引き受けます'},
+   {who:'エルンスト',text:'戦いが長引けば気力が上がる。そうなれば大技も使える。焦るな、確実に一機ずつ落とせ'},
+   {who:'作戦目標',text:'勝利条件：敵の全滅、またはゴルム改の撃破。敗北条件：カラドリウスの撃墜。'}],
+  talks:[
+   // 味方が初めて盗賊のゼクトと戦ったとき（どちらから仕掛けても1回だけ）
+   {id:'zekt',when:(a,d)=>[a,d].some(u=>u.team==='foe'&&u.key==='zekt_x'),lines:()=>[
+   {who:'ブルーノ',text:'なっ……盗賊が、うちと同じゼクトを!?'},
+   {who:'オットー',text:'塗装は剥がしてありますけど……間違いない。帝国の制式機です'},
+   {who:'エルンスト',text:'詮索は後だ。今は目の前の敵に集中しろ'},
+   {who:'エルンスト',text:'（……盗賊が、正規軍の機兵を？　どこから流れた）'}]},
+   {id:'boss',when:(a,d)=>a.boss||d.boss,lines:()=>[
+   {who:'ボルツ',text:'黒い機兵に金の線……お偉いさんの機体か。帝国の犬が、こんな辺境まで何の用だ！'},
+   {who:'エルンスト',text:'犬で結構。だが、飼い主を選ぶ程度の分別はある'},
+   {who:'ボルツ',text:'わけの分からねえことを！　帝国の犬が、なんぼのもんだ！'}]}],
+  bossDown:[
+   {who:'ボルツ',text:'ぐっ……ちくしょう、話が違うじゃねえか！　軍は来ねえって……！'},
+   {who:'エルンスト',text:'……軍は来ない？　誰から聞いた'},
+   {who:'ボルツ',text:'引き上げだ、野郎ども！　頭（かしら）に知らせろ！'},
+   {who:'ブルーノ',text:'逃げた……！　追いますか、大尉！'},
+   {who:'エルンスト',text:'深追いはするな。今は村が先だ'}],
+  allDown:[
+   {who:'ブルーノ',text:'やりました、大尉！　一機残らず片付けましたよ！'},
+   {who:'エルンスト',text:'よくやった。……だが、頭目はここにいなかった。まだ終わりではない'}],
+  lose:[
+   {who:'マティアス',text:'大尉！　くそっ、応答してください、大尉！'}],
+  // ボーナス：3ターン目の終わりまでに村（市街のマス）の中の敵が全滅していれば、クリア後の村長の会話が変わる
+  bonus:{turn:3,tile:'C'},
+  epilogue:f=>[...(f.bonus?[
+   {who:'',text:'― リンデ村 ―',narr:1},
+   {who:'村長',text:'軍の方々……来てくださったのですね。もう、誰も来ないものと……'},
+   {who:'エルンスト',text:'遅くなってすまない。被害を確かめさせてくれ。必要なものは、私の名で手配する'},
+   {who:'村長',text:'ありがたい……。帝国にも、あなたのような方がおられるとは'}]:[
+   {who:'',text:'― リンデ村 ―',narr:1},
+   {who:'村長',text:'……来てくださったことには、感謝します。ですが、冬を越す蓄えの半分は、もう……'},
+   {who:'エルンスト',text:'……私の名で、物資を手配する。必ずだ'}]),...
+   [
+   {who:'マティアス',text:'大尉、ちょっと見てくだせえ。盗賊のゼクトの残骸です'},
+   {who:'マティアス',text:'製造番号を削ってある。だが、この削り方は素人じゃねえ。工具も手順も、軍の整備場のやり方だ'},
+   {who:'マティアス',text:'こいつは盗賊の持ち物じゃねえな。軍の倉庫から、まとめて出てきたもんですぜ'},
+   {who:'エルンスト',text:'……横流しか'},
+   {who:'オットー',text:'大尉、通信です。辺境の補給基地から……'},
+   {who:'クラーラ',text:'こちら第三補給基地、クラーラ・ハイム中尉です。リンデ村の交戦の報告を傍受しました'},
+   {who:'クラーラ',text:'その残骸の番号、私に調べさせてください。……以前、同じ手口を見たことがあります'},
+   {who:'エルンスト',text:'なぜ、私に直接？　正式に上へ報告すればいい'},
+   {who:'クラーラ',text:'上に報告すれば、握りつぶされますから。……私はそれで、ここに飛ばされたんです'},
+   {who:'エルンスト',text:'……分かった。頼む、ハイム中尉'},
+   {who:'',text:'― 司令部 ―',narr:1},
+   {who:'カスパー',text:'ファルケン！　荘園の警備を放り出して、どこで何をしていた！'},
+   {who:'エルンスト',text:'巡回訓練の途中、盗賊団と遭遇し、やむなく交戦しました。村は守られました'},
+   {who:'カスパー',text:'……訓練だと？　ふん。まあいい。報告書は、私が書く'},
+   {who:'エルンスト',text:'……'},
+   {who:'マティアス',text:'（小声で）手柄は持っていかれますな'},
+   {who:'エルンスト',text:'（小声で）構わん。村が残った。それに、もっと大きな獲物の匂いがする'},
+   {who:'',text:'盗賊の機兵は、どこから来たのか。',narr:1},
+   {who:'',text:'「軍は来ない」と、誰が盗賊に教えたのか。',narr:1},
+   {who:'',text:'辺境に上がった小さな火は、やがて帝国の奥深くまで燃え広がっていく。',narr:1},
+   {who:'',text:'次回、第2話「狼の巣」',narr:1}]],
+  loseHint:'村の建物（市街）は守りに有利。傷んだ機体はマティアスの整備車両の隣へ。'}
+};
+const STAGE_ORDER=['e1','s1'];
+const stageTitle=st=>`${st.label}「${st.name}」`;
+let ST=STAGES.s1,flags={};
+// ステージの地形と背景を切り替える
+function loadStage(id){ST=STAGES[id]||STAGES.s1;MAP=ST.map;ROAD=ST.road;STAGE_IMG=stageImg(ST.bg);terrainLayer=null}
 function setup(){
-  units=[];uid=0;turn=1;phase='player';sel=null;reach=null;info=null;floats=[];mapFx=[];bossTalked=false;over=false;
-  for(const r of ROSTER)mk(...r);
+  units=[];uid=0;turn=1;phase='player';sel=null;reach=null;info=null;floats=[];mapFx=[];flags={};over=false;
+  for(const r of ST.roster)mk(...r);
 }
 const alive=t=>units.filter(u=>!u.dead&&(!t||u.team===t));
 const unitAt=(x,y)=>units.find(u=>!u.dead&&u.x===x&&u.y===y);
@@ -492,6 +694,35 @@ function drawMech(c,u,t=0){
     P(c,[.72,.24,.92,.36,.76,.4],C.acc);
     circ(c,.46,-.12,.16,C.main);c.strokeStyle=O;c.lineWidth=.03;c.stroke();circ(c,.54,-.15,.07,C.eye);
     c.strokeStyle=C.sub;c.beginPath();c.moveTo(.5,-.26);c.lineTo(.72,-.5);c.moveTo(.44,-.27);c.lineTo(.56,-.56);c.stroke();break}
+  case'knight':{ // カラドリウス：黒鉄の装甲に金のライン、背中に白い羽根、とがった頭部と剣
+    P(c,[-.08,-.4,-.62,-1,-.5,-.62],C.acc,O);P(c,[-.08,-.36,-.86,-.78,-.62,-.46],C.acc,O);P(c,[-.08,-.3,-.96,-.42,-.66,-.24],C.acc,O);
+    PM(c,[.08,.18,.26,.18,.3,.82,.1,.82],C.main,O);PM(c,[.06,.76,.34,.76,.4,.96,.02,.96],C.main,O);PM(c,[.1,.42,.26,.42,.25,.48,.11,.48],C.sub);
+    P(c,[-.34,-.44,.34,-.44,.24,.12,-.24,.12],C.main,O);
+    c.strokeStyle=C.sub;c.lineWidth=.035;c.beginPath();c.moveTo(-.22,-.38);c.lineTo(0,-.1);c.lineTo(.22,-.38);c.moveTo(0,-.1);c.lineTo(0,.1);c.stroke();
+    PM(c,[.28,-.5,.6,-.6,.5,-.3,.3,-.32],C.main,O);PM(c,[.32,-.5,.58,-.58,.56,-.54,.34,-.46],C.sub);
+    PM(c,[.34,-.3,.48,-.3,.5,.22,.36,.22],C.main,O);
+    P(c,[.44,.22,.5,.2,.98,-.5,.94,-.54],'#d9dde2',O);
+    P(c,[-.12,-.66,.14,-.64,.16,-.46,-.12,-.46],C.main,O);P(c,[.12,-.6,-.34,-.94,-.06,-.62],C.sub,O);
+    c.fillStyle=C.eye;c.fillRect(-.02,-.58,.15,.04);break}
+  case'truck':{ // 整備車両：黒と黄の6輪トラック。荷台にクレーン、運転席の上に機銃
+    P(c,[-.95,.3,.95,.3,.95,.55,-.95,.55],C.main,O);
+    P(c,[-.9,0,.42,0,.42,.3,-.9,.3],C.main,O);
+    c.save();c.beginPath();c.rect(-.9,0,1.32,.3);c.clip();for(let i=-.9;i<.5;i+=.16)P(c,[i,0,i+.08,0,i,.3,i-.08,.3],C.sub);c.restore();
+    P(c,[.45,-.2,.85,-.2,.95,.05,.95,.3,.45,.3],C.main,O);c.fillStyle='#9cc8e0';c.fillRect(.58,-.12,.26,.14);
+    c.strokeStyle=C.sub;c.lineWidth=.09;c.beginPath();c.moveTo(-.5,0);c.lineTo(-.1,-.7);c.lineTo(.3,-.55);c.stroke();
+    c.strokeStyle='#111';c.lineWidth=.025;c.beginPath();c.moveTo(.3,-.55);c.lineTo(.3,-.22);c.stroke();
+    P(c,[.5,-.34,.74,-.34,.74,-.2,.5,-.2],C.acc,O);c.fillStyle='#222';c.fillRect(.7,-.31,.28,.06);
+    for(const wx of[-.72,-.42,-.12,.2,.52,.8]){circ(c,wx,.6,.15,'#15171a');circ(c,wx,.6,.07,C.acc)}
+    break}
+  case'hound':{ // ハウンド：黄色い作業機械の改造。前の腕がドリル、後ろの腕が溶接機銃、赤い印
+    PM(c,[.12,.22,.4,.22,.44,.9,.1,.9],C.sub,O);PM(c,[.06,.84,.5,.84,.54,.98,.02,.98],C.main,O);
+    P(c,[-.5,-.3,-.82,-.24,-.84,.04,-.5,0],C.sub,O);c.fillStyle='#222';c.fillRect(-.98,-.16,.2,.08);
+    P(c,[-.5,-.5,.42,-.5,.46,.28,-.5,.28],C.main,O);
+    c.fillStyle='#0003';c.fillRect(-.5,.12,.96,.06);P(c,[-.24,-.32,.08,-.32,-.08,-.02],C.acc);
+    P(c,[-.1,-.72,.22,-.72,.24,-.5,-.12,-.5],C.main,O);circ(c,.14,-.62,.07,C.eye);
+    P(c,[.42,-.3,.66,-.3,.66,.06,.42,.06],C.sub,O);P(c,[.62,-.22,1.02,-.11,.62,0],'#9aa0a6',O);
+    c.strokeStyle='#555';c.lineWidth=.02;c.beginPath();for(let i=.7;i<.96;i+=.08){c.moveTo(i,-.19);c.lineTo(i+.04,-.03)}c.stroke();
+    break}
   case'boss':{ // 黒と暗赤に金の冠。赤いマントと槍
     const cw=t?Math.sin(t/260)*.05:0;
     P(c,[-.36,-.46,.3,-.46,.5,.96,-.2,.9+cw,-.96,.98],C.cape,O);
@@ -515,17 +746,31 @@ const cv=document.getElementById('map'),ctx=cv.getContext('2d');
 let TS=40,DPR=1,terrainLayer=null;
 // 画像：マップ背景（tools/build_map.py で生成）とユニットのドット絵（tools/extract_sprites.py で設定画から切り出し）
 function img(src,onload){const i=new Image();i.onload=onload||null;i.src=src;return i}
-const STAGE_IMG=img('assets/stage1_map.png',()=>buildTerrain());
-// 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、味方は idle / walk / attack（待機／歩行／攻撃）も
+// マップ背景はステージごと（loadStage で切り替え、読み込み済みのものは使い回す）
+let STAGE_IMG=null;const STAGE_IMGS={};
+function stageImg(src){return STAGE_IMGS[src]||(STAGE_IMGS[src]=img(src,function(){if(this===STAGE_IMG)buildTerrain()}))}
+// 画像に色を重ねたコピー（ゴルム改はゴルムの画像を赤くして使う）
+function tinted(src,color){
+  const c=document.createElement('canvas');c._ok=false;
+  const i=img(src,()=>{c.width=i.naturalWidth;c.height=i.naturalHeight;const x=c.getContext('2d');x.drawImage(i,0,0);
+    x.globalCompositeOperation='multiply';x.fillStyle=color;x.fillRect(0,0,c.width,c.height);
+    x.globalCompositeOperation='destination-in';x.drawImage(i,0,0);c._ok=true});
+  return c;
+}
+// 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、味方4機は idle / walk / attack（待機／歩行／攻撃）も。
+// TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）
+const SPR_EXTRA=['grand','sylph','bulwark','raven'];
 const SPR={};
-for(const k of Object.keys(TPL)){SPR[k]={big:img(`assets/sprites/${k}.png`)};
-  for(const v of['up','down','left','right',...(TPL[k].pilot.sp?['idle','walk','attack']:[])])SPR[k][v]=img(`assets/sprites/${k}_${v}.png`)}
+for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
+  const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);
+  SPR[k].big=load(`assets/sprites/${f}.png`);
+  for(const v of['up','down','left','right',...(SPR_EXTRA.includes(f)?['idle','walk','attack']:[])])SPR[k][v]=load(`assets/sprites/${f}_${v}.png`)}
 // 地形：設定画の立体タイル（戦闘シーンの足場、コンソールの地形表示）
 const TER_FILE={P:'plain',F:'forest',M:'mountain',W:'sea',C:'city',B:'base',E:'base'};
 const TER_IMG={};for(const[t,f]of Object.entries(TER_FILE))TER_IMG[t]=img(`assets/sprites/tile_${f}.png`);
-const ready=i=>i&&i.complete&&i.naturalWidth>0;
+const ready=i=>!!i&&(i instanceof HTMLCanvasElement?i._ok:i.complete&&i.naturalWidth>0);
 // 単位座標（-1〜1）の箱に、縦横比を保ったまま下揃えで描く
-function drawSprite(c,im){const k=2/Math.max(im.naturalWidth,im.naturalHeight),w=im.naturalWidth*k,h=im.naturalHeight*k;c.drawImage(im,-w/2,1-h,w,h)}
+function drawSprite(c,im){const iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,k=2/Math.max(iw,ih),w=iw*k,h=ih*k;c.drawImage(im,-w/2,1-h,w,h)}
 function resize(){
   // マップは空いている場所いっぱいに、マス目が整数ピクセルになる大きさで置く（コンソールは高さ固定なので位置が動かない）
   const wrap=$('mapwrap'),W_=wrap.clientWidth,H_=wrap.clientHeight;DPR=Math.min(2,window.devicePixelRatio||1);
@@ -700,7 +945,7 @@ function renderConsole(){
     html=unitCard(info.u)+(info.u.team==='foe'?'<div class="hint">赤い範囲：この敵の移動範囲と攻撃が届くマス</div>':'');
   }else{
     const left=alive('ally').filter(u=>!u.acted).length;
-    html=`<div class="hint"><b style="color:var(--fg)">味方フェイズ</b>　未行動 ${left} 機<br>味方をタップ→移動先か攻撃したい敵をタップ。<br>勝利：敵全滅かネメシス撃破／敗北：グランヴァルド撃墜</div>`;
+    html=`<div class="hint"><b style="color:var(--fg)">味方フェイズ</b>　未行動 ${left} 機<br>味方をタップ→移動先か攻撃したい敵をタップ。<br>${ST.goal}</div>`;
   }
   consoleEl.innerHTML=html;
   renderPop();
@@ -724,10 +969,12 @@ function placePop(){
 function closeSheet(){sheet.hidden=true;sheet.innerHTML='';renderPop()}
 function openSheet(html){sheet.innerHTML=`<div class="in">${html}</div>`;sheet.hidden=false;renderPop()}
 function banner(text,sub,color){return new Promise(r=>{const b=$('banner');b.innerHTML=`<div class="b" style="color:${color}">${text}<small>${sub}</small></div>`;b.hidden=false;snd('phase');setTimeout(()=>{b.hidden=true;r()},1250)})}
-function dialog(lines){
+// 会話を1行ずつ表示する。narr はナレーション（名前なし）。solid:true はマップを隠す（戦闘前・クリア後の場面）
+function dialog(lines,o={}){
   return new Promise(res=>{
     const d=$('dialog');let i=0;
-    const show=()=>{$('dWho').textContent=lines[i].who;$('dTxt').textContent=lines[i].text};
+    d.classList.toggle('solid',!!o.solid);
+    const show=()=>{const l=lines[i];$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
     show();d.hidden=false;
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;res()}else show()};
   });
@@ -860,7 +1107,7 @@ function settingsSheet(){
   <div class="sh-actions"><button class="btn" data-x="save" ${canSave()?'':'disabled'}>セーブ</button><button class="btn" data-x="load">ロード</button></div>
   ${canSave()?'':'<div class="hint" style="margin-top:6px">セーブは味方フェイズで、誰も選んでいないときだけできます</div>'}
   <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">最初からやり直す</button><button class="btn" data-x="close">閉じる</button></div>`);
-  $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(true)};
+  $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(ST.id)};
 }
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
 /* ================= STATUS ================= */
@@ -917,8 +1164,8 @@ function doRepair(a,t){
 
 /* ================= COMBAT ================= */
 async function combat(att,def,w,choice){
-  if(!bossTalked&&(att.boss||def.boss)){bossTalked=true;const p=att.boss?def:att;
-    await dialog([{who:'総帥ザルグ',text:'このネメシスに挑むか。旧式の寄せ集めが……貴様たちに、帝国の力を思い知らせてやる。'},{who:p.pilot.name,text:p.key==='grand'?'沈むのはそっちだ！　行くぞ、グランヴァルド！':'司令機と交戦開始。ここで押し切る！'}])}
+  // ステージの会話イベント（それぞれ1回だけ）
+  for(const t of ST.talks||[])if(!flags[t.id]&&t.when(att,def)){flags[t.id]=true;await dialog(t.lines(att,def))}
   att.dir=dirOf(def.x-att.x,def.y-att.y);def.dir=dirOf(att.x-def.x,att.y-def.y);
   const strikes=[strike(att,def,w,choice.mode)];
   if(def.hp>0&&choice.mode==='counter'){const cw=bestWeapon(def,att,dist(att,def));if(cw)strikes.push(strike(def,att,cw,'counter'))}
@@ -927,25 +1174,34 @@ async function combat(att,def,w,choice){
   else{for(const s of strikes){snd(s.hit?'hit':'miss');floats.push({x:s.def.x,y:s.def.y,text:s.hit?(s.crit?'!':'')+s.dmg:'MISS',color:s.hit?'#fff':'#9fb3cc',t0:performance.now()});await sleep(650)}}
   delete att._atk;
   for(const u of[att,def])if(u.hp<=0&&!u.dead){u.dead=true;mapFx.push({x:u.x,y:u.y,t0:performance.now()});snd('boom')}
+  checkBonus();
   await sleep(250);
   await checkEnd();
 }
+// ボーナス条件（ST.bonus）：決められたターンの終わりまでに、指定の地形（村＝市街）の上の敵がいなくなったか
+function checkBonus(){
+  const b=ST.bonus;if(!b||flags.bonus||turn>b.turn)return;
+  if(!alive('foe').some(e=>MAP[e.y][e.x]===b.tile))flags.bonus=true;
+}
 async function checkEnd(){
   if(over)return;
-  const boss=units.find(u=>u.boss),grand=units.find(u=>u.key==='grand');
-  if(grand.dead||!alive('ally').length){over=true;await sleep(500);await dialog([{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}]);result(false);return}
+  const boss=units.find(u=>u.boss),leader=units.find(u=>u.key===ST.leader);
+  if(leader.dead||!alive('ally').length){over=true;await sleep(500);await dialog(ST.lose);result(false);return}
   if(boss.dead||!alive('foe').length){over=true;await sleep(500);
-    await dialog(boss.dead&&alive('foe').length?[{who:'総帥ザルグ',text:'ば、馬鹿な……！　全軍、撤退せよ！'},{who:'鷹野 迅',text:'見たか。この街は俺たちが守る！'}]:[{who:'鷹野 迅',text:'敵部隊、全機撃破！'},{who:'岩瀬 ゴウ',text:'上出来だ。帰ったら整備班に礼を言っとけよ。'}]);
+    await dialog(boss.dead&&alive('foe').length?ST.bossDown:ST.allDown);
+    if(ST.epilogue)await dialog(ST.epilogue(flags),{solid:true});
     result(true)}
 }
 function result(win){
   bgm(null);
   const el=document.createElement('div');el.className='ov';el.innerHTML=`<div class="logo" style="font-family:var(--disp);font-size:clamp(32px,9vw,52px);letter-spacing:.12em;color:${win?'var(--amber)':'var(--foe)'}">${win?'MISSION CLEAR':'GAME OVER'}</div>
-  <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}`:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'}</div>
+  <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${stageTitle(ST)}<br>${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}${ST.bonus?`<br>村の防衛 ${flags.bonus?'達成':'未達成'}`:''}`:ST.loseHint}</div>
   <button class="btn pri" style="min-width:180px">${win?'もう一度プレイ':'リトライ'}</button>
+  <button class="btn" data-r="title" style="min-width:180px;margin-top:10px">タイトルへ</button>
   <button class="btn" data-r="load" style="min-width:180px;margin-top:10px" ${hasSave()?'':'disabled'}>ロード</button>`;
-  el.id='result';document.body.appendChild(el);el.querySelector('.pri').onclick=()=>{el.remove();startGame(true)};
+  el.id='result';document.body.appendChild(el);el.querySelector('.pri').onclick=()=>{el.remove();startGame(ST.id)};
   el.querySelector('[data-r=load]').onclick=()=>{snd('sel');loadSheet()};
+  el.querySelector('[data-r=title]').onclick=()=>{snd('cancel');el.remove();toTitle()};
 }
 
 /* ================= BATTLE SCENE ================= */
@@ -1049,6 +1305,7 @@ async function endPlayerPhase(){
     await enemyAct(e);
   }
   if(over){busy=false;return}
+  checkBonus();
   for(const e of alive('foe'))e.acted=false;
   turn++;phase='player';
   for(const u of alive('ally')){u.acted=false;u.moved=false;u.buf={...(u.buf.dodge?{dodge:1}:{}),...(u.buf.dbl?{dbl:1}:{})}}
@@ -1075,7 +1332,7 @@ async function enemyAct(e){
     const ox=e.x,oy=e.y;e.x=t.x;e.y=t.y;
     for(const p of alive('ally')){const d=Math.abs(t.x-p.x)+Math.abs(t.y-p.y);
       for(const w of e.weapons){if(usable(e,w)||!inRange(w,d))continue;
-        const hr=hitRate(e,p,w),dm=baseDmg(e,p,w);let sc=dm*hr/100;if(dm>=p.hp)sc+=2500*hr/100;if(p.key==='grand')sc*=1.1;
+        const hr=hitRate(e,p,w),dm=baseDmg(e,p,w);let sc=dm*hr/100;if(dm>=p.hp)sc+=2500*hr/100;if(p.key===ST.leader)sc*=1.1;
         const cw=bestWeapon(p,e,d);if(cw)sc-=baseDmg(p,e,cw)*hitRate(p,e,cw)/100*.3;
         sc+=terOf(t.x,t.y).e*3;
         if(!best||sc>best.sc)best={sc,t,p,w}}}
@@ -1107,8 +1364,8 @@ function defenseChoice(a,d,w){
 
 /* ================= SAVE / LOAD ================= */
 // localStorage の granvald-save-1〜3（手動）と granvald-save-auto（味方フェイズ開始時に自動）。
-// 形式が変わったら SAVE_VER を上げる。バージョンが違うデータは壊れたデータとして扱う
-const SAVE_VER=1,SAVE_KEY='granvald-save-',SLOTS=['auto','1','2','3'];
+// 形式が変わったら SAVE_VER を上げる（2：ステージとイベントのフラグを追加）。バージョンが違うデータは壊れたデータとして扱う
+const SAVE_VER=2,SAVE_KEY='granvald-save-',SLOTS=['auto','1','2','3'];
 const SLOT_NAME=id=>id==='auto'?'オートセーブ':'スロット'+id;
 const BUF_KEYS=Object.values(SPIRITS).map(s=>s.key).filter(Boolean);
 // 読み書きは必ず try/catch で（プライベートブラウズなどで localStorage が使えなくても止まらないように）
@@ -1116,14 +1373,16 @@ function storeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function storeSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
 function storeDel(k){try{localStorage.removeItem(k)}catch(e){}}
 function snapshot(){
-  return{ver:SAVE_VER,stage:STAGE_NAME,savedAt:Date.now(),turn,phase,bossTalked,
+  return{ver:SAVE_VER,stage:ST.id,savedAt:Date.now(),turn,phase,flags:{...flags},
     units:units.map(u=>({key:u.key,team:u.team,x:u.x,y:u.y,dir:u.dir,hp:u.hp,en:u.en,will:u.will,sp:u.sp,
       ammo:u.weapons.map(w=>w.ammo),acted:u.acted,moved:u.moved,dead:u.dead,buf:{...u.buf},guard:!!u.guard}))};
 }
 // 中身を1項目ずつ確かめる。どこかおかしければ壊れたデータ
 function validSave(d){
   const int=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b,bool=v=>typeof v==='boolean';
-  if(!d||typeof d!=='object'||d.ver!==SAVE_VER||d.stage!==STAGE_NAME||!int(d.turn,1,999)||d.phase!=='player'||!bool(d.bossTalked)||!Number.isFinite(d.savedAt))return false;
+  if(!d||typeof d!=='object'||d.ver!==SAVE_VER||!Object.hasOwn(STAGES,d.stage)||!int(d.turn,1,999)||d.phase!=='player'||!Number.isFinite(d.savedAt))return false;
+  const st=STAGES[d.stage],ROSTER=st.roster,FLAGS=[...(st.talks||[]).map(t=>t.id),'bonus'];
+  if(!d.flags||typeof d.flags!=='object'||Array.isArray(d.flags)||!Object.entries(d.flags).every(([k,v])=>FLAGS.includes(k)&&bool(v)))return false;
   if(!Array.isArray(d.units)||d.units.length!==ROSTER.length)return false;
   return d.units.every((s,i)=>{
     const[key,team]=ROSTER[i],t=TPL[key];
@@ -1144,13 +1403,13 @@ function writeSlot(id){const ok=storeSet(SAVE_KEY+id,JSON.stringify(snapshot()))
 const canSave=()=>phase==='player'&&!busy&&!over&&(mode==='idle'||mode==='peek')&&!sel;
 function autoSave(){if(canSave())writeSlot('auto')}
 function restore(d){
-  setup();
+  loadStage(d.stage);setup();
   units.forEach((u,i)=>{const s=d.units[i];
     Object.assign(u,{x:s.x,y:s.y,dir:s.dir,hp:s.hp,en:s.en,will:s.will,sp:s.sp,acted:s.acted,moved:s.moved,dead:s.dead,buf:{...s.buf}});
     if(s.guard)u.guard=true;else delete u.guard;
     u.weapons.forEach((w,j)=>w.ammo=s.ammo[j]);
   });
-  turn=d.turn;phase=d.phase;bossTalked=d.bossTalked;
+  turn=d.turn;phase=d.phase;flags={...d.flags};
   sel=null;reach=null;info=null;targets=null;mode='idle';busy=false;over=false;
 }
 function fmtDate(t){const d=new Date(t),z=n=>String(n).padStart(2,'0');return`${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
@@ -1159,7 +1418,7 @@ function slotRow(id,act){
   if(!d){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d">データなし</span>`;ok=act==='save'}
   else if(d.broken){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d"><span class="ng">壊れたデータ（読み込めません）</span></span>`;ok=act==='save'}
   else{const al=d.units.filter(u=>u.team==='ally'),left=al.filter(u=>!u.dead).length;
-    body=`<span class="n">${SLOT_NAME(id)}　${d.stage}</span><span class="p">TURN ${d.turn}</span><span class="d">${fmtDate(d.savedAt)}　味方 残り ${left}/${al.length} 機</span>`}
+    body=`<span class="n">${SLOT_NAME(id)}　${stageTitle(STAGES[d.stage])}</span><span class="p">TURN ${d.turn}</span><span class="d">${fmtDate(d.savedAt)}　味方 残り ${left}/${al.length} 機</span>`}
   const del=d?`<button class="btn del" data-slot="${id}" data-act="del">削除</button>`:'';
   return`<div class="slot"><button class="wrow" data-slot="${id}" data-act="${act}" ${ok?'':'disabled'}>${body}</button>${del}</div>`;
 }
@@ -1209,24 +1468,26 @@ function titleArt(){
     requestAnimationFrame(f)}
   requestAnimationFrame(f);
 }
-async function startGame(skipTitle){
-  setup();resize();mode='busy';busy=true;renderConsole();
+// ステージを始める：戦闘前の会話（マップを隠す）→ マップに入って開始時の会話 → 味方フェイズ
+async function startGame(id){
+  loadStage(id);setup();resize();mode='busy';busy=true;renderConsole();
   for(const a of Object.values(BGM))a.currentTime=0;
   bgm('player');
-  await dialog([
-    {who:'天城 ミオ',text:'帝国軍の機動部隊、湾の北岸に展開中。敵影8、帝国基地に大型反応が一つ。'},
-    {who:'鷹野 迅',text:'あれが司令機か……。港町には一歩も入れさせない！'},
-    {who:'風間 リク',text:'湾の上はオレの空だ。陸戦機は海で足を取られる、岸沿いに回り込めよ。'},
-    {who:'岩瀬 ゴウ',text:'損傷したら俺のところへ来い。ブルワークの修理装置で直してやる。'},
-    {who:'総帥ザルグ',text:'旧式の寄せ集めがよく吠える。全機、蹴散らせ！'},
-    {who:'作戦目標',text:'勝利条件：敵の全滅、またはカイザー・ネメシスの撃破。敗北条件：グランヴァルドの撃墜。'}]);
+  if(ST.pre)await dialog(ST.pre,{solid:true});
+  await dialog(ST.start);
   await banner('PLAYER PHASE','TURN 1','#45aaff');
   mode='idle';busy=false;renderConsole();
   autoSave();
 }
-$('btnStart').onclick=()=>{snd('ok');unlockBgm();$('title').hidden=true;startGame()};
+function renderStageList(){
+  $('stageList').innerHTML=STAGE_ORDER.map((id,i)=>{const st=STAGES[id];
+    return`<button class="btn ${i?'':'pri'}" data-stage="${id}">${st.label}「${st.name}」<small>${id==='e1'?'帝国の辺境。盗賊団から村を救え':'帝国軍の機動部隊から港町を守れ'}</small></button>`}).join('');
+}
+$('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;snd('ok');unlockBgm();$('title').hidden=true;startGame(b.dataset.stage)};
+// 結果画面からタイトルへ戻る
+function toTitle(){bgm(null);closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;titleArt()}
 $('btnContinue').onclick=()=>{snd('sel');unlockBgm();loadSheet()};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
-setup();resize();renderConsole();titleArt();refreshContinue();requestAnimationFrame(loop);
+loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
 </script>

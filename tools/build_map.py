@@ -1,10 +1,13 @@
-"""第1話のマップ背景 assets/stage1_map.png を作る。
+"""ステージのマップ背景（assets/stage1_map.png など）を作る。
 地形データ（MAP / ROAD）は index.html から読み、森・山・市街・城・基地の見た目は
 docs/ref/sprites-and-tiles.png の「マップ全体のイメージ」から切り出して貼る。
 海と平地は設定画の色で生成する（設定画の海にはマス目の線が入っていて切り出せないため）。
-使い方: python3 tools/build_map.py   （numpy, scipy, Pillow が必要）
+使い方: python3 tools/build_map.py [ステージ] [出力先]   （numpy, scipy, Pillow が必要）
+  python3 tools/build_map.py S1 assets/stage1_map.png      … 鋼の目覚め（省略時）
+  python3 tools/build_map.py E1 assets/stage_e1_map.png    … 帝国編 第1話「国境の村」
 """
 import re
+import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 from scipy import ndimage as ndi
@@ -15,7 +18,9 @@ html = open('index.html', encoding='utf-8').read()
 def grid(name):
     body = re.search(r'const ' + name + r'=\[(.*?)\];', html, re.S).group(1)
     return re.findall(r'"([^"]+)"', body)
-MAP, ROAD = grid('MAP'), grid('ROAD')
+STAGE = sys.argv[1] if len(sys.argv) > 1 else 'S1'
+OUT_PATH = sys.argv[2] if len(sys.argv) > 2 else 'assets/stage1_map.png'
+MAP, ROAD = grid('MAP_' + STAGE), grid('ROAD_' + STAGE)
 ROWS, COLS = len(MAP), len(MAP[0])
 W, H = COLS * CELL, ROWS * CELL
 rng = np.random.default_rng(7)
@@ -80,7 +85,8 @@ MASK = feather_mask(CELL + 2 * FE)
 # 道路
 dr = ImageDraw.Draw(canvas)
 def is_road(x, y):
-    return 0 <= x < COLS and 0 <= y < ROWS and (ROAD[y][x] == '#' or MAP[y][x] in 'BE')
+    # 道は建物（基地・城・市街）の手前までつなげる
+    return 0 <= x < COLS and 0 <= y < ROWS and (ROAD[y][x] == '#' or MAP[y][x] in 'BEC')
 for y in range(ROWS):
     for x in range(COLS):
         if ROAD[y][x] != '#': continue
@@ -142,5 +148,5 @@ arr[..., :3][foam] = (228, 242, 255)
 ld = ndi.distance_transform_edt(~sea)
 rock = (~sea) & (ld < 4) & (noise((H, W), 2, 11) > .25)
 arr[..., :3][rock] = arr[..., :3][rock] * .35 + np.array([120, 92, 60]) * .65
-Image.fromarray(arr[..., :3].astype(np.uint8)).save('assets/stage1_map.png', optimize=True)
-print('assets/stage1_map.png', W, H)
+Image.fromarray(arr[..., :3].astype(np.uint8)).save(OUT_PATH, optimize=True)
+print(OUT_PATH, W, H)
