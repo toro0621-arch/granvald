@@ -455,7 +455,7 @@ const STAGES={
   lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
   loseHint:'もう一度挑戦しよう。戦術の「不動」「先読み」が鍵になる。'},
  // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
- e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis',end:'crisis'},map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
+ e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis',end:'crisis'},startSolid:true,map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
   goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
   roster:[
    // 南の街道から駆けつけるファルケン中隊
@@ -1214,7 +1214,9 @@ function forecastHtml(a,d,w,mode){
   const side=(u,wp,vs,cls,m)=>{const hr=wp?hitRate(u,vs,wp,m):0,dm=wp?baseDmg(u,vs,wp,null):0;
     return`<div class="side ${cls}"><div class="nm">${u.name}</div><div class="wp">${wp?wp.name:'— 反撃不可 —'}</div>
     <div class="big">HP<em>${u.hp}</em></div><div class="big">命中<em class="${hr>=70?'hi':''}">${wp?hr+'%':'—'}</em></div><div class="big">ダメージ<em>${wp?'約'+dm:'—'}</em></div><div class="big">CRI<em>${wp?critRate(u,vs)+'%':'—'}</em></div></div>`};
-  return{html:`<div class="fc">${side(a,w,d,a.team==='ally'?'a':'e',mode)}${side(d,cw,a,d.team==='ally'?'a':'e',null)}</div>`,cw};
+  // 味方はいつも右側に出す（戦闘画面と同じ並び。ユーザーの希望）
+  const sa=side(a,w,d,a.team==='ally'?'a':'e',mode),sd=side(d,cw,a,d.team==='ally'?'a':'e',null);
+  return{html:`<div class="fc">${a.team==='ally'?sd+sa:sa+sd}</div>`,cw};
 }
 // 戦闘予測。届く武器をタブで切り替えられる
 function forecast(a,d,w){
@@ -1364,7 +1366,7 @@ function result(win){
 const bcv=$('bcv'),bctx=bcv.getContext('2d');
 // 戦闘画面の絵の向き。r＝右向き、l＝左向き、f＝正面（書いていない機体は正面）。
 // 戦闘画面では、左側（敵）は右を、右側（味方）は左を向くように、向きが逆の絵は左右反転して描く
-const BIG_FACE={bulwark:'l',zekt:'l',truck:'l',hound:'l'};
+const BIG_FACE={bulwark:'l',zekt:'l',truck:'l',hound:'r'};
 // 整備車両の攻撃の絵は正面から見た車両で、戦闘用の絵より小さく見えるので使わない。
 // グランヴァルドたち4機（番外編）の攻撃の絵は元のドット絵が小さく、拡大するとぼやけるので使わない
 const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l'};
@@ -1758,7 +1760,8 @@ async function startGame(id){
   bgm(mu.pre||'player');
   if(ST.pre)await dialog(ST.pre,{solid:true});
   bgm(mu.start||'player');
-  await dialog(ST.start);
+  // startSolid：開始時の会話が終わるまでマップを隠し、背景画（帝国編第1話は襲撃されたリンデ村）のまま話す（ユーザーの希望）
+  await dialog(ST.start,{solid:!!ST.startSolid});
   bgm('player');
   await banner('PLAYER PHASE','TURN 1','#45aaff');
   mode='idle';busy=false;renderConsole();
