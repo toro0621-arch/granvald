@@ -1,5 +1,6 @@
-"""docs/ref/sprites-and-tiles.png（設定画「ユニットグラフィック」「マップのマスグラフィック」）から
-機体と地形タイルを切り抜き、背景を透明にして assets/sprites/ に保存する。絵そのものには手を加えない。
+"""docs/ref/sprites-and-tiles.png（設定画「ユニットグラフィック」「マップのマスグラフィック」）と
+docs/ref/empire-01-sprites.png（帝国編 第1話のユニットグラフィック）から機体と地形タイルを切り抜き、
+背景を透明にして assets/sprites/ に保存する。絵そのものには手を加えない。
 使い方: python3 tools/extract_sprites.py   （numpy, scipy, Pillow が必要）
 """
 import numpy as np
@@ -27,25 +28,51 @@ UNITS = {
     'vespa':   {'big': (1329, 140, 1417, 247), 'down': (1329, 260, 1375, 312), 'up': (1375, 258, 1416, 312), 'left': (1328, 346, 1374, 403), 'right': (1374, 346, 1416, 402)},
     'nemesis': {'big': (1428, 130, 1520, 249), 'down': (1431, 256, 1476, 312), 'up': (1477, 256, 1518, 312), 'left': (1428, 343, 1474, 402), 'right': (1476, 343, 1518, 402)},
 }
+# 帝国編 第1話のドット絵（docs/ref/empire-01-sprites.png）。歩行・攻撃は数コマ並んでいるので、分かりやすい1コマだけ。
+# 攻撃エフェクト（剣の光、機銃の火、火花）がかからないコマ・範囲を選んでいる
+SRC_E1 = 'docs/ref/empire-01-sprites.png'
+UNITS_E1 = {
+    'caladrius': {'big': (203, 168, 388, 343), 'down': (397, 193, 484, 312), 'up': (487, 193, 583, 312), 'left': (588, 193, 674, 312), 'right': (677, 193, 752, 312),
+                  'idle': (30, 388, 130, 505), 'walk': (208, 393, 270, 492), 'attack': (556, 393, 615, 505)},
+    'truck':     {'big': (947, 170, 1202, 345), 'down': (1214, 203, 1286, 309), 'up': (1290, 203, 1363, 309), 'left': (1368, 203, 1435, 309), 'right': (1440, 203, 1508, 309),
+                  'idle': (792, 402, 910, 498), 'walk': (937, 410, 1038, 486), 'attack': (1218, 430, 1298, 499)},
+    'hound':     {'big': (30, 608, 285, 843), 'down': (300, 640, 409, 762), 'up': (412, 640, 529, 762), 'left': (532, 640, 640, 762), 'right': (644, 640, 746, 762),
+                  'idle': (40, 875, 128, 962), 'walk': (155, 873, 247, 965), 'attack': (476, 858, 569, 957)},
+    'golmkai':   {'big': (795, 630, 1038, 843), 'down': (1062, 643, 1172, 775), 'up': (1178, 643, 1292, 775), 'left': (1298, 643, 1402, 775), 'right': (1408, 643, 1500, 775),
+                  'idle': (802, 875, 883, 968), 'walk': (915, 873, 987, 970), 'attack': (1248, 850, 1334, 958)},
+}
 # マスグラフィックの立体タイル（左側の絵）
 TILES = {
     'plain': (14, 544, 180, 698), 'forest': (352, 544, 513, 698), 'mountain': (672, 542, 856, 698),
     'sea': (14, 756, 180, 940), 'city': (352, 756, 513, 940), 'base': (672, 754, 856, 940),
 }
 
-def cut(img, box, tol=30, pockets=True):
+def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False):
     x0, y0, x1, y1 = box
     a = img[y0:y1, x0:x1].astype(int)
     # 背景はグラデーションなので、行ごとに左右端の中央値を背景色とみなす。
     # 絵が端にかかった行で値が狂わないよう、上下方向にも中央値でならす
-    # 左右の端のうち、全体の背景色に近いほうを使う（絵が片側の端にかかっていても狂わない）
-    left, right = np.median(a[:, :3], axis=1), np.median(a[:, -3:], axis=1)
-    ref = np.median(np.concatenate([left, right]), axis=0)
-    near_left = ((left - ref) ** 2).sum(1) <= ((right - ref) ** 2).sum(1)
-    rowbg = np.where(near_left[:, None], left, right)
+    if robust_bg:
+        # 行ごとの背景色：その行のうち、外周の背景色に近い画素の中央値（絵が左右両方の端にかかっていても狂わない）
+        ref = np.median(np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]]), axis=0)
+        near = np.sqrt(((a - ref) ** 2).sum(2)) < 45
+        rowbg = np.array([np.median(a[y][near[y]], axis=0) if near[y].sum() >= 3 else ref for y in range(a.shape[0])])
+    else:
+        # 左右の端のうち、全体の背景色に近いほうを使う（絵が片側の端にかかっていても狂わない）
+        left, right = np.median(a[:, :3], axis=1), np.median(a[:, -3:], axis=1)
+        ref = np.median(np.concatenate([left, right]), axis=0)
+        near_left = ((left - ref) ** 2).sum(1) <= ((right - ref) ** 2).sum(1)
+        rowbg = np.where(near_left[:, None], left, right)
     rowbg = ndi.median_filter(rowbg, size=(15, 1), mode='nearest')[:, None, :]
     d = np.sqrt(((a - rowbg) ** 2).sum(2))
-    lab, _ = ndi.label(d < tol)
+    bglike = d < tol
+    if shadow:
+        # 足元の影：背景と同じ色合いで暗いだけの部分も背景にする（白い羽根などは色合いが違うので残る）
+        bn = rowbg / np.maximum(np.linalg.norm(rowbg, axis=2, keepdims=True), 1)
+        an = a / np.maximum(np.linalg.norm(a, axis=2, keepdims=True), 1)
+        ratio = np.linalg.norm(a, axis=2) / np.maximum(np.linalg.norm(rowbg, axis=2), 1)
+        bglike |= ((an * bn).sum(2) > 0.996) & (ratio > 0.6) & (ratio < 1.1)
+    lab, _ = ndi.label(bglike)
     border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bgset = set(border)
     if pockets:
@@ -54,7 +81,7 @@ def cut(img, box, tol=30, pockets=True):
         bgset |= {i + 1 for i, s in enumerate(sizes) if s >= 25}
     bg = np.isin(lab, list(bgset))
     # 外周に残る背景色のにじみを1px削る
-    halo = ndi.binary_dilation(bg) & (d < tol * 1.8)
+    halo = ndi.binary_dilation(bg) & ((d < tol * 1.8) | (bglike & ~bg))
     fg = ~(bg | halo)
     # 枠線の切れ端（幅や高さが数pxの細いもの）を消す
     lab1, n1 = ndi.label(fg)
@@ -81,6 +108,13 @@ if __name__ == '__main__':
         for kind, box in boxes.items():
             name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
             im = cut(img, box if kind == 'big' else pad(box))
+            im.save(name, optimize=True)
+            print(name, im.size)
+    img_e1 = np.asarray(Image.open(SRC_E1).convert('RGB'))
+    for key, boxes in UNITS_E1.items():
+        for kind, box in boxes.items():
+            name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
+            im = cut(img_e1, box, shadow=True, robust_bg=True)
             im.save(name, optimize=True)
             print(name, im.size)
     for key, box in TILES.items():

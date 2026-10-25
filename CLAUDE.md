@@ -8,14 +8,14 @@
 - 機体と地形の見た目は、ユーザーが用意した画像（`assets/sprites/`）を使う。画像の元は `docs/ref/` の設定画で、設定画どおりの見た目にすることが目標。
   - 設定画から切り抜くときは、背景・ラベル文字・枠線を取り除き、背景が透明なPNGにする。
   - 画像が読み込めないときだけ、Canvas の図形（`drawMech`）で代わりに描く。
-  - 切り抜きは `python3 tools/extract_sprites.py`（切り抜く範囲はスクリプト内の `UNITS` / `TILES`）。機体は `grand.png`（戦闘用の大きい絵）、`grand_up/down/left/right.png`（背面／正面／左／右）、味方は `_idle/_walk/_attack`（待機／歩行／攻撃）、地形は `tile_*.png`（立体タイル）。
+  - 切り抜きは `python3 tools/extract_sprites.py`（切り抜く範囲はスクリプト内の `UNITS` / `TILES`＝`sprites-and-tiles.png`、`UNITS_E1`＝`empire-01-sprites.png`）。機体は `grand.png`（戦闘用の大きい絵）、`grand_up/down/left/right.png`（背面／正面／左／右）、`_idle/_walk/_attack`（待機／歩行／攻撃。グランヴァルドたち4機と、カラドリウス・整備車両・ハウンド・ゴルム改）、地形は `tile_*.png`（立体タイル）。歩行・攻撃は数コマのうち1コマを使い、攻撃エフェクトや足元の影は取り除く。
   - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、設定画のマップから森・山・市街・城・基地を貼り、海と平地は設定画の色で生成）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`。マップを変えたら作り直す。
-  - ドット絵がない機体は TPL に `spr:false`（図形で描く）。別の機体の画像を使うときは `spr:'zekt'` のように書き、`tint` で色を重ねられる（ゴルム改＝ゴルムの画像を赤く）。
-- 機体デザインは既存作品に似せない。特に、頭部の V字アンテナや、ガンダム風の「二つ目＋マスク状の口元」の顔は使わない。グランヴァルドは一本角とバイザー型の目、シルフィードは後ろへ流れる耳型センサーとゴーグル型の目、カイザー・ネメシスは王冠状の角、を基本形にする。
+  - 別の機体の画像を使うときは TPL に `spr:'zekt'` のように書く（中隊と盗賊のゼクト・ゴルム）。`tint` で色を重ねられ、`spr:false` は画像なし（図形で描く）。待機・歩行・攻撃の絵がある機体は `SPR_EXTRA`。
+- 機体デザインは既存作品に似せない。特に、頭部の V字アンテナや、ガンダム風の「二つ目＋マスク状の口元」の顔は使わない。グランヴァルドは一本角とバイザー型の目、シルフィードは後ろへ流れる耳型センサーとゴーグル型の目、カイザー・ネメシスは王冠状の角、カラドリウスはくちばし状に突き出した額の装甲と後頭部へ流れる白い羽根状のアンテナ3枚（目はくちばしの付け根の金の単眼）、ハウンドは鉄格子で囲んだむき出しの操縦席と作業灯2つ、ゴルム改はゴルムの箱型の頭に額の一本の衝角、を基本形にする。
 - スマホ縦画面が基準（幅400px前後）。
 - localStorage のキーは必ず `granvald-` で始める（GitHub Pages では toro0621-arch.github.io の他のページと保存領域を共有するため）。設定は `granvald-settings`、セーブデータは `granvald-save-*`。セーブデータの形式を変えたら `SAVE_VER` を上げる。
 - BGMはユーザーが用意したフリー素材（`assets/bgm/`、クレジットは README）。2曲とも −16 LUFS に音量をそろえて 128kbps で再エンコード済み。曲を足すときも同じようにそろえる（iOS ではページ側の音量変更が効かないため）。
-- 機体・地形のデザインと数値の元は `docs/ref/` の設定画。内容は `SETTING.md` にまとめてある。
+- 機体・地形のデザインと数値の元は `docs/ref/` の設定画（帝国編第1話は `empire-01-sheet.png`／`-sprites.png`／`-heads.png`）。内容は `SETTING.md` にまとめてある。
 
 ## コード構成（index.html の <script> 内、上から順）
 | セクション | 内容 |
@@ -26,7 +26,7 @@
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
 | MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないとき・画像がない機体の代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss / knight（カラドリウス）/ truck（整備車両）/ hound（ハウンド） |
-| MAP RENDER | `SPR`（機体画像。`spr` / `tint` に対応）、`TER_IMG`（地形タイル）、`STAGE_IMG`（今のステージのマップ背景、`stageImg` で読み込み）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
+| MAP RENDER | `SPR`（機体画像。`spr` / `tint` / `SPR_EXTRA` に対応）、`TER_IMG`（地形タイル）、`STAGE_IMG`（今のステージのマップ背景、`stageImg` で読み込み）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
 | BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
 | UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog(lines, {solid})`（narr＝ナレーション、solid＝マップを隠す）、`banner()` |
 | COMBAT | `combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkBonus` → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |

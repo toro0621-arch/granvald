@@ -308,8 +308,8 @@ const TPL={
   weapons:[W('マシンガン','射',1800,1,3,{fx:'bullet'}),W('メガビーム','射',4000,1,4,{en:50,will:130,fx:'blast'})]},
  // ===== 帝国編 第1話「辺境の火」 =====
  // 数値は STORY.md の表と設定画 docs/ref/empire-01-sheet.png。パイロット能力はエルンストも含めて仮設定（SETTING.md）
- // spr：使う画像（別の機体の画像を流用するとき）、false＝画像なし（drawMech で描く）。tint：画像に重ねる色
- caladrius:{name:'カラドリウス',kind:'knight',hp:4000,en:170,armor:1100,mob:100,move:5,spr:false,
+ // 画像は assets/sprites/（docs/ref/empire-01-sprites.png から切り抜き）。spr：別の機体の画像を使うとき（中隊と盗賊のゼクト・ゴルム）
+ caladrius:{name:'カラドリウス',kind:'knight',hp:4000,en:170,armor:1100,mob:100,move:5,
   col:{main:'#1d1f25',sub:'#c9a23a',acc:'#eef0f2',eye:'#ffcf5a'},
   pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['集中','必中']},
   lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
@@ -324,12 +324,12 @@ const TPL={
   pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['集中','鉄壁']},
   lines:['ね、狙います……！','落ち着いて、確実に。'],
   weapons:[W('クロー','格',1300,1,1,{}),W('ビーム砲','射',1400,1,3,{fx:'beam'})]},
- truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,spr:false,
+ truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,
   col:{main:'#2a2c30',sub:'#e0b42a',acc:'#8f959c',eye:'#ffd24a'},
   pilot:{name:'マティアス',melee:100,shoot:125,hit:130,eva:95,skill:125,sp:45,spirits:['根性','鉄壁']},
   lines:['整備屋をなめなさんな。','こいつでも、牽制ぐらいはできますぜ。'],
   weapons:[W('機銃','射',900,1,2,{fx:'bullet'})]},
- hound:{name:'ハウンド',kind:'hound',hp:1500,en:60,armor:600,mob:70,move:4,spr:false,
+ hound:{name:'ハウンド',kind:'hound',hp:1500,en:60,armor:600,mob:70,move:4,
   col:{main:'#d8a628',sub:'#3b3a3c',acc:'#c0392b',eye:'#ffde59'},
   pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
   lines:['ひゃっはー！','金目のもんを出しな！'],
@@ -344,7 +344,7 @@ const TPL={
   pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
   lines:['ぶっ潰せ！','硬さだけは折り紙つきだ！'],
   weapons:[W('アイアンハンマー','格',1900,1,1,{fx:'punch'}),W('拡散砲','射',1400,2,4,{fx:'shell'})]},
- golmkai:{name:'ゴルム改',kind:'heavy',hp:5000,en:120,armor:1300,mob:60,move:3,boss:true,spr:'golm',tint:'#ff5a46',
+ golmkai:{name:'ゴルム改',kind:'heavy',hp:5000,en:120,armor:1300,mob:60,move:3,boss:true,
   col:{main:'#8e2a2a',sub:'#3a3434',acc:'#c9a23a',eye:'#ffdd55'},
   pilot:{name:'ボルツ',melee:150,shoot:125,hit:135,eva:105,skill:120,sp:0,spirits:[]},
   lines:['帝国の犬が、なんぼのもんだ！','まとめて叩き潰してやる！'],
@@ -757,9 +757,10 @@ function tinted(src,color){
     x.globalCompositeOperation='destination-in';x.drawImage(i,0,0);c._ok=true});
   return c;
 }
-// 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、味方4機は idle / walk / attack（待機／歩行／攻撃）も。
-// TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）
-const SPR_EXTRA=['grand','sylph','bulwark','raven'];
+// 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、SPR_EXTRA の機体は idle / walk / attack（待機／歩行／攻撃）も。
+// TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）。tint で画像に色を重ねられる
+// 待機・歩行・攻撃の絵がある機体
+const SPR_EXTRA=['grand','sylph','bulwark','raven','caladrius','truck','hound','golmkai'];
 const SPR={};
 for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);
