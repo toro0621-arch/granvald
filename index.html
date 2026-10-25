@@ -478,11 +478,11 @@ const STAGES={
   // ボーナス：3ターン目の終わりまでに村（市街のマス）の中の敵が全滅していれば、クリア後の村長の会話が変わる
   bonus:{turn:3,tile:'C'},
   epilogue:f=>[...(f.bonus?[
-   {who:'',text:'― リンデ村 ―',narr:1,bg:'village'},
+   {who:'',text:'― リンデ村 ―',narr:1,bg:'linde'},
    {who:'村長',text:'軍の方々……来てくださったのですね。もう、誰も来ないものと……'},
    {who:'エルンスト',text:'遅くなってすまない。被害を確かめさせてくれ。必要なものは、私の名で手配する'},
    {who:'村長',text:'ありがたい……。帝国にも、あなたのような方がおられるとは'}]:[
-   {who:'',text:'― リンデ村 ―',narr:1,bg:'village'},
+   {who:'',text:'― リンデ村 ―',narr:1,bg:'linde'},
    {who:'村長',text:'……来てくださったことには、感謝します。ですが、冬を越す蓄えの半分は、もう……'},
    {who:'エルンスト',text:'……私の名で、物資を手配する。必ずだ'}]),...
    [
@@ -994,7 +994,7 @@ const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 function setFace(el,name){const f=faceSrc(name);if(f){el.onerror=()=>{el.hidden=true};el.src=f;el.hidden=false}else el.hidden=true}
 // 会話の背景画（assets/bg/）。会話の行に bg:'hq' のように書くと、その行から背景が変わる（マップを隠す solid の会話だけ）。
 // BG にない名前は背景なし（無地）になるので、画像ができたらここに足す
-const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg',hangar:'assets/bg/hangar.jpg'};
+const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg',hangar:'assets/bg/hangar.jpg',linde:'assets/bg/linde.jpg'};
 // 端を切らずに全体を見せる背景（地図など）。画面の上に寄せ、余白は背景色
 const BG_WHOLE=['map'];
 // 地図の上に重ねる印。x / y は地図の画像（continent.jpg）の幅・高さに対する位置（%）。
