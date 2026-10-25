@@ -1358,7 +1358,12 @@ const bcv=$('bcv'),bctx=bcv.getContext('2d');
 // 戦闘画面の絵の向き。r＝右向き、l＝左向き、f＝正面（書いていない機体は正面）。
 // 戦闘画面では、左側（敵）は右を、右側（味方）は左を向くように、向きが逆の絵は左右反転して描く
 const BIG_FACE={bulwark:'l',zekt:'l',truck:'l',hound:'l'};
-const ATK_FACE={grand:'r',sylph:'r',bulwark:'l',raven:'r',zekt:'r',caladrius:'l',truck:'f',hound:'r',golmkai:'l'};
+// 整備車両の攻撃の絵は正面から見た車両で、戦闘用の絵より小さく見えるので使わない。
+// グランヴァルドたち4機（番外編）の攻撃の絵は元のドット絵が小さく、拡大するとぼやけるので使わない
+const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l'};
+// 攻撃の絵が何の攻撃の絵か（格＝格闘、射＝射撃）。武器の種類と合うときだけ攻撃の絵を使う
+// （ゼクトの攻撃の絵はライフルを構えた絵なので、バトルアックスでは使わない、など）
+const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格'};
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
@@ -1392,11 +1397,11 @@ function playBattle(att,def,strikes){
     function sidePos(u){return u===L?{x:w*.25,y:h*.6,f:1}:{x:w*.75,y:h*.6,f:-1}}
     const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
     // 機体の絵を描く（攻撃の絵を使うかどうかも決める）
-    function drawUnitArt(c,u,attacking,now){
+    function drawUnitArt(c,u,attacking,now,wtype){
       const sp=SPR[u.key],big=sp.big;
       if(!ready(big)){const sc=h*(u.boss?.24:.19);c.scale((u===L?1:-1)*sc,sc);drawMech(c,u,now);return}
       const bw=big.naturalWidth||big.width,bh=big.naturalHeight||big.height,sc=h*(u.boss?.27:.24),kk=2/Math.max(bw,bh);
-      const key=TPL[u.key].spr||u.key,want=u===L?'r':'l',useAtk=attacking&&ATK_FACE[key]&&ready(sp.attack)&&ready(sp.idle);
+      const key=TPL[u.key].spr||u.key,want=u===L?'r':'l',useAtk=attacking&&ATK_FACE[key]&&ATK_KIND[key]===wtype&&ready(sp.attack)&&ready(sp.idle);
       const face=(useAtk?ATK_FACE[key]:BIG_FACE[key])||'f';
       if(face!=='f'&&face!==want)c.scale(-1,1); // 相手のほうを向くように反転
       if(useAtk){
@@ -1458,13 +1463,13 @@ function playBattle(att,def,strikes){
         const attacking=u===s.att&&!cutting&&(melee?(k>.18&&k<.8):(k>.2&&k<impactK+.18));
         // 残像：突進・回避で大きく動いたとき、少し前の位置に薄い絵を残す
         const tr=trail[u.id]||(trail[u.id]=[]);tr.push({x,y:fy,t:now});while(tr.length&&now-tr[0].t>140)tr.shift();
-        if((dash||dodge)&&tr.length>1){for(let g=0;g<tr.length-1;g+=Math.max(1,Math.floor(tr.length/3))){const q=tr[g];if(Math.hypot(q.x-x,q.y-fy)<h*.03)continue;c.save();c.globalAlpha=.22*alpha;c.translate(q.x,q.y);drawUnitArt(c,u,attacking,now);c.restore()}}
+        if((dash||dodge)&&tr.length>1){for(let g=0;g<tr.length-1;g+=Math.max(1,Math.floor(tr.length/3))){const q=tr[g];if(Math.hypot(q.x-x,q.y-fy)<h*.03)continue;c.save();c.globalAlpha=.22*alpha;c.translate(q.x,q.y);drawUnitArt(c,u,attacking,now,s.w.type);c.restore()}}
         c.save();c.globalAlpha=alpha;c.translate(x,fy);
         // 足場のタイルは置かない（ユーザーの希望）。地面に影だけ落とす（空中の機体は影を薄く小さく）
         {const sy=(u.air?h*.3-Math.sin(now/250)*h*.02:h*.22)-h*.08;c.fillStyle=u.air?'#0003':'#0006';c.beginPath();c.ellipse(0,sy,h*(u.air?.1:.15),h*(u.air?.02:.028),0,0,7);c.fill()}
         // 被弾時は点滅させる（ctx.filter はスマホで非常に重いので使わない）
         if(u===s.def&&s.hit&&!cutting&&k>impactK&&k<impactK+.1&&Math.floor(now/40)%2)c.globalAlpha=alpha*.35;
-        drawUnitArt(c,u,attacking,now);
+        drawUnitArt(c,u,attacking,now,s.w.type);
         c.restore();
       }
       // 射撃：撃つ前に銃口が光る（ビームはため）、撃つ瞬間の銃口の火花、弾
@@ -1480,7 +1485,7 @@ function playBattle(att,def,strikes){
             if(Math.floor(now/60)%2){c.save();c.globalCompositeOperation='lighter';circ(c,sx,sy,h*.03,'#ffd26a99');circ(c,sx,sy,h*.014,'#fff');c.restore()}
             if(Math.random()<.35)parts.push({x:sx-A.f*h*.06,y:sy,vx:-A.f*w*.004*(1+Math.random()),vy:-h*.012*Math.random(),life:1,c:'#e7b74a',shell:1});
           }
-          else if(fx==='missile'||fx==='shell'){for(let n=0;n<(fx==='missile'?3:1);n++){const q=clamp(pk-n*.1,0,1);const arc=Math.sin(q*Math.PI)*h*(fx==='shell'?.3:.12)*(n%2?1:-1);const mx=sx+(ex-sx)*q,my=sy+(ey-sy)*q-Math.abs(arc);c.fillStyle='#ddd';c.fillRect(mx-h*.02,my-h*.008,h*.04,h*.016);circ(c,mx-A.f*h*.03,my,h*.012,'#ff9a3d');if(Math.random()<.5)parts.push({x:mx-A.f*h*.04,y:my,vx:0,vy:-h*.002,life:.6,c:'#c9c9c9',dust:1})}
+          else if(fx==='missile'||fx==='shell'){for(let n=0;n<(fx==='missile'?3:1);n++){const q=clamp(pk-n*.1,0,1);const arc=Math.sin(q*Math.PI)*h*(fx==='shell'?.18:.12)*(n%2?1:-1);const mx=sx+(ex-sx)*q,my=sy+(ey-sy)*q-Math.abs(arc);const ms=fx==='shell'?1:1.5;c.fillStyle='#000';c.fillRect(mx-h*.032*ms,my-h*.013*ms,h*.064*ms,h*.026*ms);c.fillStyle='#e8e8e8';c.fillRect(mx-h*.03*ms,my-h*.011*ms,h*.06*ms,h*.022*ms);c.fillStyle='#d23a3a';c.fillRect(mx+A.f*h*.018*ms,my-h*.011*ms,h*.012*ms,h*.022*ms);circ(c,mx-A.f*h*.04*ms,my,h*.016*ms,'#ff9a3d');circ(c,mx-A.f*h*.04*ms,my,h*.008*ms,'#fff6c0');if(Math.random()<.7)parts.push({x:mx-A.f*h*.05*ms,y:my,vx:0,vy:-h*.002,life:.7,c:'#d8d8d8cc',dust:1})}
             if(k<.33&&fx==='shell'){c.save();c.globalCompositeOperation='lighter';circ(c,sx,sy,h*.05,'#ffb34799');c.restore()}}
           else{circ(c,sx+(ex-sx)*pk,sy+(ey-sy)*pk,h*.02,'#fff')}
         }
