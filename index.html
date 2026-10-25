@@ -153,6 +153,10 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #dialog.hasbg{justify-content:flex-end;padding-bottom:max(7vh,env(safe-area-inset-bottom,0px));background-color:#000;background-size:cover;background-position:center}
 #dialog .msg{height:auto;min-height:96px}
 /* 地図の上の印（MAP_PLACES）。地図の画像に対する位置（%）で置く */
+/* 地図（BG_WHOLE）を横向きの画面で出すときは、地図を左、文字枠を右に並べる */
+#dialog.side{align-items:flex-end;justify-content:center;padding-bottom:16px}
+#dialog.side .msg{width:var(--sidew)!important;max-width:none!important}
+#dialog.side .skip{width:var(--sidew);text-align:center}
 #dMark{position:absolute;width:0;height:0;pointer-events:none}
 #dMark .ring{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border:3px solid #d42a2a;border-radius:50%;box-shadow:0 0 0 2px #fff8,0 0 10px #d42a2aaa;animation:markp 1.4s ease-in-out infinite}
 #dMark .lbl{position:absolute;right:22px;top:-11px;white-space:nowrap;font-family:var(--disp);font-size:14px;font-weight:700;color:#2b1a12;text-shadow:0 0 3px #f3e6c8,0 0 3px #f3e6c8,0 0 6px #f3e6c8}
@@ -1014,16 +1018,25 @@ function dialog(lines,o={}){
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
     // 行に solid:1 があれば、マップの上の会話でもその行だけマップを隠して背景を出す
     let solid=!!o.solid;
-    const setBg=()=>{d.classList.toggle('solid',solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':'';placeMark()};
+    const setBg=()=>{d.classList.toggle('solid',solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
+    // 地図（BG_WHOLE）の置き方：縦向きは文字枠の上に収まる大きさで上に寄せる。横向きで右に文字枠を置く幅があれば、地図を左、文字枠を右に並べる
+    let box=null;
+    const layout=()=>{const url=solid&&bg&&BG[bg],sz=BG_SIZE[bg];box=null;
+      if(!url||!BG_WHOLE.includes(bg)||!sz){placeMark();return}
+      const W=d.clientWidth,H=d.clientHeight,MSG_W=300;
+      let k=H/sz[1],side=W-sz[0]*k>=MSG_W+48;
+      if(side){const w=sz[0]*k;box={k,left:Math.max(16,(W-w-MSG_W-32)/2),top:0};d.style.setProperty('--sidew',Math.min(600,W-box.left-w-32)+'px')}
+      else{const reserve=Math.max(H*.07,0)+156;k=Math.min(W/sz[0],(H-reserve)/sz[1]);box={k,left:(W-sz[0]*k)/2,top:0}}
+      d.classList.toggle('side',side);
+      d.style.backgroundSize=`${sz[0]*box.k}px ${sz[1]*box.k}px`;d.style.backgroundPosition=`${box.left}px ${box.top}px`;placeMark()};
     // 印は、端を切らずに表示している地図（BG_WHOLE）の上だけに出す
     const placeMark=()=>{const p=mark&&MAP_PLACES[mark],sz=BG_SIZE[bg];
-      if(!p||!sz||!solid||!BG[bg]||!BG_WHOLE.includes(bg)){mk.hidden=true;return}
-      const W=d.clientWidth,H=d.clientHeight,k=Math.min(W/sz[0],H/sz[1]),w=sz[0]*k,h=sz[1]*k;
-      mk.style.left=((W-w)/2+w*p.x/100)+'px';mk.style.top=(h*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
-    const onRs=()=>placeMark();addEventListener('resize',onRs);
+      if(!p||!sz||!box){mk.hidden=true;return}
+      mk.style.left=(box.left+sz[0]*box.k*p.x/100)+'px';mk.style.top=(box.top+sz[1]*box.k*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
+    const onRs=()=>layout();addEventListener('resize',onRs);
     const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid);if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
-    show();d.hidden=false;placeMark();
-    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
+    show();d.hidden=false;layout();
+    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
 }
 
