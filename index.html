@@ -456,22 +456,27 @@ const STAGES={
   talks:[
    // 味方が初めて盗賊のゼクトと戦ったとき（どちらから仕掛けても1回だけ）
    {id:'zekt',when:(a,d)=>[a,d].some(u=>u.team==='foe'&&u.key==='zekt_x'),lines:()=>[
-   {who:'ブルーノ',text:'なっ……盗賊が、うちと同じゼクトを!?'},
-   {who:'オットー',text:'塗装は剥がしてありますけど……間違いない。帝国の制式機です'},
+   {who:'ブルーノ',text:'なっ……盗賊が、うちと同じゼクトを!?',alt:['オットー','マティアス']},
+   {who:'オットー',text:'塗装は剥がしてありますけど……間違いない。帝国の制式機です',alt:['マティアス']},
    {who:'エルンスト',text:'詮索は後だ。今は目の前の敵に集中しろ'},
    {who:'エルンスト',text:'（……盗賊が、正規軍の機兵を？　どこから流れた）'}]},
-   {id:'boss',when:(a,d)=>a.boss||d.boss,lines:()=>[
+   // ボスとカラドリウスが戦ったとき（ボルツのセリフはカラドリウスの見た目のこと）
+   {id:'boss',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='caladrius'),lines:()=>[
    {who:'ボルツ',text:'黒い機兵に金の線……お偉いさんの機体か。帝国の犬が、こんな辺境まで何の用だ！'},
    {who:'エルンスト',text:'犬で結構。だが、飼い主を選ぶ程度の分別はある'},
-   {who:'ボルツ',text:'わけの分からねえことを！　帝国の犬が、なんぼのもんだ！'}]}],
+   {who:'ボルツ',text:'わけの分からねえことを！　帝国の犬が、なんぼのもんだ！'}]},
+   // カラドリウスより先に、ほかの機体がボスと戦ったとき
+   {id:'bossOther',when:(a,d)=>(a.boss||d.boss)&&![a,d].some(u=>u.key==='caladrius'),lines:()=>[
+   {who:'ボルツ',text:'軍の機兵だと!?　盗賊相手に、ご苦労なこった！'},
+   {who:'エルンスト',text:'そいつが指揮官機だ。無理に一機で当たるな、囲んで叩け！'}]}],
   bossDown:[
    {who:'ボルツ',text:'ぐっ……ちくしょう、話が違うじゃねえか！　軍は来ねえって……！'},
    {who:'エルンスト',text:'……軍は来ない？　誰から聞いた'},
    {who:'ボルツ',text:'引き上げだ、野郎ども！　頭（かしら）に知らせろ！'},
-   {who:'ブルーノ',text:'逃げた……！　追いますか、大尉！'},
+   {who:'ブルーノ',text:'逃げた……！　追いますか、大尉！',alt:['オットー']},
    {who:'エルンスト',text:'深追いはするな。今は村が先だ'}],
   allDown:[
-   {who:'ブルーノ',text:'やりました、大尉！　一機残らず片付けましたよ！'},
+   {who:'ブルーノ',text:'やりました、大尉！　一機残らず片付けましたよ！',alt:['オットー','マティアス']},
    {who:'エルンスト',text:'よくやった。……だが、頭目はここにいなかった。まだ終わりではない'}],
   lose:[
    {who:'マティアス',text:'大尉！　くそっ、応答してください、大尉！'}],
@@ -1206,9 +1211,18 @@ function doRepair(a,t){
 }
 
 /* ================= COMBAT ================= */
+// 戦闘中の会話で、撃墜された味方のセリフは alt に書いた仲間（生きている最初の人）が代わりに言う。代わりがいなければその行を省く
+function battleLines(lines){
+  const down=n=>units.some(u=>u.team==='ally'&&u.pilot.name===n&&u.dead)&&!units.some(u=>u.team==='ally'&&u.pilot.name===n&&!u.dead);
+  const out=[];
+  for(const l of lines){if(!down(l.who)){out.push(l);continue}
+    const sub=(l.alt||[]).find(n=>units.some(u=>u.team==='ally'&&u.pilot.name===n&&!u.dead));
+    if(sub)out.push({...l,who:sub})}
+  return out.length?out:lines;
+}
 async function combat(att,def,w,choice){
   // ステージの会話イベント（それぞれ1回だけ）
-  for(const t of ST.talks||[])if(!flags[t.id]&&t.when(att,def)){flags[t.id]=true;await dialog(t.lines(att,def))}
+  for(const t of ST.talks||[])if(!flags[t.id]&&t.when(att,def)){flags[t.id]=true;await dialog(battleLines(t.lines(att,def)))}
   att.dir=dirOf(def.x-att.x,def.y-att.y);def.dir=dirOf(att.x-def.x,att.y-def.y);
   const strikes=[strike(att,def,w,choice.mode)];
   if(def.hp>0&&choice.mode==='counter'){const cw=bestWeapon(def,att,dist(att,def));if(cw)strikes.push(strike(def,att,cw,'counter'))}
@@ -1229,9 +1243,9 @@ function checkBonus(){
 async function checkEnd(){
   if(over)return;
   const boss=units.find(u=>u.boss),leader=units.find(u=>u.key===ST.leader);
-  if(leader.dead||!alive('ally').length){over=true;await sleep(500);await dialog(ST.lose);result(false);return}
+  if(leader.dead||!alive('ally').length){over=true;await sleep(500);await dialog(battleLines(ST.lose));result(false);return}
   if(boss.dead||!alive('foe').length){over=true;await sleep(500);
-    await dialog(boss.dead&&alive('foe').length?ST.bossDown:ST.allDown);
+    await dialog(battleLines(boss.dead&&alive('foe').length?ST.bossDown:ST.allDown));
     if(ST.epilogue)await dialog(ST.epilogue(flags),{solid:true});
     result(true)}
 }

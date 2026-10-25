@@ -33,7 +33,7 @@
 | MAP RENDER | `SPR`（機体画像。`spr` / `tint` / `SPR_EXTRA` に対応）、`TER_IMG`（地形タイル）、`STAGE_IMG`（今のステージのマップ背景、`stageImg` で読み込み）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
 | BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
 | UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog(lines, {solid})`（narr＝ナレーション、solid＝マップを隠す、行の bg＝背景画）、`banner()` |
-| COMBAT | `combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkBonus` → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
+| COMBAT | 戦闘中の会話（talks・bossDown・allDown・lose）は `battleLines` を通す：撃墜された味方のセリフは、行の `alt`（代わりに言う仲間の名前の並び）の生きている最初の人が言い、いなければ省く。`combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkBonus` → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵、足元にそのマスの地形タイル |
 | SAVE / LOAD | localStorage の `granvald-save-1〜3`（手動）と `granvald-save-auto`（味方フェイズ開始時に `autoSave`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 壊れたデータ）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。セーブできるのは `canSave()`（味方フェイズで誰も選んでいないとき）だけ。上書き・削除・ゲーム中のロードは `confirmSheet` で確認 |
 | TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価。leader を少し優先して狙う）、`startOfPhase` |
