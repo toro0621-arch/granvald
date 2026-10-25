@@ -127,7 +127,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .ov{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#050910ee;padding:16px}
 #battle{justify-content:flex-start;padding-top:max(12vh,env(safe-area-inset-top,0px))}
 /* 会話の文字枠は、背景があってもなくても画面の下に置く */
-#dialog{justify-content:flex-end;padding-bottom:max(7vh,env(safe-area-inset-bottom,0px))}
+#dialog{justify-content:flex-end;padding-bottom:max(16vh,env(safe-area-inset-bottom,0px))}
 #battle .stage{width:min(100%,680px);position:relative}
 #bcv{width:100%;display:block;border:1px solid var(--line);border-radius:6px;background:#000}
 .msg{width:min(100%,680px);margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;height:96px;overflow:hidden}
@@ -145,19 +145,17 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 @keyframes ban{0%{opacity:0;transform:translateX(-40px)}20%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateX(40px)}}
 #toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:70;background:var(--panel2);border:1px solid var(--line);padding:8px 14px;border-radius:6px;font-size:13px;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px)}
 /* タイトル画面：全面の背景（canvas）の上に、ロゴ・「TAP TO START」・メニュー */
-#title{justify-content:space-between;padding:max(9vh,env(safe-area-inset-top,0px)) 20px max(4vh,env(safe-area-inset-bottom,0px));background:#05070c;overflow:hidden}
-#tcv{position:absolute;inset:0;width:100%;height:100%;z-index:0}
-#title>*:not(#tcv){position:relative;z-index:1}
-.t-logo{text-align:center}
-.t-kicker{font-family:var(--body);font-weight:900;font-size:clamp(20px,6vw,30px);letter-spacing:.6em;padding-left:.6em;color:#d9e1ea;text-shadow:0 2px 0 #000}
-.t-name{font-family:var(--body);font-weight:900;font-size:clamp(32px,10.5vw,64px);line-height:1.1;letter-spacing:.01em;margin-top:4px;white-space:nowrap;
-  color:#ffd457;-webkit-text-stroke:1px #4a2c06;text-shadow:0 1px 0 #fff2c0,0 3px 0 #a8650e,0 4px 0 #5a3305,0 8px 18px #000,0 0 26px #ff9a2a66}
-.t-en{font-family:var(--disp);font-size:12px;letter-spacing:.5em;padding-left:.5em;color:#b7c7da;margin-top:10px;white-space:nowrap;text-shadow:0 1px 2px #000}
-.t-en::before,.t-en::after{content:'';display:inline-block;width:28px;height:1px;background:#9fb4cc88;vertical-align:middle;margin:0 10px}
-.t-press{font-family:var(--disp);font-size:16px;letter-spacing:.35em;color:#fff;text-shadow:0 0 10px #45aaff,0 2px 0 #000;animation:tpress 1.6s ease-in-out infinite;margin-top:auto;margin-bottom:3vh;padding:6px 14px;background:#0008;border-radius:4px}
+#title{justify-content:space-between;padding:max(4vh,env(safe-area-inset-top,0px)) 16px max(3vh,env(safe-area-inset-bottom,0px));background:#000;overflow:hidden}
+.t-logo{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;width:100%}
+/* ロゴの絵は背景が黒なので、黒い画面にそのままなじむ。画面の幅と高さの両方に収める */
+.t-logo img{width:min(100%,62vh,560px);height:auto;max-height:100%;object-fit:contain;animation:tlogo 4s ease-in-out infinite;
+  -webkit-mask-image:radial-gradient(closest-side,#000 93%,transparent 100%);mask-image:radial-gradient(closest-side,#000 93%,transparent 100%)}
+@keyframes tlogo{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+@media (prefers-reduced-motion:reduce){.t-logo img{animation:none}}
+.t-press{font-family:var(--disp);font-size:16px;letter-spacing:.35em;color:#fff;text-shadow:0 0 10px #45aaff,0 2px 0 #000;animation:tpress 1.6s ease-in-out infinite;margin:2vh 0 3vh;padding:6px 14px}
 @keyframes tpress{0%,100%{opacity:1}50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.t-press{animation:none}}
-.t-menu{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(100%,320px);margin-top:auto;margin-bottom:3vh;animation:tmenu .35s ease-out}
+.t-menu{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(100%,320px);margin:1vh 0 2vh;animation:tmenu .35s ease-out}
 @keyframes tmenu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .t-menu .stages{display:flex;flex-direction:column;gap:8px;width:100%}
 .t-menu .btn{width:100%;text-align:left;padding:9px 16px;min-height:54px;background:#0b1424e0;border-color:#3d5578;backdrop-filter:blur(4px)}
@@ -169,7 +167,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .dlg{cursor:pointer}
 #dialog.solid{background:var(--bg)}
 /* 会話の背景画（BG）。背景があるときは文字枠を下に置く */
-#dialog.hasbg{justify-content:flex-end;padding-bottom:max(7vh,env(safe-area-inset-bottom,0px));background-color:#000;background-size:cover;background-position:center}
+#dialog.hasbg{justify-content:flex-end;padding-bottom:max(16vh,env(safe-area-inset-bottom,0px));background-color:#000;background-size:cover;background-position:center}
 #dialog .msg{height:auto;min-height:96px}
 /* 地図の上の印（MAP_PLACES）。地図の画像に対する位置（%）で置く */
 /* 地図（BG_WHOLE）を横向きの画面で出すときは、地図を左、文字枠を右に並べる */
@@ -241,12 +239,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 </div>
 
 <div id="title" class="ov">
-  <canvas id="tcv" aria-hidden="true"></canvas>
-  <div class="t-logo">
-    <div class="t-kicker">機甲戦線</div>
-    <div class="t-name">グランヴァルド</div>
-    <div class="t-en">GRANVALD</div>
-  </div>
+  <div class="t-logo"><img src="assets/title-logo.jpg" alt="機甲戦線グランヴァルド"></div>
   <div class="t-press" id="tPress">TAP TO START</div>
   <div class="t-menu" id="tMenu" hidden>
     <div class="stages" id="stageList"></div>
@@ -1092,7 +1085,7 @@ function dialog(lines,o={}){
       const W=d.clientWidth,H=d.clientHeight,MSG_W=300;
       let k=H/sz[1],side=W-sz[0]*k>=MSG_W+48;
       if(side){const w=sz[0]*k;box={k,left:Math.max(16,(W-w-MSG_W-32)/2),top:0};d.style.setProperty('--sidew',Math.min(600,W-box.left-w-32)+'px')}
-      else{const reserve=Math.max(H*.07,0)+156;k=Math.min(W/sz[0],(H-reserve)/sz[1]);box={k,left:(W-sz[0]*k)/2,top:0}}
+      else{const reserve=H*.16+156;k=Math.min(W/sz[0],(H-reserve)/sz[1]);box={k,left:(W-sz[0]*k)/2,top:0}}
       d.classList.toggle('side',side);
       d.style.backgroundSize=`${sz[0]*box.k}px ${sz[1]*box.k}px`;d.style.backgroundPosition=`${box.left}px ${box.top}px`;placeMark()};
     // 印は、端を切らずに表示している地図（BG_WHOLE）の上だけに出す
@@ -1603,47 +1596,8 @@ function loadSheet(){
 }
 
 /* ================= TITLE / START ================= */
-// タイトルの背景：assets/bg/title.jpg（キービジュアル）があればそれを全面に、なければ機体の絵で組んだ絵を描く
-const TITLE_IMG=img('assets/bg/title.jpg');
-let titleRun=0;
-function titleArt(){
-  const c=$('tcv'),run=++titleRun;
-  const dust=Array.from({length:40},(_,i)=>({x:Math.random(),y:Math.random(),v:.02+Math.random()*.05,r:Math.random()}));
-  function f(now){if($('title').hidden||run!==titleRun)return;
-    const dpr=Math.min(2,window.devicePixelRatio||1),W=Math.round(c.clientWidth*dpr),H=Math.round(c.clientHeight*dpr);
-    if(c.width!==W||c.height!==H){c.width=W;c.height=H}
-    const x=c.getContext('2d'),w=W,h=H;x.imageSmoothingEnabled=true;
-    if(ready(TITLE_IMG)){const iw=TITLE_IMG.naturalWidth,ih=TITLE_IMG.naturalHeight,k=Math.max(w/iw,h/ih);x.drawImage(TITLE_IMG,(w-iw*k)/2,(h-ih*k)/2,iw*k,ih*k)}
-    else{
-      // 空：上は夜の紺、地平線は戦火の赤
-      const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,'#04070e');g.addColorStop(.45,'#101a30');g.addColorStop(.72,'#4a1a1c');g.addColorStop(.78,'#1a0d10');g.addColorStop(1,'#05070c');x.fillStyle=g;x.fillRect(0,0,w,h);
-      // 地平線の光
-      const hz=h*.74,rg=x.createRadialGradient(w/2,hz,0,w/2,hz,w*.9);rg.addColorStop(0,'#ff7a3a55');rg.addColorStop(1,'#ff7a3a00');x.fillStyle=rg;x.fillRect(0,0,w,h);
-      // サーチライト
-      x.save();x.globalCompositeOperation='lighter';
-      for(const [cx,a0,sp] of [[.2,-1.25,.00025],[.82,-1.9,-.0002]]){const a=a0+Math.sin(now*sp)*.25,L=h*1.1;
-        const lg=x.createLinearGradient(w*cx,hz,w*cx+Math.cos(a)*L,hz+Math.sin(a)*L);lg.addColorStop(0,'#9fd0ff22');lg.addColorStop(1,'#9fd0ff00');x.fillStyle=lg;
-        x.beginPath();x.moveTo(w*cx,hz);x.lineTo(w*cx+Math.cos(a-.06)*L,hz+Math.sin(a-.06)*L);x.lineTo(w*cx+Math.cos(a+.06)*L,hz+Math.sin(a+.06)*L);x.fill()}
-      x.restore();
-      // 機体：後ろにゼクト2機（暗く）、手前にカラドリウス。ドット絵はくっきり描く
-      x.imageSmoothingEnabled=false;
-      const S=Math.min(w*.9,h*.55);
-      const put=(k,px,py,sz,dark)=>{const b=SPR[k]&&SPR[k].big;if(!ready(b))return;const iw=b.naturalWidth||b.width,ih=b.naturalHeight||b.height,sc=sz/ih;
-        x.save();x.translate(px,py+Math.sin(now/900+px)*h*.004);x.drawImage(b,-iw*sc/2,-ih*sc,iw*sc,ih*sc);
-        if(dark){x.globalCompositeOperation='source-atop';x.fillStyle=`rgba(8,12,24,${dark})`;x.fillRect(-iw*sc/2,-ih*sc,iw*sc,ih*sc)}x.restore()};
-      put('zekt',w*.2,hz+h*.02,S*.42,.55);put('zekt',w*.8,hz+h*.02,S*.42,.55);
-      put('caladrius',w*.5,hz+h*.1,S*.78,0);
-      x.imageSmoothingEnabled=true;
-      // 足元の暗がり
-      const fg=x.createLinearGradient(0,hz+h*.06,0,h);fg.addColorStop(0,'#05070c00');fg.addColorStop(.35,'#05070cdd');fg.addColorStop(1,'#05070c');x.fillStyle=fg;x.fillRect(0,hz,w,h-hz);
-    }
-    // 舞い上がる火の粉
-    for(const d of dust){const yy=((d.y-now/1000*d.v)%1+1)%1,xx=d.x+Math.sin(now/1500+d.r*9)*.01;x.fillStyle=`rgba(255,${150+d.r*80|0},90,${.25+.5*(1-yy)})`;x.fillRect(xx*w,yy*h,(1+d.r*2)*dpr,(1+d.r*2)*dpr)}
-    // 上下を暗くして文字を読みやすく
-    const vg=x.createLinearGradient(0,0,0,h);vg.addColorStop(0,'#000a');vg.addColorStop(.3,'#0000');vg.addColorStop(.7,'#0000');vg.addColorStop(1,'#000c');x.fillStyle=vg;x.fillRect(0,0,w,h);
-    requestAnimationFrame(f)}
-  requestAnimationFrame(f);
-}
+// タイトルの背景は黒、中央にロゴの絵（assets/title-logo.jpg）
+function titleArt(){}
 // タイトル：最初は「TAP TO START」。タップでメニューを出す（このタップで音も鳴らせるようになる）
 function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();$('tPress').hidden=true;$('tMenu').hidden=false}
 $('title').addEventListener('click',e=>{if($('tMenu').hidden)showTitleMenu()});
