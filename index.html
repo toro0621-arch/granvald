@@ -152,6 +152,12 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 /* 会話の背景画（BG）。背景があるときは文字枠を下に置く */
 #dialog.hasbg{justify-content:flex-end;padding-bottom:max(7vh,env(safe-area-inset-bottom,0px));background-color:#000;background-size:cover;background-position:center}
 #dialog .msg{height:auto;min-height:96px}
+/* 地図の上の印（MAP_PLACES）。地図の画像に対する位置（%）で置く */
+#dMark{position:absolute;width:0;height:0;pointer-events:none}
+#dMark .ring{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border:3px solid #d42a2a;border-radius:50%;box-shadow:0 0 0 2px #fff8,0 0 10px #d42a2aaa;animation:markp 1.4s ease-in-out infinite}
+#dMark .lbl{position:absolute;right:22px;top:-11px;white-space:nowrap;font-family:var(--disp);font-size:14px;font-weight:700;color:#2b1a12;text-shadow:0 0 3px #f3e6c8,0 0 3px #f3e6c8,0 0 6px #f3e6c8}
+@keyframes markp{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+@media (prefers-reduced-motion:reduce){#dMark .ring{animation:none}}
 #dialog.hasbg .msg{background:#0b1220e8}
 #dialog.hasbg .skip{color:#dfe7f2;text-shadow:0 1px 3px #000}
 #dialog.narr .txt{color:#c3cfdf;font-size:14px;line-height:1.8}
@@ -181,6 +187,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 </div>
 
 <div id="dialog" class="ov dlg" hidden>
+  <div id="dMark" hidden><span class="ring"></span><span class="lbl"></span></div>
   <div class="msg" style="max-width:600px"><img class="face" id="dFace" alt="" hidden><div class="mtx"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div></div>
   <div class="skip">タップで次へ</div>
 </div>
@@ -410,7 +417,7 @@ const STAGES={
    ['golmkai','foe',4,1],['golm_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
    ['hound','foe',5,3],['hound','foe',3,4],['hound','foe',6,5]],
   pre:[
-   {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1,bg:'map'},
+   {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1,bg:'map',mark:'linde'},
    {who:'',text:'灰の講和から27年。帝国と共和国は剣を収めたまま睨み合い、国境の村々は、その谷間で静かに痩せ細っていた。',narr:1},
    {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
    {who:'伝令',text:'申し上げます！　リンデ村より救援要請。盗賊団の襲撃を受けており、機兵を数機確認とのこと！'},
@@ -990,15 +997,27 @@ function setFace(el,name){const f=faceSrc(name);if(f){el.onerror=()=>{el.hidden=
 const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg'};
 // 端を切らずに全体を見せる背景（地図など）。画面の上に寄せ、余白は背景色
 const BG_WHOLE=['map'];
+// 地図の上に重ねる印。x / y は地図の画像（continent.jpg）の幅・高さに対する位置（%）。
+// 会話の行に mark:'linde' と書くとその行から印が出る（bg が変わると消える。mark:null でも消える）
+const MAP_PLACES={
+ linde:{x:56.3,y:36.0,label:'リンデ村'}
+};
+const BG_SIZE={map:[848,1264]};
 for(const f of Object.values(BG))new Image().src=f;
 function dialog(lines,o={}){
   return new Promise(res=>{
-    const d=$('dialog');let i=0,bg=o.bg||null;
+    const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
     d.classList.toggle('solid',!!o.solid);
-    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':''};
-    const show=()=>{const l=lines[i];if('bg' in l)bg=l.bg;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
-    show();d.hidden=false;
-    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';res()}else show()};
+    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':'';placeMark()};
+    // 印は、端を切らずに表示している地図（BG_WHOLE）の上だけに出す
+    const placeMark=()=>{const p=mark&&MAP_PLACES[mark],sz=BG_SIZE[bg];
+      if(!p||!sz||!o.solid||!BG[bg]||!BG_WHOLE.includes(bg)){mk.hidden=true;return}
+      const W=d.clientWidth,H=d.clientHeight,k=Math.min(W/sz[0],H/sz[1]),w=sz[0]*k,h=sz[1]*k;
+      mk.style.left=((W-w)/2+w*p.x/100)+'px';mk.style.top=(h*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
+    const onRs=()=>placeMark();addEventListener('resize',onRs);
+    const show=()=>{const l=lines[i];if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
+    show();d.hidden=false;placeMark();
+    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
 }
 
