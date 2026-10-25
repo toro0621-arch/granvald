@@ -1367,7 +1367,8 @@ function playBattle(att,def,strikes){
     const bg=document.createElement('canvas');bg.width=w+40;bg.height=h+40;{const bx=bg.getContext('2d'),g=bx.createLinearGradient(0,20,0,h+20);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');bx.fillStyle=g;bx.fillRect(0,0,w+40,h+40)}
     function finish(){if(done)return;done=true;ov.hidden=true;ov.onclick=null;resolve()}
     ov.onclick=finish;
-    function sidePos(u){return u===L?{x:w*.25,y:h*.52,f:1}:{x:w*.75,y:h*.52,f:-1}}
+    // 足場がないので、機体は少し下げて地面（画面の下の帯）に立たせる
+    function sidePos(u){return u===L?{x:w*.25,y:h*.6,f:1}:{x:w*.75,y:h*.6,f:-1}}
     function frame(now){
       if(done)return;
       const el=Math.max(0,now-t0);if(el>total){finish();return}
@@ -1396,9 +1397,8 @@ function playBattle(att,def,strikes){
         if(strikes.some((sj,j)=>j<i&&sj.kill&&sj.def===u))alpha=0;
         if(alpha<=0)continue;
         c.save();c.globalAlpha=alpha;c.translate(x,y+(u.air?Math.sin(now/250)*h*.02:0));
-        {const ti=TER_IMG[MAP[u.y][u.x]];
-         if(ready(ti)&&!(u.air&&u===s.att&&melee)){const pw=h*.52,ph=pw*ti.naturalHeight/ti.naturalWidth,fy=h*.17+(u.air?h*.08:0)-(u.air?Math.sin(now/250)*h*.02:0);c.drawImage(ti,-pw/2,fy-ph*.3,pw,ph)}
-         else{c.fillStyle='#0005';c.beginPath();c.ellipse(0,h*.22,h*.16,h*.03,0,0,7);c.fill()}}
+        // 足場のタイルは置かない（ユーザーの希望）。地面に影だけ落とす（空中の機体は影を薄く小さく）
+        {const fy=(u.air?h*.3-Math.sin(now/250)*h*.02:h*.22)-h*.08;c.fillStyle=u.air?'#0003':'#0006';c.beginPath();c.ellipse(0,fy,h*(u.air?.1:.15),h*(u.air?.02:.028),0,0,7);c.fill()}
         // 被弾時は点滅させる（ctx.filter はスマホで非常に重いので使わない）
         if(u===s.def&&s.hit&&k>impactK&&k<impactK+.1&&Math.floor(now/40)%2)c.globalAlpha=alpha*.35;
         const big=SPR[u.key].big;
