@@ -361,7 +361,7 @@ const TPL={
   col:{main:'#1d1f25',sub:'#c9a23a',acc:'#eef0f2',eye:'#ffcf5a'},
   pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['集中','必中']},
   lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
-  weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('ホワイトプルーム','格',2800,1,1,{en:30,will:110})]},
+  weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('二段斬り','格',2800,1,1,{en:30,will:110,fx:'cross'})]},
  zekt_b:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['気合','根性']},
@@ -1381,7 +1381,18 @@ function playBattle(att,def,strikes){
         else if(fx==='missile'||fx==='shell'){for(let n=0;n<(fx==='missile'?3:1);n++){const q=clamp(pk-n*.1,0,1);const arc=Math.sin(q*Math.PI)*h*(fx==='shell'?.3:.12)*(n%2?1:-1);const mx=sx+(ex-sx)*q,my=sy+(ey-sy)*q-Math.abs(arc);c.fillStyle='#ddd';c.fillRect(mx-h*.02,my-h*.008,h*.04,h*.016);circ(c,mx-A.f*h*.03,my,h*.012,'#ff9a3d')}}
         else{circ(c,sx+(ex-sx)*pk,sy+(ey-sy)*pk,h*.02,'#fff')}
       }
-      if(melee&&k>impactK-.02&&k<impactK+.12&&s.hit){c.strokeStyle='#fff';c.lineWidth=h*.015;c.beginPath();c.moveTo(T.x-h*.18,T.y-h*.25);c.lineTo(T.x+h*.18,T.y+h*.1);c.stroke()}
+      // 斬撃の線。fx:'cross'（二段斬り）は、×の字に2回斬りつける（1本目のあと少し遅れて2本目）
+      if(melee&&s.hit&&s.w.fx==='cross'){
+        const cx=T.x,cy=T.y-h*.08,R=h*.24;
+        const slash=(t0,dir)=>{const q=(k-t0)/.07;if(q<=0||k>impactK+.2)return;const g=Math.min(1,q),fade=k>impactK+.12?1-(k-impactK-.12)/.08:1;
+          const x0=cx-R*dir,y0=cy-R,x1=cx+R*dir,y1=cy+R,xe=x0+(x1-x0)*g,ye=y0+(y1-y0)*g;
+          c.save();c.globalAlpha=Math.max(0,fade);c.lineCap='round';
+          c.strokeStyle='#8fd8ff';c.lineWidth=h*.045;c.beginPath();c.moveTo(x0,y0);c.lineTo(xe,ye);c.stroke();
+          c.strokeStyle='#fff';c.lineWidth=h*.016;c.beginPath();c.moveTo(x0,y0);c.lineTo(xe,ye);c.stroke();c.restore()};
+        slash(impactK-.06,1);slash(impactK+.01,-1);
+        if(k>impactK+.01&&k<impactK+.05&&!s._x2){s._x2=1;flash=Math.max(flash,.8);snd('hit')}
+      }
+      else if(melee&&k>impactK-.02&&k<impactK+.12&&s.hit){c.strokeStyle='#fff';c.lineWidth=h*.015;c.beginPath();c.moveTo(T.x-h*.18,T.y-h*.25);c.lineTo(T.x+h*.18,T.y+h*.1);c.stroke()}
       // explosion
       if(s.kill&&k>.65){const ek=(k-.65)/.35;for(let n=0;n<3;n++){c.globalAlpha=Math.max(0,1-ek);circ(c,T.x+Math.sin(n*2.1)*h*.06,T.y-h*.05+Math.cos(n*1.7)*h*.05,h*(.08+ek*.3)*(1-n*.2),['#fff3c4','#ffb347','#ff5a3d'][n])}c.globalAlpha=1;if(!s._boom){s._boom=1;snd('boom')}}
       // particles
