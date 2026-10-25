@@ -499,7 +499,7 @@ const STAGES={
    {who:'マティアス',text:'攻撃は、移動のあとでもできます。ただし、撃ったら動けねえ。順番を間違えなさんな。'},
    {who:'マティアス',text:'傷んだ機体は、俺の車両の隣に寄せてください。修理も補給も引き受けます。'},
    {who:'エルンスト',text:'戦いが長引けば気力が上がる。そうなれば大技も使える。焦るな、確実に一機ずつ落とせ。'},
-   {who:'作戦目標',text:'勝利条件：敵の全滅、またはゴルム改の撃破。敗北条件：カラドリウスの撃墜。'}],
+   {who:'作戦目標',onmap:1,text:'勝利条件：敵の全滅、またはゴルム改の撃破。敗北条件：カラドリウスの撃墜。'}],
   talks:[
    // 味方が初めて盗賊のゼクトと戦ったとき（どちらから仕掛けても1回だけ）
    {id:'zekt',when:(a,d)=>[a,d].some(u=>u.team==='foe'&&u.key==='zekt_x'),lines:()=>[
@@ -1115,7 +1115,7 @@ function dialog(lines,o={}){
       if(!p||!sz||!box){mk.hidden=true;return}
       mk.style.left=(box.left+sz[0]*box.k*p.x/100)+'px';mk.style.top=(box.top+sz[1]*box.k*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
     const onRs=()=>layout();addEventListener('resize',onRs);
-    const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid);if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
+    const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
     show();d.hidden=false;layout();
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side','onmap');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
