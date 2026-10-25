@@ -47,7 +47,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #pop .btn:disabled{opacity:1;background:#141c29;color:#56647a;border-color:var(--line)}
 #console{flex:none;height:124px;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
 .uhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.btn.xs{padding:2px 8px;min-height:24px;font-size:11px;margin-left:auto;align-self:center}
+.btn.xs{padding:4px 10px;min-height:28px;font-size:12px;margin-left:auto;align-self:center;border-color:var(--ally);color:var(--ally)}
 .st-top{display:flex;gap:12px;align-items:center}
 .st-top img{width:84px;height:84px;object-fit:contain;flex:none;image-rendering:pixelated}
 .st-sec{font-family:var(--disp);font-size:13px;color:var(--mute);margin:12px 0 6px;letter-spacing:.06em}
@@ -128,6 +128,11 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #bcv{width:100%;display:block;border:1px solid var(--line);border-radius:6px;background:#000}
 .msg{width:min(100%,680px);margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;height:96px;overflow:hidden}
 .msg .who{font-family:var(--disp);font-size:13px;color:var(--amber);margin-bottom:4px}
+.msg{display:flex;gap:12px;align-items:flex-start}
+.msg .mtx{flex:1;min-width:0}
+.face{width:72px;height:72px;flex:none;border-radius:6px;border:1px solid var(--line);object-fit:cover;background:var(--panel2)}
+.st-pilot{display:flex;gap:12px;align-items:center;margin-top:4px}
+.st-pilot .face{width:88px;height:88px}
 .msg .txt{font-size:15px;line-height:1.6}
 .skip{margin-top:8px;font-size:12px;color:var(--mute)}
 #banner{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;pointer-events:none}
@@ -166,12 +171,12 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 <div id="battle" class="ov" hidden>
   <div class="stage"><canvas id="bcv"></canvas></div>
-  <div class="msg"><div class="who" id="bWho"></div><div class="txt" id="bTxt"></div></div>
+  <div class="msg"><img class="face" id="bFace" alt="" hidden><div class="mtx"><div class="who" id="bWho"></div><div class="txt" id="bTxt"></div></div></div>
   <div class="skip">タップでスキップ</div>
 </div>
 
 <div id="dialog" class="ov dlg" hidden>
-  <div class="msg" style="max-width:600px"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div>
+  <div class="msg" style="max-width:600px"><img class="face" id="dFace" alt="" hidden><div class="mtx"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div></div>
   <div class="skip">タップで次へ</div>
 </div>
 
@@ -844,12 +849,11 @@ function drawUnit(c,u,s,now){
   c.strokeStyle=ac;c.lineWidth=Math.max(1.5,s*.05);c.strokeRect(X+s*.08,Y+s*.08,s*.84,s*.84);
   const moving=u.px!==undefined,bob=(u.air?Math.sin(now/300+u.id)*s*.03:0)-(moving?Math.abs(Math.sin(now/70))*s*.05:0),sp=SPR[u.key];
   // 向きの絵を選ぶ（反転などの加工はしない）。左へ歩くときは歩行の絵（左向き）と交互に、攻撃中は攻撃の絵
-  let im=sp[u.dir];
-  if(moving&&u.dir==='left'&&sp.walk&&Math.floor(now/140)%2)im=sp.walk;
-  if(u._atk&&sp.attack)im=sp.attack;
+  // マップでは向きを変えず、いつも設定画の「通常時」の絵（なければ正面）で描く
+  let im=ready(sp.idle)?sp.idle:sp.down;
   c.translate(X+s/2,Y+s*.47+bob);
   if(ready(im)){const sc=s*.42;c.scale(sc,sc);drawSprite(c,im)}
-  else{const sc=s*(u.boss?.4:.33);c.scale((u.dir==='left'?-1:1)*sc,sc);drawMech(c,u,u.kind==='wasp'||u.kind==='jet'?now:0)}
+  else{const sc=s*(u.boss?.4:.33);c.scale(sc,sc);drawMech(c,u,u.kind==='wasp'||u.kind==='jet'?now:0)}
   c.restore();
   if(u.acted){c.fillStyle='#0a1019aa';c.fillRect(X+s*.06,Y+s*.06,s*.88,s*.88)}
   const f=u.hp/u.maxHp;c.fillStyle='#000a';c.fillRect(X+s*.12,Y+s*.84,s*.76,s*.08);
@@ -926,7 +930,7 @@ function unitCard(u,compact){
   if(!u)return'';
   const chips=Object.keys(u.buf).map(k=>Object.entries(SPIRITS).find(([,s])=>s.key===k)?.[0]).filter(Boolean).map(n=>`<span class="chip">${n}</span>`).join('');
   const t=terOf(u.x,u.y),ter=`<span>${u.air?'':`<img class="ticon" src="assets/sprites/tile_${TER_FILE[MAP[u.y][u.x]]}.png" alt="" onerror="this.remove()">`}地形 <em>${u.air?'空中':t.n}</em>${!u.air&&(t.d||t.e)?` 防${Math.round(t.d*100)}% 回${t.e>0?'+':''}${t.e}`:''}</span>`;
-  return`<div class="uhead"><span class="uname">${u.name}</span><span class="upil">${u.pilot.name}</span><span class="tag ${u.team}">${u.team==='ally'?'味方':'敵'}${u.air?'・空':''}</span>${u.acted?'<span class="tag">行動済</span>':''}${chips}<button class="btn xs" data-a="status" data-uid="${u.id}">詳細</button></div>
+  return`<div class="uhead"><span class="uname">${u.name}</span><span class="upil">${u.pilot.name}</span><span class="tag ${u.team}">${u.team==='ally'?'味方':'敵'}${u.air?'・空':''}</span>${u.acted?'<span class="tag">行動済</span>':''}${chips}<button class="btn xs" data-a="status" data-uid="${u.id}">ステータス</button></div>
   <div class="stats">${meter('HP',u.hp,u.maxHp,u.hp/u.maxHp>.5?'var(--good)':u.hp/u.maxHp>.25?'var(--amber)':'var(--foe)')}${meter('EN',u.en,u.maxEn,'var(--ally)')}</div>
   ${compact?'':`<div class="kv"><span>気力 <em>${u.will}</em></span>${u.team==='ally'?`<span>SP <em>${u.sp}</em>/${u.maxSp}</span><span>移動 <em>${u.move}</em></span>`:`<span>運動 <em>${u.mob}</em></span><span>装甲 <em>${u.armor}</em></span>`}${ter}</div>`}`;
 }
@@ -957,7 +961,7 @@ function renderPop(){
   pop.hidden=!show;if(!show)return;
   const canRep=sel.repair&&repairTargets(sel).length>0;
   const canSup=sel.repair&&supplyTargets(sel).length>0;
-  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button><button class="btn" data-a="supply" ${canSup?'':'disabled'}>補給</button>`:''}<button class="btn" data-a="spirit">精神</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
+  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button><button class="btn" data-a="supply" ${canSup?'':'disabled'}>補給</button>`:''}<button class="btn" data-a="spirit">精神</button><button class="btn" data-a="status" data-uid="${sel.id}">ステータス</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
   placePop();
 }
 function placePop(){
@@ -971,11 +975,16 @@ function closeSheet(){sheet.hidden=true;sheet.innerHTML='';renderPop()}
 function openSheet(html){sheet.innerHTML=`<div class="in">${html}</div>`;sheet.hidden=false;renderPop()}
 function banner(text,sub,color){return new Promise(r=>{const b=$('banner');b.innerHTML=`<div class="b" style="color:${color}">${text}<small>${sub}</small></div>`;b.hidden=false;snd('phase');setTimeout(()=>{b.hidden=true;r()},1250)})}
 // 会話を1行ずつ表示する。narr はナレーション（名前なし）。solid:true はマップを隠す（戦闘前・クリア後の場面）
+// パイロットの顔グラ（設定画から切り抜いた assets/faces/*.png）。名前で引く
+const FACE={'エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara',
+ '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
+const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
+function setFace(el,name){const f=faceSrc(name);if(f){el.onerror=()=>{el.hidden=true};el.src=f;el.hidden=false}else el.hidden=true}
 function dialog(lines,o={}){
   return new Promise(res=>{
     const d=$('dialog');let i=0;
     d.classList.toggle('solid',!!o.solid);
-    const show=()=>{const l=lines[i];$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
+    const show=()=>{const l=lines[i];setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
     show();d.hidden=false;
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;res()}else show()};
   });
@@ -1131,7 +1140,8 @@ function statusSheet(u,fromRoster){
   <div class="st-grid">${g('装甲',u.armor)}${g('運動性',u.mob)}${g('移動',u.move)}${g('タイプ',u.air?'空':'陸')}${g('地形',u.air?'空中':t.n)}${g('位置',`${u.x},${u.y}`)}</div>
   ${abil.length?`<div class="hint" style="margin-top:6px">特殊能力：${abil.join('／')}</div>`:''}
   <div class="st-sec">パイロット</div>
-  <div class="st-grid">${g('格闘',P.melee)}${g('射撃',P.shoot)}${g('技量',P.skill)}${g('命中',P.hit)}${g('回避',P.eva)}${g('気力',u.will)}</div>
+  ${faceSrc(P.name)?`<div class="st-pilot"><img class="face" src="${faceSrc(P.name)}" alt="" onerror="this.remove()"><div><div class="uname" style="font-size:15px">${P.name}</div></div></div>`:''}
+  <div class="st-grid" style="margin-top:6px">${g('格闘',P.melee)}${g('射撃',P.shoot)}${g('技量',P.skill)}${g('命中',P.hit)}${g('回避',P.eva)}${g('気力',u.will)}</div>
   ${ally?`<div class="st-sec">精神コマンド　SP ${u.sp}/${u.maxSp}</div><div class="chips">${P.spirits.map(n=>`<span class="chip" style="${u.sp<SPIRITS[n].cost?'opacity:.45':''}">${n} ${SPIRITS[n].cost}</span>`).join('')}</div>`:''}
   ${buffs.length?`<div class="hint" style="margin-top:6px">効果中：${buffs.join('、')}</div>`:''}
   <div class="st-sec">武器</div>
@@ -1225,7 +1235,7 @@ function playBattle(att,def,strikes){
       if(done)return;
       const el=Math.max(0,now-t0);if(el>total){finish();return}
       const i=Math.min(strikes.length-1,Math.floor(el/D)),k=(el-i*D)/D,s=strikes[i];
-      if(i!==lastI){lastI=i;$('bWho').textContent=s.att.pilot.name;$('bTxt').textContent=`「${s.line}」　${s.w.name}！`;snd(s.w.type==='格'?'slash':'beam')}
+      if(i!==lastI){lastI=i;setFace($('bFace'),s.att.pilot.name);$('bWho').textContent=s.att.pilot.name;$('bTxt').textContent=`「${s.line}」　${s.w.name}！`;snd(s.w.type==='格'?'slash':'beam')}
       const A=sidePos(s.att),T=sidePos(s.def),melee=s.w.type==='格';
       const impactK=melee?.5:.58;
       if(k>=impactK&&impacted<i&&el<strikes.length*D){impacted=i;
