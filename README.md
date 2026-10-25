@@ -5,7 +5,7 @@
 ## クレジット
 BGM はすべて OpenTracks（旧 DOVA-SYNDROME、https://opentracks.com/ ）のフリー素材です。
 - タイトル〜物語の場面：「作戦会議２」 Tomoki — `assets/bgm/story.dat`
-- 村が襲われている場面：（曲名未確認） — `assets/bgm/crisis.dat`
+- 村が襲われている場面：「戦闘準備」 — `assets/bgm/crisis.dat`
 - 味方フェイズ：「Sword in the Void」 — `assets/bgm/player.dat`
 - 敵フェイズ：「Deckrail」 — `assets/bgm/enemy.dat`
 
