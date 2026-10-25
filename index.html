@@ -325,34 +325,34 @@ const TER={
 };
 function W(name,type,pow,min,max,o={}){return{name,type,pow,min,max,en:o.en||0,maxAmmo:o.ammo||0,ammo:o.ammo||0,will:o.will||0,hit:o.hit||0,fx:o.fx||(type==='格'?'slash':'beam')}}
 const SPIRITS={
- '必中':{cost:15,desc:'このターン、攻撃が必ず命中する',key:'hit100'},
- 'ひらめき':{cost:10,desc:'次の敵の攻撃を1回だけ必ず回避',key:'dodge'},
- '集中':{cost:15,desc:'このターン、命中率と回避率が+30%',key:'focus'},
- '熱血':{cost:30,desc:'次に命中した攻撃のダメージが2倍',key:'dbl'},
- '鉄壁':{cost:20,desc:'このターン、受けるダメージが1/4',key:'wall'},
- '加速':{cost:5,desc:'このターンの移動力+3（移動前のみ）',key:'accel'},
- '根性':{cost:20,desc:'HPを最大値の30%回復',key:null},
- '気合':{cost:20,desc:'気力+10',key:null}
+ '照準固定':{cost:15,desc:'このターン、攻撃が必ず命中する',key:'hit100'},
+ '先読み':{cost:10,desc:'次の敵の攻撃を1回だけ必ず回避',key:'dodge'},
+ '研ぎ澄まし':{cost:15,desc:'このターン、命中率と回避率が+30%',key:'focus'},
+ '渾身':{cost:30,desc:'次に命中した攻撃のダメージが2倍',key:'dbl'},
+ '不動':{cost:20,desc:'このターン、受けるダメージが1/4',key:'wall'},
+ '強行軍':{cost:5,desc:'このターンの移動力+3（移動前のみ）',key:'accel'},
+ '応急修理':{cost:20,desc:'HPを最大値の30%回復',key:null},
+ '鬨の声':{cost:20,desc:'気力+10',key:null}
 };
 const TPL={
  grand:{name:'グランヴァルド',kind:'super',hp:5200,en:180,armor:1400,mob:75,move:4,
   col:{main:'#1e7a3c',sub:'#2b3a33',acc:'#e8b52e',eye:'#8ff5ff',core:'#c8303a'},
-  pilot:{name:'鷹野 迅',melee:160,shoot:130,hit:140,eva:120,skill:130,sp:60,spirits:['必中','熱血','鉄壁','気合']},
+  pilot:{name:'鷹野 迅',melee:160,shoot:130,hit:140,eva:120,skill:130,sp:60,spirits:['照準固定','渾身','不動','鬨の声']},
   lines:['いくぜ、グランヴァルド！','こいつで決める！','まだまだァ！','鉄の拳を食らえ！'],
   weapons:[W('ナックルブレイカー','格',1700,1,1,{hit:10,fx:'punch'}),W('アイビーム','射',1500,1,3,{en:10,fx:'beam'}),W('ヴァルドブレード','格',2900,1,1,{en:30,will:110,hit:5}),W('ギガ・バスター','射',3800,1,2,{en:60,will:130,hit:-5,fx:'blast'})]},
  sylph:{name:'シルフィード',kind:'real',hp:3000,en:150,armor:900,mob:120,move:6,
   col:{main:'#eef2f6',sub:'#1fb3a0',acc:'#7ff9ff',eye:'#7ff9ff'},
-  pilot:{name:'天城 ミオ',melee:140,shoot:165,hit:170,eva:180,skill:160,sp:55,spirits:['ひらめき','集中','加速','必中']},
+  pilot:{name:'天城 ミオ',melee:140,shoot:165,hit:170,eva:180,skill:160,sp:55,spirits:['先読み','研ぎ澄まし','強行軍','照準固定']},
   lines:['ターゲット、ロック！','遅いよ！','この距離なら外さない。'],
   weapons:[W('ビームダガー','格',1300,1,1,{hit:15}),W('レールライフル','射',1600,1,4,{ammo:8,fx:'bullet'}),W('ホーミングミサイル','射',1800,2,5,{ammo:4,hit:10,fx:'missile'}),W('ハイパーランチャー','射',2800,2,6,{en:50,will:115,fx:'blast'})]},
  bulwark:{name:'ブルワーク',kind:'tank',hp:4200,en:160,armor:1300,mob:60,move:3,repair:true,
   col:{main:'#2f3f6a',sub:'#6f7a48',acc:'#d8b84a',eye:'#7fe8ff'},
-  pilot:{name:'岩瀬 ゴウ',melee:110,shoot:150,hit:145,eva:100,skill:120,sp:50,spirits:['根性','鉄壁','必中','気合']},
+  pilot:{name:'岩瀬 ゴウ',melee:110,shoot:150,hit:145,eva:100,skill:120,sp:50,spirits:['応急修理','不動','照準固定','鬨の声']},
   lines:['砲撃支援、行くぞ。','狙いは十分だ。','下がってろ、ここは俺が受ける。'],
   weapons:[W('マシンキャノン','射',1200,1,2,{hit:10,fx:'bullet'}),W('ロングカノン','射',2100,3,6,{ammo:6,fx:'shell'})]},
  raven:{name:'レイヴンウィング',kind:'jet',hp:2800,en:140,armor:800,mob:115,move:7,air:true,
   col:{main:'#1c2130',sub:'#3a8fff',acc:'#9fd0ff',eye:'#5fd0ff'},
-  pilot:{name:'風間 リク',melee:145,shoot:150,hit:155,eva:165,skill:150,sp:50,spirits:['加速','ひらめき','熱血','集中']},
+  pilot:{name:'風間 リク',melee:145,shoot:150,hit:155,eva:165,skill:150,sp:50,spirits:['強行軍','先読み','渾身','研ぎ澄まし']},
   lines:['空はオレの庭だ！','一気に抜ける！','振り切ってやるぜ。'],
   weapons:[W('バルカン','射',900,1,2,{hit:15,fx:'bullet'}),W('スピアミサイル','射',1700,1,4,{ammo:6,fx:'missile'}),W('ソニックダイブ','格',2300,1,1,{en:30,will:110,fx:'dive'})]},
  zekt:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,
@@ -377,25 +377,25 @@ const TPL={
   weapons:[W('マシンガン','射',1800,1,3,{fx:'bullet'}),W('メガビーム','射',4000,1,4,{en:50,will:130,fx:'blast'})]},
  // ===== 帝国編 第1話「辺境の火」 =====
  // 数値は STORY.md の表と設定画 docs/ref/empire-01-sheet.png。パイロット能力はエルンストも含めて仮設定（SETTING.md）
- // 画像は assets/sprites/（docs/ref/empire-01-sprites.png から切り抜き）。spr：別の機体の画像を使うとき（中隊と盗賊のゼクト・ゴルム）
+ // 画像は assets/sprites/（docs/ref/empire-01-sprites.png から切り抜き）。spr：別の機体の画像を使うとき（中隊と盗賊のゼクト）
  caladrius:{name:'カラドリウス',kind:'knight',hp:4000,en:170,armor:1100,mob:100,move:5,
   col:{main:'#1d1f25',sub:'#c9a23a',acc:'#eef0f2',eye:'#ffcf5a'},
-  pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['集中','必中']},
+  pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['研ぎ澄まし','照準固定']},
   lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
   weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('二段斬り','格',2800,1,1,{en:30,will:110,fx:'cross'})]},
  zekt_b:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
-  pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['気合','根性']},
+  pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['鬨の声','応急修理']},
   lines:['おらおら、どきな！','へへっ、もらった！'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  zekt_o:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
-  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['集中','鉄壁']},
+  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['研ぎ澄まし','不動']},
   lines:['ね、狙います……！','落ち着いて、確実に。'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,selfRepair:true,
   col:{main:'#2a2c30',sub:'#e0b42a',acc:'#8f959c',eye:'#ffd24a'},
-  pilot:{name:'マティアス',melee:100,shoot:125,hit:130,eva:95,skill:125,sp:45,spirits:['根性','鉄壁']},
+  pilot:{name:'マティアス',melee:100,shoot:125,hit:130,eva:95,skill:125,sp:45,spirits:['応急修理','不動']},
   lines:['整備屋をなめなさんな。','こいつでも、牽制ぐらいはできますぜ。'],
   weapons:[W('機銃','射',900,1,2,{fx:'bullet'})]},
  hound:{name:'ハウンド',kind:'hound',hp:1500,en:60,armor:600,mob:70,move:4,
@@ -408,11 +408,6 @@ const TPL={
   pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
   lines:['軍の機兵だろうが関係ねえ！','こいつの扱いには慣れてんだよ。'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
- golm_x:{name:'ゴルム',kind:'heavy',hp:4000,en:100,armor:1200,mob:55,move:3,spr:'golm',
-  col:{main:'#4a5248',sub:'#2e342e',acc:'#7a8270',eye:'#ff3344'},
-  pilot:{name:'盗賊兵',melee:110,shoot:105,hit:110,eva:100,skill:95,sp:0,spirits:[]},
-  lines:['ぶっ潰せ！','硬さだけは折り紙つきだ！'],
-  weapons:[W('アイアンハンマー','格',1900,1,1,{fx:'punch'}),W('拡散砲','射',1400,2,4,{fx:'shell'})]},
  golmkai:{name:'ゴルム改',kind:'heavy',hp:5000,en:120,armor:1300,mob:60,move:3,boss:true,
   col:{main:'#8e2a2a',sub:'#3a3434',acc:'#c9a23a',eye:'#ffdd55'},
   pilot:{name:'ボルツ',melee:150,shoot:125,hit:135,eva:105,skill:120,sp:0,spirits:[]},
@@ -458,7 +453,7 @@ const STAGES={
   bossDown:[{who:'総帥ザルグ',text:'ば、馬鹿な……！　全軍、撤退せよ！'},{who:'鷹野 迅',text:'見たか。この街は俺たちが守る！'}],
   allDown:[{who:'鷹野 迅',text:'敵部隊、全機撃破！'},{who:'岩瀬 ゴウ',text:'上出来だ。帰ったら整備班に礼を言っとけよ。'}],
   lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
-  loseHint:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'},
+  loseHint:'もう一度挑戦しよう。戦術の「不動」「先読み」が鍵になる。'},
  // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
  e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis',end:'crisis'},map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
   goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
@@ -466,7 +461,7 @@ const STAGES={
    // 南の街道から駆けつけるファルケン中隊
    ['zekt_b','ally',3,10],['caladrius','ally',4,10],['zekt_o','ally',5,10],['truck','ally',4,11],
    // 盗賊団：峠にボス、村にハウンド
-   ['golmkai','foe',4,1],['golm_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
+   ['golmkai','foe',4,1],['zekt_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
    ['hound','foe',5,3],['hound','foe',3,4],['hound','foe',6,5]],
   pre:[
    {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1,bg:'map',mark:'linde'},
@@ -1036,7 +1031,7 @@ function renderConsole(){
   let html='';
   if(phase!=='player'){html=unitCard(sel)||'<div class="hint">敵の行動中…</div>'}
   else if(mode==='select'&&sel){
-    html=unitCard(sel,true)+`<div class="hint">青いマスへ移動／<b style="color:var(--foe)">敵をタップで攻撃</b></div><div class="actions"><button class="btn" data-a="spirit">精神</button><button class="btn" data-a="stay">その場で行動</button><button class="btn" data-a="cancel">戻る</button></div>`;
+    html=unitCard(sel,true)+`<div class="hint">青いマスへ移動／<b style="color:var(--foe)">敵をタップで攻撃</b></div><div class="actions"><button class="btn" data-a="spirit">戦術</button><button class="btn" data-a="stay">その場で行動</button><button class="btn" data-a="cancel">戻る</button></div>`;
   }else if(mode==='menu'&&sel){
     html=unitCard(sel)+`<div class="hint">${attackable(sel).length?'赤い枠の敵をタップでも攻撃できます':'メニューから行動を選んでください'}</div>`;
   }else if(mode==='target'){
@@ -1056,7 +1051,7 @@ function renderPop(){
   pop.hidden=!show;if(!show)return;
   const canRep=sel.repair&&repairTargets(sel).length>0;
   const canSup=sel.repair&&supplyTargets(sel).length>0;
-  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button><button class="btn" data-a="supply" ${canSup?'':'disabled'}>補給</button>`:''}<button class="btn" data-a="spirit">精神</button><button class="btn" data-a="status" data-uid="${sel.id}">ステータス</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
+  pop.innerHTML=`<button class="btn pri" data-a="attack" ${attackable(sel).length?'':'disabled'}>攻撃</button>${sel.repair?`<button class="btn" data-a="repair" ${canRep?'':'disabled'}>修理</button><button class="btn" data-a="supply" ${canSup?'':'disabled'}>補給</button>`:''}<button class="btn" data-a="spirit">戦術</button><button class="btn" data-a="status" data-uid="${sel.id}">ステータス</button><button class="btn" data-a="wait">待機</button><button class="btn" data-a="undo">${sel.moved?'移動取消':'戻る'}</button>`;
   placePop();
 }
 function placePop(){
@@ -1210,9 +1205,9 @@ function finishUnit(u){u.acted=true;sel=null;reach=null;targets=null;mode='idle'
 function spiritSheet(u){
   snd('sel');
   const rows=u.pilot.spirits.map(n=>{const s=SPIRITS[n];let ng='';
-    if(u.sp<s.cost)ng='SP不足';else if(s.key&&u.buf[s.key])ng='効果中';else if(n==='加速'&&(u.moved||mode!=='select'))ng='移動前のみ';else if(n==='根性'&&u.hp>=u.maxHp)ng='HP満タン';else if(n==='気合'&&u.will>=150)ng='気力上限';
+    if(u.sp<s.cost)ng='SP不足';else if(s.key&&u.buf[s.key])ng='効果中';else if(n==='強行軍'&&(u.moved||mode!=='select'))ng='移動前のみ';else if(n==='応急修理'&&u.hp>=u.maxHp)ng='HP満タン';else if(n==='鬨の声'&&u.will>=150)ng='気力上限';
     return`<button class="wrow" data-sp="${n}" ${ng?'disabled':''}><span class="n">${n}</span><span class="p">${s.cost}</span><span class="d">${s.desc}${ng?` <span class="ng">— ${ng}</span>`:''}</span></button>`}).join('');
-  openSheet(`<div class="sh-title"><span>精神コマンド　${u.pilot.name}</span><span style="color:var(--amber)">SP ${u.sp}/${u.maxSp}</span></div><div class="wlist">${rows}</div><div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+  openSheet(`<div class="sh-title"><span>戦術　${u.pilot.name}</span><span style="color:var(--amber)">SP ${u.sp}/${u.maxSp}</span></div><div class="wlist">${rows}</div><div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
 }
 function forecastHtml(a,d,w,mode){
   const dist_=dist(a,d),cw=mode==='counter'?bestWeapon(d,a,dist_):null;
@@ -1226,7 +1221,7 @@ function forecast(a,d,w){
   snd('sel');
   const f=forecastHtml(a,d,w,'counter'),dd=dist(a,d);
   const tabs=a.weapons.map((x,i)=>usable(a,x)||!inRange(x,dd)?'':`<button class="wtab ${x===w?'on':''}" data-fw="${i}">${x.name}<small>攻撃 ${x.pow}・命中 ${hitRate(a,d,x)}%・${x.maxAmmo?`弾 ${x.ammo}`:x.en?`EN ${x.en}`:'消費なし'}</small></button>`).join('');
-  openSheet(`<div class="sh-title"><span>戦闘予測</span><span style="color:var(--mute);font-size:12px">${a.buf.dbl?'熱血 ':''}${a.buf.hit100?'必中 ':''}</span></div><div class="wtabs">${tabs}</div>${f.html}<div class="sh-actions"><button class="btn pri" data-x="go">攻撃開始</button><button class="btn" data-x="close">やめる</button></div>`);
+  openSheet(`<div class="sh-title"><span>戦闘予測</span><span style="color:var(--mute);font-size:12px">${a.buf.dbl?'渾身 ':''}${a.buf.hit100?'照準固定 ':''}</span></div><div class="wtabs">${tabs}</div>${f.html}<div class="sh-actions"><button class="btn pri" data-x="go">攻撃開始</button><button class="btn" data-x="close">やめる</button></div>`);
   sheet._go=async()=>{closeSheet();busy=true;renderConsole();await combat(a,d,w,{mode:'counter'});busy=false;if(!over)finishUnit(a)};
   sheet._fw=i=>forecast(a,d,a.weapons[i]);
 }
@@ -1241,9 +1236,9 @@ sheet.addEventListener('click',async e=>{
   const st=e.target.closest('[data-st]');if(st){const u=units.find(v=>v.id===+st.dataset.st);if(u)statusSheet(u,true);return}
   if(e.target.closest('[data-roster]')){rosterSheet();return}
   if(sp&&!sp.disabled){const n=sp.dataset.sp,s=SPIRITS[n],u=sel;u.sp-=s.cost;snd('spirit');
-    if(s.key)u.buf[s.key]=1;if(n==='根性')u.hp=Math.min(u.maxHp,u.hp+Math.round(u.maxHp*.3));if(n==='気合')u.will=Math.min(150,u.will+10);
+    if(s.key)u.buf[s.key]=1;if(n==='応急修理')u.hp=Math.min(u.maxHp,u.hp+Math.round(u.maxHp*.3));if(n==='鬨の声')u.will=Math.min(150,u.will+10);
     floats.push({x:u.x,y:u.y,text:n,color:'#ffc23d',t0:performance.now()});
-    if(n==='加速'&&mode==='select')reach=computeReach(u);
+    if(n==='強行軍'&&mode==='select')reach=computeReach(u);
     toast(`${u.pilot.name}「${n}！」`);spiritSheet(u);renderConsole();return}
   if(df&&sheet._def){const r=sheet._def;sheet._def=null;closeSheet();r(df.dataset.def);return}
   if(tg){const k=tg.dataset.set;if(k==='bgmVol'){settings.bgmVol=(settings.bgmVol+1)%BGM_VOL.length;if(bgmCur)bgm(bgmCur)}else settings[k]=!settings[k];saveSettings();settingsSheet();return}
@@ -1282,7 +1277,7 @@ function statusSheet(u,fromRoster){
   <div class="st-sec">パイロット</div>
   ${faceSrc(P.name)?`<div class="st-pilot"><img class="face" src="${faceSrc(P.name)}" alt="" onerror="this.remove()"><div><div class="uname" style="font-size:15px">${P.name}</div></div></div>`:''}
   <div class="st-grid" style="margin-top:6px">${g('格闘',P.melee)}${g('射撃',P.shoot)}${g('技量',P.skill)}${g('命中',P.hit)}${g('回避',P.eva)}${g('気力',u.will)}</div>
-  ${ally?`<div class="st-sec">精神コマンド　SP ${u.sp}/${u.maxSp}</div><div class="chips">${P.spirits.map(n=>`<span class="chip" style="${u.sp<SPIRITS[n].cost?'opacity:.45':''}">${n} ${SPIRITS[n].cost}</span>`).join('')}</div>`:''}
+  ${ally?`<div class="st-sec">戦術　SP ${u.sp}/${u.maxSp}</div><div class="chips">${P.spirits.map(n=>`<span class="chip" style="${u.sp<SPIRITS[n].cost?'opacity:.45':''}">${n} ${SPIRITS[n].cost}</span>`).join('')}</div>`:''}
   ${buffs.length?`<div class="hint" style="margin-top:6px">効果中：${buffs.join('、')}</div>`:''}
   <div class="st-sec">武器</div>
   <div class="wtab"><table><thead><tr><th>武器</th><th>種類</th><th>攻撃力</th><th>射程</th><th>命中</th><th>消費</th><th>気力</th></tr></thead><tbody>${wrows}</tbody></table></div>
