@@ -160,7 +160,4 @@ if __name__ == '__main__':
             im = cut(img_c, box, tol=24, robust_bg=True, pocket_min=400)
             im.save(name, optimize=True)
             print(name, im.size)
-    for key, box in TILES.items():
-        im = cut(img, box, tol=34, pockets=False)
-        im.save(f'{OUT}tile_{key}.png', optimize=True)
-        print(f'{OUT}tile_{key}.png', im.size)
+    # 地形タイル（戦闘画面の足場）は、ファンタジー風のシートから tools/fantasy_tiles.py で作る（ここでは作らない）

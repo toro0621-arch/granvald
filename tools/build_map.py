@@ -1,6 +1,6 @@
 """ステージのマップ背景（assets/stage1_map.png など）を作る。
 地形データ（MAP / ROAD）は index.html から読み、森・山・市街・城・基地の見た目は
-docs/ref/sprites-and-tiles.png の「マップ全体のイメージ」から切り出して貼る。
+docs/ref/fantasy-tiles.jpg（ファンタジー風の地形タイル）から切り出して貼る。
 海と平地は設定画の色で生成する（設定画の海にはマス目の線が入っていて切り出せないため）。
 使い方: python3 tools/build_map.py [ステージ] [出力先]   （numpy, scipy, Pillow が必要）
   python3 tools/build_map.py S1 assets/stage1_map.png      … 鋼の目覚め（省略時）
@@ -24,16 +24,18 @@ MAP, ROAD = grid('MAP_' + STAGE), grid('ROAD_' + STAGE)
 ROWS, COLS = len(MAP), len(MAP[0])
 W, H = COLS * CELL, ROWS * CELL
 rng = np.random.default_rng(7)
-ref = Image.open(SRC).convert('RGB')
 
-# 設定画「マップ全体のイメージ（例：第1話）」から切り出す場所 (x0, y0, x1, y1)
-PATCH = {
-    'F': [(1099, 512, 1135, 548), (1462, 635, 1498, 671), (1051, 635, 1087, 671), (1423, 626, 1459, 662)],
-    'M': [(1055, 505, 1105, 555), (1440, 540, 1495, 595), (1080, 915, 1135, 970), (1460, 895, 1515, 950)],
-    'C': [(1195, 842, 1231, 878), (1330, 854, 1366, 890), (1231, 833, 1267, 869), (1340, 820, 1376, 856), (1380, 850, 1416, 886)],
-}
-# 複数マスにまたがる建物：帝国の城（E）と味方基地（B）
-BLOCK = {'E': (1240, 500, 1322, 556), 'B': (1248, 858, 1324, 934)}
+# 森・山・市街・城・基地は、ファンタジー風の地形タイル（docs/ref/fantasy-tiles.jpg、範囲は tools/fantasy_tiles.py の MAPTILE）から貼る。
+# 市街（C）は、帝国編の辺境では「村」、沿岸都市連合の港町では「町」
+sys.path.insert(0, 'tools')
+from fantasy_tiles import MAPTILE
+ref = Image.open('docs/ref/fantasy-tiles.jpg').convert('RGB')
+def inset(b, m=4):
+    return (b[0] + m, b[1] + m, b[2] - m, b[3] - m)
+PATCH = {'F': [inset(b) for b in MAPTILE['forest']], 'M': [inset(b) for b in MAPTILE['mountain']],
+         'C': [inset(b) for b in (MAPTILE['village'] if STAGE == 'E1' else MAPTILE['town'])]}
+# 複数マスにまたがる建物：帝国の城（E）と味方基地（B＝砦）
+BLOCK = {'E': inset(MAPTILE['castle']), 'B': inset(MAPTILE['fort'])}
 
 def noise(shape, scale, seed):
     r = np.random.default_rng(seed).random((shape[0] // scale + 2, shape[1] // scale + 2))
@@ -50,7 +52,8 @@ def pixel_texture(base, dark, light, density, seed, px=2, blot=.3):
     out[(r > 1 - density * .7) & (n > .45)] = light
     return np.asarray(Image.fromarray(out.astype(np.uint8)).resize((W, H), Image.NEAREST)).astype(float)
 
-grass = pixel_texture((112, 140, 42), (92, 114, 32), (146, 166, 84), .1, 1, blot=.12)
+# 草地の色は、ファンタジー風の地形タイルの草地（中央値 (91, 138, 47)）に合わせる（継ぎ目を目立たなくする）
+grass = pixel_texture((91, 138, 47), (74, 116, 38), (116, 160, 66), .1, 1, blot=.12)
 water = pixel_texture((4, 72, 162), (0, 60, 146), (22, 98, 186), .06, 2, blot=.08)
 # 海のさざ波（横に短い明るい線）
 wimg = Image.fromarray(water.astype(np.uint8)); d = ImageDraw.Draw(wimg)
@@ -99,7 +102,7 @@ for y in range(ROWS):
                               X + (CELL if dx > 0 else CELL / 2 if dx < 0 else m + w), Y + (CELL if dy > 0 else CELL / 2 if dy < 0 else m + w)))
         # 道はファンタジーの世界に合わせて土の道（白線のある舗装道路にしない）
         for p in parts:
-            dr.rectangle([p[0] - 2, p[1] - 2, p[2] + 2, p[3] + 2], fill=(104, 116, 40))
+            dr.rectangle([p[0] - 2, p[1] - 2, p[2] + 2, p[3] + 2], fill=(84, 112, 40))
         for p in parts:
             dr.rectangle(p, fill=(158, 128, 82))
         # 轍（わだち）と小石
@@ -114,7 +117,7 @@ for y, x in order:
     if t not in PATCH: continue
     box = PATCH[t][rng.integers(len(PATCH[t]))]
     size = CELL + 2 * FE + (10 if t == 'M' else 0)
-    im = clean_lines(ref.crop(box)).resize((size, size), Image.LANCZOS)
+    im = ref.crop(box).resize((size, size), Image.LANCZOS)
     if rng.random() < .5 and t != 'B': im = im.transpose(Image.FLIP_LEFT_RIGHT)
     mask = MASK if t != 'M' else feather_mask(size)
     off = (size - CELL) // 2
