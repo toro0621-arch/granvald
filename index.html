@@ -167,6 +167,9 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .t-credit{font-size:11px;color:#8a99ad;text-shadow:0 1px 2px #000}
 .dlg{cursor:pointer}
 #dialog.solid{background:var(--bg)}
+/* マップの上の会話は暗くしない（マップをそのまま見せる。ユーザーの希望） */
+#dialog.onmap{background:transparent}
+#dialog.onmap .skip{color:#fff;text-shadow:0 1px 3px #000,0 0 6px #000}
 /* 会話の背景画（BG）。背景があるときは文字枠を下に置く */
 #dialog.hasbg{background-color:#000;background-size:cover;background-position:center}
 #dialog .msg{height:auto;min-height:96px}
@@ -1099,7 +1102,7 @@ function dialog(lines,o={}){
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
     // 行に solid:1 があれば、マップの上の会話でもその行だけマップを隠して背景を出す
     let solid=!!o.solid;
-    const setBg=()=>{d.classList.toggle('solid',solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
+    const setBg=()=>{d.classList.toggle('solid',solid);d.classList.toggle('onmap',!solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
     // 地図（BG_WHOLE）の置き方：縦向きは文字枠（画面の上）の下の空いたところに収める。横向きで右に文字枠を置く幅があれば、地図を左、文字枠を右に並べる
     let box=null;
     const layout=()=>{const url=solid&&bg&&BG[bg],sz=BG_SIZE[bg];box=null;
@@ -1119,7 +1122,7 @@ function dialog(lines,o={}){
     const onRs=()=>layout();addEventListener('resize',onRs);
     const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid);if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
     show();d.hidden=false;layout();
-    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
+    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side','onmap');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
 }
 
