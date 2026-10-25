@@ -148,10 +148,6 @@ if __name__ == '__main__':
             im = cut(img_c, box, tol=24, robust_bg=True, pocket_min=400)
             im.save(name, optimize=True)
             print(name, im.size)
-    # ステータス画面用の構えた絵（_pose.png）。カラドリウスは設定画の「正面」のイラスト（全身が入っている）。
-    # 白い羽根飾りが背景の水色とほぼ同じ色で切り抜けないので、背景ごと四角く切り出す（ゲーム側でカードとして表示）
-    Image.open(SRC_CAL).convert('RGB').crop((30, 148, 584, 674)).save(f'{OUT}caladrius_pose.png', optimize=True)
-    print(f'{OUT}caladrius_pose.png')
     for key, box in TILES.items():
         im = cut(img, box, tol=34, pockets=False)
         im.save(f'{OUT}tile_{key}.png', optimize=True)

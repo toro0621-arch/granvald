@@ -50,13 +50,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .btn.xs{padding:4px 10px;min-height:28px;font-size:12px;margin-left:auto;align-self:center;border-color:var(--ally);color:var(--ally)}
 .st-top{display:flex;gap:12px;align-items:center}
 .st-top img{width:84px;height:84px;object-fit:contain;flex:none;image-rendering:pixelated}
-/* ステータス画面の機体の絵（大きく見せる）。設定画の絵（pose）は水色の背景ごとカードで出す */
-.st-fig{height:min(34vh,240px);margin:2px 0 10px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:flex-end;justify-content:center;overflow:hidden;
-  background:radial-gradient(ellipse at 50% 85%,#2a3b58 0%,#101828 70%)}
-.st-fig.foe{background:radial-gradient(ellipse at 50% 85%,#4a2230 0%,#180c12 70%)}
-.st-fig img{max-width:92%;max-height:94%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 6px 8px #000a)}
-.st-fig.pose{background:#dbeefa;align-items:center}
-.st-fig.pose img{max-width:100%;max-height:100%;image-rendering:auto;filter:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+/* ステータス画面の機体の絵：顔グラと同じくらいの大きさで、背景を抜いた絵を出す */
+.st-top .st-mech{width:88px;height:88px;border-radius:6px;border:1px solid var(--line);background:radial-gradient(ellipse at 50% 80%,#2a3b58,#101828 75%);padding:4px;box-sizing:border-box}
 .st-sec{font-family:var(--disp);font-size:13px;color:var(--mute);margin:12px 0 6px;letter-spacing:.06em}
 .st-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 10px;font-size:12px;font-variant-numeric:tabular-nums}
 .st-grid div{display:flex;justify-content:space-between;gap:6px;border-bottom:1px solid var(--line);padding:3px 0;color:var(--mute)}
@@ -1244,12 +1239,10 @@ function settingsSheet(){
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
 /* ================= STATUS ================= */
 // ユニットの詳細ステータス（敵味方どちらも見られる）
-// ステータス画面の機体の絵：設定画の構えた絵（POSE）があればそれ、なければ戦闘用の大きい絵。
+// ステータス画面の機体の絵：戦闘用の大きい絵（背景を抜いたもの）。
 // 中隊・盗賊のゼクトなど、別の機体の画像を使う機体は TPL の spr のファイルを使う
-const POSE=['caladrius'];
 function sprFile(u){const t=TPL[u.key];return t.spr||u.key}
 function sprSrc(u){return`assets/sprites/${sprFile(u)}.png`}
-function poseSrc(u){const f=sprFile(u);return POSE.includes(f)?`assets/sprites/${f}_pose.png`:null}
 function statusSheet(u,fromRoster){
   snd('sel');
   const t=terOf(u.x,u.y),P=u.pilot,ally=u.team==='ally';
@@ -1258,8 +1251,7 @@ function statusSheet(u,fromRoster){
   const buffs=Object.keys(u.buf).map(k=>Object.entries(SPIRITS).find(([,s])=>s.key===k)?.[0]).filter(Boolean);
   const wrows=u.weapons.map(w=>{const ng=usable(u,w);return`<tr class="${ng?'ng':''}"><td>${w.name}</td><td>${w.type==='格'?'格闘':'射撃'}</td><td>${w.pow}</td><td>${w.min===w.max?w.min:w.min+'〜'+w.max}</td><td>${w.hit>=0?'+':''}${w.hit}</td><td>${w.maxAmmo?`弾 ${w.ammo}/${w.maxAmmo}`:w.en?`EN ${w.en}`:'—'}</td><td>${w.will||'—'}</td></tr>`}).join('');
   openSheet(`<div class="sh-title"><span>ステータス</span>${fromRoster?'<button class="btn sm" data-roster="1">部隊一覧へ</button>':''}</div>
-  <div class="st-fig ${poseSrc(u)?'pose':''} ${u.team}"><img src="${poseSrc(u)||sprSrc(u)}" alt="${u.name}" onerror="this.parentNode.remove()"></div>
-  <div class="st-top"><div style="flex:1;min-width:0">
+  <div class="st-top"><img class="st-mech" src="${sprSrc(u)}" alt="${u.name}" onerror="this.remove()"><div style="flex:1;min-width:0">
     <div class="uhead"><span class="uname">${u.name}</span><span class="tag ${u.team}">${ally?'味方':'敵'}・${u.air?'空':'陸'}</span>${u.dead?'<span class="tag">撃墜</span>':u.acted?'<span class="tag">行動済</span>':''}</div>
     <div class="upil">パイロット：${P.name}</div>
     <div class="stats" style="grid-template-columns:1fr;margin-top:6px">${meter('HP',u.hp,u.maxHp,u.hp/u.maxHp>.5?'var(--good)':u.hp/u.maxHp>.25?'var(--amber)':'var(--foe)')}${meter('EN',u.en,u.maxEn,'var(--ally)')}</div>
