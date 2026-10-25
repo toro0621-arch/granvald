@@ -893,21 +893,25 @@ function buildTerrain(){
 function drawUnit(c,u,s,now){
   const X=(u.px??u.x)*s,Y=(u.py??u.y)*s,ac=u.team==='ally'?'#45aaff':'#ff5163';
   c.save();
-  c.fillStyle=u.team==='ally'?'#0b2a4a99':'#4a0b1499';c.fillRect(X+s*.06,Y+s*.06,s*.88,s*.88);
+  // ボスは赤い機体が赤い下地に溶けないよう、下地を暗くする
+  c.fillStyle=u.boss?'#120608d0':u.team==='ally'?'#0b2a4a99':'#4a0b1499';c.fillRect(X+s*.06,Y+s*.06,s*.88,s*.88);
   c.strokeStyle=ac;c.lineWidth=Math.max(1.5,s*.05);c.strokeRect(X+s*.08,Y+s*.08,s*.84,s*.84);
   const moving=u.px!==undefined,bob=(u.air?Math.sin(now/300+u.id)*s*.03:0)-(moving?Math.abs(Math.sin(now/70))*s*.05:0),sp=SPR[u.key];
   // 向きの絵を選ぶ（反転などの加工はしない）。左へ歩くときは歩行の絵（左向き）と交互に、攻撃中は攻撃の絵
   // マップでは向きを変えず、いつも設定画の「通常時」の絵（なければ正面）で描く
   let im=ready(sp.idle)?sp.idle:sp.down;
-  c.translate(X+s/2,Y+s*.47+bob);
-  if(ready(im)){const sc=s*.42;c.scale(sc,sc);drawSprite(c,im)}
+  // ボスはひと回り大きく描く（頭がマスの上に少しはみ出す）
+  c.translate(X+s/2,Y+s*(u.boss?.39:.47)+bob);
+  if(ready(im)){const sc=s*(u.boss?.5:.42);c.scale(sc,sc);drawSprite(c,im)}
   else{const sc=s*(u.boss?.4:.33);c.scale(sc,sc);drawMech(c,u,u.kind==='wasp'||u.kind==='jet'?now:0)}
   c.restore();
   // 行動済み：暗くしすぎると黒い機体（カラドリウスなど）が見えなくなるので、薄めに暗くして灰色の枠を重ねる
   if(u.acted){c.fillStyle='#0a101977';c.fillRect(X+s*.06,Y+s*.06,s*.88,s*.88);c.strokeStyle='#9aa4b2';c.lineWidth=Math.max(1.5,s*.05);c.strokeRect(X+s*.08,Y+s*.08,s*.84,s*.84)}
   const f=u.hp/u.maxHp;c.fillStyle='#000a';c.fillRect(X+s*.12,Y+s*.84,s*.76,s*.08);
   c.fillStyle=f>.5?'#5fe08a':f>.25?'#ffc23d':'#ff5163';c.fillRect(X+s*.12,Y+s*.84,s*.76*f,s*.08);
-  if(u.boss){c.font=`${s*.22}px DotGothic16,monospace`;c.textAlign='left';c.textBaseline='top';c.lineWidth=Math.max(2,s*.06);c.strokeStyle='#000c';c.strokeText('BOSS',X+s*.1,Y+s*.08);c.fillStyle='#ffc23d';c.fillText('BOSS',X+s*.1,Y+s*.08)}
+  // 「BOSS」は機体にかぶらないよう、マスの左下に小さな札で出す
+  if(u.boss){const fs=s*.17;c.font=`${fs}px DotGothic16,monospace`;c.textAlign='left';c.textBaseline='middle';const tw=c.measureText('BOSS').width,bx=X+s*.06,by=Y+s*.68;
+    c.fillStyle='#ffc23d';c.fillRect(bx,by,tw+fs*.5,fs*1.15);c.fillStyle='#1a0e04';c.fillText('BOSS',bx+fs*.25,by+fs*.6)}
 }
 function drawMap(now){
   const s=TS*DPR;
