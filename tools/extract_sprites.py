@@ -33,8 +33,7 @@ UNITS = {
 # 攻撃エフェクト（剣の光、機銃の火、火花）がかからないコマ・範囲を選んでいる
 SRC_E1 = 'docs/ref/empire-01-sprites.png'
 UNITS_E1 = {
-    'caladrius': {'big': (203, 168, 388, 343), 'down': (397, 193, 484, 312), 'up': (487, 193, 583, 312), 'left': (588, 193, 674, 312), 'right': (677, 193, 752, 312),
-                  'idle': (30, 388, 130, 505), 'walk': (208, 393, 270, 492), 'attack': (556, 393, 615, 505)},
+    # カラドリウスは改訂版（UNITS_CAL）を使う
     'truck':     {'big': (947, 170, 1202, 345), 'down': (1214, 203, 1286, 309), 'up': (1290, 203, 1363, 309), 'left': (1368, 203, 1435, 309), 'right': (1440, 203, 1508, 309),
                   'idle': (792, 402, 910, 498), 'walk': (937, 410, 1038, 486), 'attack': (1218, 430, 1298, 499)},
     'hound':     {'big': (30, 608, 285, 843), 'down': (300, 640, 409, 762), 'up': (412, 640, 529, 762), 'left': (532, 640, 640, 762), 'right': (644, 640, 746, 762),
@@ -48,6 +47,14 @@ SRC_ZEKT = 'docs/ref/zekt-v2-sprites.png'
 UNITS_ZEKT = {
     'zekt': {'big': (318, 125, 805, 539), 'down': (835, 195, 1000, 445), 'up': (1010, 195, 1185, 445), 'left': (1200, 195, 1340, 445), 'right': (1350, 195, 1495, 445),
              'idle': (90, 655, 295, 895), 'walk': (430, 655, 630, 895), 'attack': (770, 680, 980, 895)},
+}
+# カラドリウス（改訂版。docs/ref/caladrius-v2-sheet.png の下段のドット絵）。
+# このシートには待機・歩行・攻撃しかないので、戦闘用の大きい絵と4方向は待機の絵で代用する（マップは向きを変えないので困らない）
+SRC_CAL = 'docs/ref/caladrius-v2-sheet.png'
+CAL_IDLE = (60, 745, 285, 928)
+UNITS_CAL = {
+    'caladrius': {'big': CAL_IDLE, 'down': CAL_IDLE, 'up': CAL_IDLE, 'left': CAL_IDLE, 'right': CAL_IDLE,
+                  'idle': CAL_IDLE, 'walk': (330, 745, 560, 928), 'attack': (600, 770, 1185, 928)},
 }
 # マスグラフィックの立体タイル（左側の絵）
 TILES = {
@@ -132,6 +139,19 @@ if __name__ == '__main__':
             im = cut(img_z, box, tol=24, robust_bg=True, pocket_min=1500)
             im.save(name, optimize=True)
             print(name, im.size)
+    img_c = np.asarray(Image.open(SRC_CAL).convert('RGB')).copy()
+    # 攻撃の絵の範囲にかかる「攻撃（剣）」の札を、すぐ下の背景色で塗りつぶしておく
+    img_c[765:812, 585:705] = img_c[815:816, 585:705]
+    for key, boxes in UNITS_CAL.items():
+        for kind, box in boxes.items():
+            name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
+            im = cut(img_c, box, tol=24, robust_bg=True, pocket_min=400)
+            im.save(name, optimize=True)
+            print(name, im.size)
+    # ステータス画面用の構えた絵（_pose.png）。カラドリウスは設定画の「正面」のイラスト（全身が入っている）。
+    # 白い羽根飾りが背景の水色とほぼ同じ色で切り抜けないので、背景ごと四角く切り出す（ゲーム側でカードとして表示）
+    Image.open(SRC_CAL).convert('RGB').crop((30, 148, 584, 674)).save(f'{OUT}caladrius_pose.png', optimize=True)
+    print(f'{OUT}caladrius_pose.png')
     for key, box in TILES.items():
         im = cut(img, box, tol=34, pockets=False)
         im.save(f'{OUT}tile_{key}.png', optimize=True)
