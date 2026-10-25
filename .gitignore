@@ -1,1 +1,3 @@
 __pycache__/
+# BGM の元の mp3 は置かない（OpenTracks の規約。tools/pack_bgm.py で .dat にしたものだけ置く）
+assets/bgm/*.mp3

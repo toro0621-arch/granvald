@@ -457,7 +457,7 @@ const STAGES={
   lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
   loseHint:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'},
  // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
- e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
+ e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis'},map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
   goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
   roster:[
    // 南の街道から駆けつけるファルケン中隊
@@ -975,20 +975,32 @@ function snd(type){
 
 /* ================= BGM ================= */
 // 味方フェイズ／敵フェイズで曲を切り替える。曲の続きから再開する。音源は assets/bgm/ で音量をそろえてある
-const BGM={player:new Audio('assets/bgm/player.mp3'),enemy:new Audio('assets/bgm/enemy.mp3')};
+// BGM は OpenTracks（旧 DOVA-SYNDROME）のフリー素材。規約で「音源ファイルを容易にアクセス・複製できる状態」が禁止なので、
+// mp3 をそのまま置かず、バイト列を混ぜた .dat を置いて、ここで元に戻して再生する（tools/pack_bgm.py と同じ鍵・式）。
+// story＝タイトルから最初の出撃前まで、crisis＝村が襲われている場面（戦闘開始時の会話）、player／enemy＝各フェイズ
+const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio()};
+const BGM_KEY=new TextEncoder().encode('granvald-bgm-2026');
+function loadBgm(name){
+  return fetch(`assets/bgm/${name}.dat`).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(buf=>{
+    const b=new Uint8Array(buf),k=BGM_KEY;for(let i=0;i<b.length;i++)b[i]^=k[i%k.length]^((i*31+7)&255);
+    const a=BGM[name];a.src=URL.createObjectURL(new Blob([b],{type:'audio/mpeg'}));a.load();
+    if(bgmCur===name)bgm(name); // 読み込み前に流すよう言われていた曲は、読めたところで流す
+  }).catch(()=>{}); // ローカルで index.html を直接開いた場合などは読めない（BGM なしで遊べる）
+}
 const BGM_VOL=[0,.2,.4,.7],BGM_LBL=['OFF','小','中','大'];
 for(const a of Object.values(BGM)){a.loop=true;a.preload='auto'}
+for(const k of Object.keys(BGM))loadBgm(k);
 let bgmCur=null;
 function fadeTo(a,v,ms,done){clearInterval(a._f);const v0=a.volume,t0=performance.now();a._f=setInterval(()=>{const k=Math.min(1,(performance.now()-t0)/ms);a.volume=v0+(v-v0)*k;if(k>=1){clearInterval(a._f);done&&done()}},30)}
 function bgm(name){
   bgmCur=name;const vol=BGM_VOL[settings.bgmVol]??BGM_VOL[2];
   for(const[k,a]of Object.entries(BGM)){
-    if(k===name&&vol>0&&!document.hidden){if(a.paused){a.volume=0;a.play().catch(()=>{})}fadeTo(a,vol,400)}
+    if(k===name&&vol>0&&!document.hidden){if(!a.src)continue;if(a.paused){a.volume=0;a.play().catch(()=>{})}fadeTo(a,vol,400)}
     else if(!a.paused)fadeTo(a,0,400,()=>a.pause());
   }
 }
 // iOS では曲ごとにタップ中の再生が必要なので、出撃ボタンで両方を一度鳴らしておく
-function unlockBgm(){for(const a of Object.values(BGM)){a.volume=0;a.play().then(()=>{if(bgmCur!==a._name)a.pause()}).catch(()=>{})}}
+function unlockBgm(){for(const a of Object.values(BGM)){if(!a.src)continue;a.volume=0;a.play().then(()=>{if(bgmCur!==a._name)a.pause()}).catch(()=>{})}}
 for(const[k,a]of Object.entries(BGM))a._name=k;
 document.addEventListener('visibilitychange',()=>{if(bgmCur)bgm(bgmCur)});
 
@@ -1602,15 +1614,19 @@ function loadSheet(){
 // タイトルの背景は黒、中央にロゴの絵（assets/title-logo.jpg）
 function titleArt(){}
 // タイトル：最初は「TAP TO START」。タップでメニューを出す（このタップで音も鳴らせるようになる）
-function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();$('tPress').hidden=true;$('tMenu').hidden=false}
+function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();bgm('story');$('tPress').hidden=true;$('tMenu').hidden=false}
 $('title').addEventListener('click',e=>{if($('tMenu').hidden)showTitleMenu()});
 // ステージを始める：戦闘前の会話（マップを隠す）→ マップに入って開始時の会話 → 味方フェイズ
 async function startGame(id){
   loadStage(id);setup();resize();mode='busy';busy=true;renderConsole();
-  for(const a of Object.values(BGM))a.currentTime=0;
-  bgm('player');
+  for(const[k,a]of Object.entries(BGM))if(k!=='story')a.currentTime=0;
+  // 曲：ステージの music（pre＝戦闘前の会話、start＝開始時の会話）。なければ味方フェイズの曲
+  const mu=ST.music||{};
+  bgm(mu.pre||'player');
   if(ST.pre)await dialog(ST.pre,{solid:true});
+  bgm(mu.start||'player');
   await dialog(ST.start);
+  bgm('player');
   await banner('PLAYER PHASE','TURN 1','#45aaff');
   mode='idle';busy=false;renderConsole();
   autoSave();
@@ -1625,7 +1641,7 @@ function renderStageList(){
 }
 $('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;snd('ok');unlockBgm();$('title').hidden=true;startGame(b.dataset.stage)};
 // 結果画面からタイトルへ戻る
-function toTitle(){bgm(null);closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
+function toTitle(){bgm('story');closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
 $('btnContinue').onclick=()=>{snd('sel');unlockBgm();loadSheet()};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
