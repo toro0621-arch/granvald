@@ -1740,12 +1740,13 @@ function loadSheet(){
 // タイトルの背景は黒、中央にロゴの絵（assets/title-logo.jpg）
 function titleArt(){}
 // タイトル：最初は「TAP TO START」。タップでメニューを出す（このタップで音も鳴らせるようになる）
-function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();bgm('story');$('tPress').hidden=true;$('tMenu').hidden=false}
+function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();$('tPress').hidden=true;$('tMenu').hidden=false}
 $('title').addEventListener('click',e=>{if($('tMenu').hidden)showTitleMenu()});
 // ステージを始める：戦闘前の会話（マップを隠す）→ マップに入って開始時の会話 → 味方フェイズ
 async function startGame(id){
   loadStage(id);setup();resize();mode='busy';busy=true;renderConsole();
-  for(const[k,a]of Object.entries(BGM))if(k!=='story')a.currentTime=0;
+  // 曲はステージのボタンを押したところから、頭から流す（タイトル画面は無音）
+  for(const a of Object.values(BGM))a.currentTime=0;
   // 曲：ステージの music（pre＝戦闘前の会話、start＝開始時の会話）。なければ味方フェイズの曲
   const mu=ST.music||{};
   bgm(mu.pre||'player');
@@ -1767,7 +1768,7 @@ function renderStageList(){
 }
 $('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;snd('ok');unlockBgm();$('title').hidden=true;startGame(b.dataset.stage)};
 // 結果画面からタイトルへ戻る
-function toTitle(){bgm('story');closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
+function toTitle(){bgm(null);closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
 $('btnContinue').onclick=()=>{snd('sel');unlockBgm();loadSheet()};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
