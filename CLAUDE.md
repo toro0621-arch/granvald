@@ -38,7 +38,7 @@
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵、足元にそのマスの地形タイル。機体は足場の上に立ち、突進や回避では足場ごと動く（ユーザーの希望。足場を置いたまま機体だけ動かすと安っぽく見える）。攻撃側を後に描く。格闘の斬撃の線は1本、武器の `fx:'cross'`（カラドリウスの二段斬り）は×の字に2回斬りつける |
 | SAVE / LOAD | localStorage の `granvald-save-1〜3`（手動）と `granvald-save-auto`（味方フェイズ開始時に `autoSave`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 壊れたデータ）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。セーブできるのは `canSave()`（味方フェイズで誰も選んでいないとき）だけ。上書き・削除・ゲーム中のロードは `confirmSheet` で確認 |
 | TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価。leader を少し優先して狙う）、`startOfPhase` |
-| TITLE / START | `renderStageList`（タイトルのステージ選択）、`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle` |
+| TITLE / START | タイトル画面：全面の背景（`titleArt`。`assets/bg/title.jpg` のキービジュアルがあればそれ、なければカラドリウスとゼクト2機の絵で組んだ夜の戦場）、ロゴ、「TAP TO START」→ タップでメニュー（`showTitleMenu`。このタップで音も解禁）。メニューは `renderStageList`：はじめから（`STAGE_ORDER` の先頭＝帝国編第1話）、つづきから、番外編（残りのステージ）。`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle`（メニューを出した状態で戻る） |
 
 ## 計算式
 - 命中 = 80 + (攻撃側の命中 − 防御側の回避) × 0.5 − (防御側の運動性 − 70) × 0.4 + 武器の命中補正 − 地形の回避補正 + 気力差 × 0.1
