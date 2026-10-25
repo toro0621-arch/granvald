@@ -440,8 +440,8 @@ const STAGES={
    {who:'オットー',text:'……分かりました。お供します'},
    {who:'マティアス',text:'整備車両も出しますぜ。訓練には、整備がつきものですからな'}],
   start:[
-   {who:'',text:'― リンデ村 ―',narr:1},
-   {who:'',text:'村のあちこちから煙が上がっている。',narr:1},
+   {who:'',text:'― リンデ村 ―',narr:1,solid:1,bg:'linde'},
+   {who:'',text:'村のあちこちから煙が上がっている。',narr:1,solid:1},
    {who:'ボルツ',text:'おら、さっさと積め！　食い物も金目のもんも、根こそぎだ！'},
    {who:'村人',text:'お願いです、それは冬を越すための……！'},
    {who:'ボルツ',text:'知るか！　恨むなら、助けにも来ねえお上を恨みな！'},
@@ -1007,15 +1007,16 @@ for(const f of Object.values(BG))new Image().src=f;
 function dialog(lines,o={}){
   return new Promise(res=>{
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
-    d.classList.toggle('solid',!!o.solid);
-    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':'';placeMark()};
+    // 行に solid:1 があれば、マップの上の会話でもその行だけマップを隠して背景を出す
+    let solid=!!o.solid;
+    const setBg=()=>{d.classList.toggle('solid',solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#0000 45%,#000b),url(${url})`):'';d.style.backgroundSize=whole?'contain':'';d.style.backgroundPosition=whole?'center top':'';d.style.backgroundRepeat=whole?'no-repeat':'';placeMark()};
     // 印は、端を切らずに表示している地図（BG_WHOLE）の上だけに出す
     const placeMark=()=>{const p=mark&&MAP_PLACES[mark],sz=BG_SIZE[bg];
-      if(!p||!sz||!o.solid||!BG[bg]||!BG_WHOLE.includes(bg)){mk.hidden=true;return}
+      if(!p||!sz||!solid||!BG[bg]||!BG_WHOLE.includes(bg)){mk.hidden=true;return}
       const W=d.clientWidth,H=d.clientHeight,k=Math.min(W/sz[0],H/sz[1]),w=sz[0]*k,h=sz[1]*k;
       mk.style.left=((W-w)/2+w*p.x/100)+'px';mk.style.top=(h*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
     const onRs=()=>placeMark();addEventListener('resize',onRs);
-    const show=()=>{const l=lines[i];if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
+    const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid);if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
     show();d.hidden=false;placeMark();
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
