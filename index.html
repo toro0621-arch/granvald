@@ -816,7 +816,16 @@ function drawMech(c,u,t=0){
 const cv=document.getElementById('map'),ctx=cv.getContext('2d');
 let TS=40,DPR=1,terrainLayer=null;
 // 画像：マップ背景（tools/build_map.py で生成）とユニットのドット絵（tools/extract_sprites.py で設定画から切り出し）
-function img(src,onload){const i=new Image();i.onload=onload||null;i.src=src;return i}
+// 画像は同じファイルを1回だけ読み込んで使い回す（ゼクトのように同じ絵を何機も使うと、スマホで同時に何度も読みにいって
+// 一部が失敗し、代わりの図形で描かれていた）。読み込みに失敗したら、少し待って2回まで読み直す
+const IMG_CACHE={};
+function img(src,onload){
+  let i=IMG_CACHE[src];
+  if(!i){i=IMG_CACHE[src]=new Image();i._tries=0;
+    i.onerror=()=>{if(i._tries++<2)setTimeout(()=>{i.src=src+(src.includes('?')?'&':'?')+'r='+i._tries},400*i._tries)};
+    i._cbs=[];i.onload=()=>{for(const f of i._cbs)f.call(i);i._cbs=[]};i.src=src}
+  if(onload){if(i.complete&&i.naturalWidth)onload.call(i);else i._cbs.push(onload)}
+  return i}
 // マップ背景はステージごと（loadStage で切り替え、読み込み済みのものは使い回す）
 let STAGE_IMG=null;const STAGE_IMGS={};
 function stageImg(src){return STAGE_IMGS[src]||(STAGE_IMGS[src]=img(src,function(){if(this===STAGE_IMG)buildTerrain()}))}
@@ -917,7 +926,7 @@ function drawUnit(c,u,s,now){
   const moving=u.px!==undefined,bob=(u.air?Math.sin(now/300+u.id)*s*.03:0)-(moving?Math.abs(Math.sin(now/70))*s*.05:0),sp=SPR[u.key];
   // 向きの絵を選ぶ（反転などの加工はしない）。左へ歩くときは歩行の絵（左向き）と交互に、攻撃中は攻撃の絵
   // マップでは向きを変えず、いつも設定画の「通常時」の絵（なければ正面）で描く
-  let im=ready(sp.idle)?sp.idle:sp.down;
+  let im=ready(sp.idle)?sp.idle:ready(sp.down)?sp.down:sp.big; // 待機の絵 → 正面 → 戦闘用の絵の順に、読めたものを使う
   // ボスはひと回り大きく描く（頭がマスの上に少しはみ出す）
   c.translate(X+s/2,Y+s*(u.boss?.39:.47)+bob);
   if(ready(im)){const sc=s*(u.boss?.5:.42);c.scale(sc,sc);drawSprite(c,im)}
