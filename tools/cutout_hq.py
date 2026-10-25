@@ -1,0 +1,138 @@
+"""戦闘用・ステータス用の大きい機体の絵（assets/sprites/<機体>.png）を、きれいに切り抜き直す。
+
+tools/extract_sprites.py と同じ設定画・同じ範囲を使い、背景の抜き方だけを丁寧にしたもの。
+  1. 背景の色を「なめらかな面」として推定する（グラデーションや、パネルの明るさのむらに強い）
+  2. extract_sprites.py の切り抜きを土台にして（白い装甲や羽根はそこで守られている）、
+     そのふちに残る「背景色と黒い輪郭線が混ざった色」のにじみを、背景のそば数画素だけ抜く
+  3. 足元の影（背景と同じ色合いで暗いだけの部分）を抜く（影が描かれている整備車両だけ）
+  4. ラベル文字・枠線のかけら・細い線・1画素の毛羽を消す
+  5. ふちを半画素だけなめらかにする（縮小表示したときにギザギザしない）
+使い方: python3 tools/cutout_hq.py            （全機体）
+        python3 tools/cutout_hq.py grand zekt （指定した機体だけ）
+extract_sprites.py を実行し直すと大きい絵も上書きされるので、そのあとにこちらも実行する。
+"""
+import sys
+import numpy as np
+from PIL import Image
+from scipy import ndimage as ndi
+
+sys.path.insert(0, 'tools')
+import extract_sprites as ex  # noqa: E402
+
+OUT = 'assets/sprites/'
+INK = np.array([22.0, 22.0, 30.0])  # 輪郭線のおおよその色
+
+def smooth_bg(a, known, sigma):
+    """known（背景と分かっている画素）の色から、絵の裏側も含めた背景の色の面を推定する（正規化畳み込み）"""
+    w = ndi.gaussian_filter(known.astype(float), sigma)
+    out = np.empty_like(a, dtype=float)
+    for c in range(3):
+        out[..., c] = ndi.gaussian_filter(a[..., c] * known, sigma) / np.maximum(w, 1e-6)
+    ref = np.median(a[known], axis=0) if known.any() else np.median(a.reshape(-1, 3), axis=0)
+    out[w < 1e-3] = ref
+    return out
+
+def border_connected(mask):
+    lab, _ = ndi.label(mask)
+    edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    return np.isin(lab, list(edge)), lab
+
+def old_mask(img, box, opts):
+    """extract_sprites.py の cut() と同じ判定で、機体の画素（True）の配列を返す（切り取り前の大きさのまま）"""
+    a = img[box[1]:box[3], box[0]:box[2]]
+    im = ex.cut(img, box, **opts)
+    # cut() は余白を切り落として返すので、元の範囲での位置を探して戻す
+    full = np.zeros(a.shape[:2], bool)
+    al = np.asarray(im)[..., 3] > 0
+    rgb = np.asarray(im)[..., :3].astype(int)
+    H, W = al.shape
+    for oy in range(a.shape[0] - H + 1):
+        for ox in range(a.shape[1] - W + 1):
+            if (np.abs(a[oy:oy + H, ox:ox + W].astype(int) - rgb)[al].max(initial=0)) == 0:
+                full[oy:oy + H, ox:ox + W] = al
+                return full
+    raise RuntimeError('位置が見つからない')
+
+def cut_hq(img, box, old_opts, mix_tol=16, mix_max=0.75, halo_px=3, shadow=False):
+    x0, y0, x1, y1 = box
+    a = img[y0:y1, x0:x1].astype(float)
+    h, w, _ = a.shape
+    fg0 = old_mask(img, box, old_opts)          # これまでの切り抜き（白い装甲・羽根などは守られている）
+    bg0 = ~fg0
+    # --- 1. 背景の面を推定（これまで背景だった画素から）
+    B = smooth_bg(a, bg0 & ndi.binary_erosion(bg0, iterations=1), max(h, w) / 14)
+    # --- 2. 背景色と輪郭線の色が混ざった画素（ふちのにじみ）を、背景のすぐそば（halo_px 以内）だけ背景に戻す
+    seg = INK[None, None, :] - B
+    t = ((a - B) * seg).sum(2) / np.maximum((seg ** 2).sum(2), 1)
+    proj = B + np.clip(t, 0, 1)[..., None] * seg
+    off = np.sqrt(((a - proj) ** 2).sum(2))
+    mix = (off < mix_tol) & (t > 0.03) & (t < mix_max)
+    near = ndi.binary_dilation(bg0, iterations=halo_px)
+    cand = mix & near & fg0
+    bg = bg0.copy()
+    for _ in range(halo_px):                     # 背景から順に1画素ずつ、つながっている分だけ広げる
+        grow = cand & ndi.binary_dilation(bg) & ~bg
+        if not grow.any():
+            break
+        bg |= grow
+    # --- 3. 足元の影：背景と同じ色合いで暗いだけの部分（下の方だけ）。外の背景とつながっている分を抜く
+    if shadow:
+        Bn = B / np.maximum(np.linalg.norm(B, axis=2, keepdims=True), 1)
+        an = a / np.maximum(np.linalg.norm(a, axis=2, keepdims=True), 1)
+        ratio = np.linalg.norm(a, axis=2) / np.maximum(np.linalg.norm(B, axis=2), 1)
+        sh = ((an * Bn).sum(2) > 0.96) & (ratio > 0.3) & (ratio < 0.98) & fg0
+        sh[: int(h * 0.7)] = False
+        lab, _ = ndi.label(sh | bg)
+        ok = set(np.unique(lab[bg])) - {0}
+        bg |= sh & np.isin(lab, list(ok))
+    fg = ~bg
+    # --- 4. かけら・細い線を消す
+    lab1, _ = ndi.label(fg)
+    for i, sl in enumerate(ndi.find_objects(lab1)):
+        if sl is None:
+            continue
+        hh, ww = sl[0].stop - sl[0].start, sl[1].stop - sl[1].start
+        if min(hh, ww) <= 4 or (max(hh, ww) >= 8 * min(hh, ww) and min(hh, ww) <= 7):
+            fg[sl][lab1[sl] == i + 1] = False
+    lab2, n = ndi.label(ndi.binary_dilation(fg, iterations=1))
+    if n > 1:
+        sizes = ndi.sum(fg, lab2, range(1, n + 1))
+        keep = [i + 1 for i, s in enumerate(sizes) if s >= sizes.max() * 0.1]
+        fg &= np.isin(lab2, keep)
+    # 1画素だけ飛び出した毛羽を落とす
+    nb = ndi.uniform_filter(fg.astype(float), 3) * 9
+    fg &= ~(fg & (nb <= 2.5))
+    # --- 5. ふちだけ少しなめらかに（外周の1画素を半透明に）
+    alpha = fg.astype(float)
+    edge = fg & ~ndi.binary_erosion(fg)
+    soft = ndi.uniform_filter(fg.astype(float), 3)
+    alpha[edge] = np.clip(soft[edge] * 1.3, 0.6, 1)
+    rgba = np.dstack([a, alpha * 255]).round().astype(np.uint8)
+    out = Image.fromarray(rgba, 'RGBA')
+    return out.crop(out.getbbox())
+
+def jobs():
+    """(機体名, 設定画, 範囲, オプション) の一覧。範囲は extract_sprites.py と同じ"""
+    j = []
+    for k, b in ex.UNITS.items():
+        j.append((k, ex.SRC, b['big'], {'old_opts': {}}))
+    for k, b in ex.UNITS_E1.items():
+        # 足元に青い影が描かれているのは整備車両だけ。ほかの機体で影抜きをすると、背景に近い色の足先まで消えてしまう
+        j.append((k, ex.SRC_E1, b['big'], {'old_opts': {'shadow': True, 'robust_bg': True}, 'shadow': k == 'truck'}))
+    for k, b in ex.UNITS_ZEKT.items():
+        j.append((k, ex.SRC_ZEKT, b['big'], {'old_opts': {'tol': 24, 'robust_bg': True, 'pocket_min': 1500}}))
+    for k, b in ex.UNITS_CAL.items():
+        j.append((k, ex.SRC_CAL, b['big'], {'old_opts': {'tol': 24, 'robust_bg': True, 'pocket_min': 400}}))
+    return j
+
+if __name__ == '__main__':
+    only = set(sys.argv[1:])
+    cache = {}
+    for key, src, box, opt in jobs():
+        if only and key not in only:
+            continue
+        if src not in cache:
+            cache[src] = np.asarray(Image.open(src).convert('RGB'))
+        im = cut_hq(cache[src], box, **opt)
+        im.save(f'{OUT}{key}.png', optimize=True)
+        print(f'{OUT}{key}.png', im.size)

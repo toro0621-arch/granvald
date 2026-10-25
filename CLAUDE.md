@@ -9,6 +9,7 @@
   - 設定画から切り抜くときは、背景・ラベル文字・枠線を取り除き、背景が透明なPNGにする。
   - 画像が読み込めないときだけ、Canvas の図形（`drawMech`）で代わりに描く。
   - 切り抜きは `python3 tools/extract_sprites.py`（切り抜く範囲はスクリプト内の `UNITS` / `TILES`＝`sprites-and-tiles.png`、`UNITS_E1`＝`empire-01-sprites.png`、`UNITS_ZEKT`＝`zekt-v2-sprites.png`、`UNITS_CAL`＝`caladrius-v2-sheet.png` の下段のドット絵。このシートには待機・歩行・攻撃しかないので、戦闘用の大きい絵と4方向は待機の絵で代用）。機体は `grand.png`（戦闘用の大きい絵）、`grand_up/down/left/right.png`（背面／正面／左／右）、`_idle/_walk/_attack`（待機／歩行／攻撃。グランヴァルドたち4機と、ゼクト・カラドリウス・整備車両・ハウンド・ゴルム改）、地形は `tile_*.png`（立体タイル）。歩行・攻撃は数コマのうち1コマを使い、攻撃エフェクトや足元の影は取り除く。
+  - 戦闘用・ステータス用の大きい絵（`<機体>.png`）は、そのあと `python3 tools/cutout_hq.py` で切り抜き直す（`extract_sprites.py` の切り抜きを土台に、ふちに残る水色・桃色のにじみと、整備車両の足元の影を消す。白い装甲や羽根は残る）。`extract_sprites.py` を実行し直したら、必ずこちらも実行する。
   - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、設定画のマップから森・山・市街・城・基地を貼り、海と平地は設定画の色で生成）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`。マップを変えたら作り直す。
   - 別の機体の画像を使うときは TPL に `spr:'zekt'` のように書く（中隊と盗賊のゼクト・ゴルム）。`tint` で色を重ねられ、`spr:false` は画像なし（図形で描く）。待機・歩行・攻撃の絵がある機体は `SPR_EXTRA`。
 - ステータス画面の機体の絵は、顔グラと同じくらいの大きさ（88px）で、背景を抜いた戦闘用の絵を出す（大きく出さない。ユーザーの希望）。別の機体の画像を使う機体（`spr`）はそのファイルを使う（`sprFile`）。
