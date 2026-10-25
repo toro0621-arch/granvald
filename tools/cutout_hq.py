@@ -160,13 +160,79 @@ def cut_matte(img, box, t0=12, t1=32, label_box=None):
     out = Image.fromarray(rgba, 'RGBA')
     return out.crop(out.getbbox())
 
+def cut_outline(img, box, label_box=None, tol=16, pocket_tol=8, pocket_min=60):
+    """輪郭線がはっきりした大きい設定画（カラドリウスの正面の絵）向けの抜き方。
+    色だけで透明度を決める cut_matte だと、装甲の明るいハイライトや足の甲が背景の水色に近くて半透明になるので、
+    1. 背景に近い色の画素のうち、範囲のふちからつながっているものだけを背景にする（輪郭線の内側は残る）
+    2. 輪郭線に囲まれた背景（腕と体のすき間、脚の間など）は、ほぼ背景の色そのもので、ある程度の広さがあるものだけ抜く
+    3. 背景と接するふちの1〜2画素だけ、背景との差から半透明にして背景色を差し引く
+    白い羽根飾りは、背景には青みがあり羽根にはないので、青みの差を大きめに数えて見分ける（cut_matte と同じ）"""
+    x0, y0, x1, y1 = box
+    a = img[y0:y1, x0:x1].astype(float)
+    def diff(a, B):
+        rgb = np.sqrt(((a - B) ** 2).sum(-1))
+        chroma = np.abs((a[..., 2] - a[..., 0]) - (B[..., 2] - B[..., 0]))
+        return np.maximum(rgb, chroma * 1.6)
+    ref = np.median(np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]]), axis=0)
+    known = diff(a, ref[None, None, :]) < 10
+    B = smooth_bg(a, known, max(a.shape[:2]) / 10)
+    d = diff(a, B)
+    bgl = d < tol
+    # パネルの枠線（あざやかな青。機体には使われていない色）も背景として扱う
+    bgl |= (a[..., 2] - a[..., 0] > 90)
+    if label_box:
+        lx0, ly0, lx1, ly1 = label_box
+        bgl[max(0, ly0 - y0):max(0, ly1 - y0), max(0, lx0 - x0):max(0, lx1 - x0)] = True
+    lab, n = ndi.label(bgl)
+    border = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+    bg = np.isin(lab, list(border))
+    for i, sl in enumerate(ndi.find_objects(lab)):
+        if sl is None or (i + 1) in border:
+            continue
+        m = lab[sl] == i + 1
+        if m.sum() >= pocket_min and np.median(d[sl][m]) < pocket_tol:
+            bg[sl] |= m
+    # 足元の薄い水色の影：背景と同じ青みで少し暗いだけの画素（下の方だけ）。外の背景とつながっている分を抜く
+    H = a.shape[0]
+    lum, Bl = a.mean(-1), B.mean(-1)
+    sh = (np.abs((a[..., 2] - a[..., 0]) - (B[..., 2] - B[..., 0])) < 24) & (lum > Bl * .5) & (lum < Bl * 1.2)
+    sh[: int(H * .85)] = False
+    lab3, _ = ndi.label(sh | bg)
+    ok = set(np.unique(lab3[bg])) - {0}
+    bg |= sh & np.isin(lab3, list(ok))
+    fg = ~bg
+    # 下のふちに残る枠線の細い横線（高さ1〜2画素）を消す
+    lo = int(H * .95)
+    fg[lo:] &= ndi.binary_opening(fg, structure=np.ones((4, 1)))[lo:]
+    # いちばん大きい塊だけ残す（札・枠線・かけらを消す）
+    lab2, n2 = ndi.label(ndi.binary_dilation(fg, iterations=1))
+    if n2 > 1:
+        sizes = ndi.sum(fg, lab2, range(1, n2 + 1))
+        fg &= lab2 == (int(np.argmax(sizes)) + 1)
+    # 1画素だけ飛び出した毛羽を落とす
+    nb = ndi.uniform_filter(fg.astype(float), 3) * 9
+    fg &= ~(fg & (nb <= 2.5))
+    alpha = fg.astype(float)
+    edge = fg & ndi.binary_dilation(~fg, iterations=2)
+    alpha[edge] = np.clip((d[edge] - 6) / 34, 0.25, 1)
+    k = np.maximum(alpha, 1e-3)[..., None]
+    F = np.clip((a - (1 - alpha)[..., None] * B) / k, 0, 255)
+    F[alpha >= .999] = a[alpha >= .999]
+    rgba = np.dstack([F, alpha * 255]).round().astype(np.uint8)
+    out = Image.fromarray(rgba, 'RGBA')
+    return out.crop(out.getbbox())
+
 def matte_jobs():
-    """cut_matte で抜く絵：カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）"""
+    """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
     j = []
     for k, b in ex.UNITS_CAL.items():
         for kind, box in b.items():
             name = f'{k}.png' if kind == 'big' else f'{k}_{kind}.png'
             # 攻撃の絵の範囲には「攻撃（剣）」の札がかかるので塗りつぶす
+            if kind == 'big':
+                # 大きい正面の設定画は輪郭線がはっきりしているので cut_outline で抜く（「正面」の札は消す）
+                j.append((name, ex.SRC_CAL, box, {'outline': True, 'label_box': (20, 108, 130, 152)}))
+                continue
             j.append((name, ex.SRC_CAL, box, {'label_box': (600, 770, 705, 790)} if kind == 'attack' else {}))
     return j
 
@@ -199,6 +265,7 @@ if __name__ == '__main__':
             continue
         if src not in cache:
             cache[src] = np.asarray(Image.open(src).convert('RGB'))
-        im = cut_matte(cache[src], box, **opt)
+        opt = dict(opt)
+        im = cut_outline(cache[src], box, **{k: v for k, v in opt.items() if k != 'outline'}) if opt.get('outline') else cut_matte(cache[src], box, **opt)
         im.save(f'{OUT}{name}', optimize=True)
         print(f'{OUT}{name}', im.size)

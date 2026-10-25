@@ -52,8 +52,10 @@ UNITS_ZEKT = {
 # このシートには待機・歩行・攻撃しかないので、戦闘用の大きい絵と4方向は待機の絵で代用する（マップは向きを変えないので困らない）
 SRC_CAL = 'docs/ref/caladrius-v2-sheet.png'
 CAL_IDLE = (60, 745, 285, 928)
+# 戦闘用・ステータス用の大きい絵は、上段の「正面」の大きい設定画を使う（待機のドット絵を拡大すると粗いため）
+CAL_FRONT = (28, 110, 560, 684)
 UNITS_CAL = {
-    'caladrius': {'big': CAL_IDLE, 'down': CAL_IDLE, 'up': CAL_IDLE, 'left': CAL_IDLE, 'right': CAL_IDLE,
+    'caladrius': {'big': CAL_FRONT, 'down': CAL_IDLE, 'up': CAL_IDLE, 'left': CAL_IDLE, 'right': CAL_IDLE,
                   'idle': CAL_IDLE, 'walk': (330, 745, 560, 928), 'attack': (600, 770, 1185, 928)},
 }
 # マスグラフィックの立体タイル（左側の絵）
