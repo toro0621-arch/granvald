@@ -111,6 +111,65 @@ def cut_hq(img, box, old_opts, mix_tol=16, mix_max=0.75, halo_px=3, shadow=False
     out = Image.fromarray(rgba, 'RGBA')
     return out.crop(out.getbbox())
 
+def cut_matte(img, box, t0=12, t1=32, label_box=None):
+    """背景が一色に近いなめらかな水色で、機体が暗い絵（カラドリウス）向けの抜き方。
+    1. 背景の色の面を推定する
+    2. 画素ごとに「背景との差」から透明度を決める（ふちは半透明）。白い羽根飾りは背景と明るさが近いが、
+       背景は青みがある（青−赤 が約30）のに羽根は青みがないので、青みの差を大きめに数えて見分ける
+    3. 半透明の画素から背景の色を差し引いて、ふちに水色が残らないようにする
+    4. ラベル文字やかけらを消し、いちばん大きい塊だけ残す
+    輪郭線に囲まれたすき間（腕と盾の間など）も、色で判定するので自然に抜ける"""
+    x0, y0, x1, y1 = box
+    a = img[y0:y1, x0:x1].astype(float)
+    drop = np.zeros(a.shape[:2], bool)
+    if label_box:
+        # 札の四角と、そこから横に伸びるパネルの枠線（範囲の上端の数行）を捨てる
+        lx0, ly0, lx1, ly1 = label_box
+        drop[max(0, ly0 - y0):max(0, ly1 - y0), max(0, lx0 - x0):max(0, lx1 - x0)] = True
+        drop[:6] = True
+    def diff(a, B):
+        rgb = np.sqrt(((a - B) ** 2).sum(-1))
+        chroma = np.abs((a[..., 2] - a[..., 0]) - (B[..., 2] - B[..., 0]))
+        return np.maximum(rgb, chroma * 1.6)
+    ref = np.median(np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]]), axis=0)
+    known = diff(a, ref[None, None, :]) < 10
+    B = smooth_bg(a, known, max(a.shape[:2]) / 10)
+    d = diff(a, B)
+    alpha = np.clip((d - t0) / (t1 - t0), 0, 1)
+    alpha[drop] = 0
+    # 足元の薄い水色の影：背景と同じ青みで、少し暗いだけの画素（下の方だけ）を抜く
+    H = a.shape[0]
+    lum, Bl = a.mean(-1), B.mean(-1)
+    chroma_like = np.abs((a[..., 2] - a[..., 0]) - (B[..., 2] - B[..., 0])) < 14
+    shadow = chroma_like & (lum > Bl * .5) & (lum < Bl * 1.05)
+    shadow[: int(H * .8)] = False
+    alpha[shadow] = 0
+    # いちばん大きい塊だけ残す（ラベルの札・パネルの枠線を消す）
+    solid = alpha > .5
+    lab, n = ndi.label(ndi.binary_dilation(solid, iterations=1))
+    if n > 1:
+        sizes = ndi.sum(solid, lab, range(1, n + 1))
+        alpha *= lab == (int(np.argmax(sizes)) + 1)
+    # 1画素だけの毛羽・孤立した半透明を消す
+    alpha[ndi.uniform_filter((alpha > .5).astype(float), 3) * 9 <= 1.5] = 0
+    # 背景色を差し引く（色の戻し）
+    k = np.maximum(alpha, 1e-3)[..., None]
+    F = np.clip((a - (1 - alpha)[..., None] * B) / k, 0, 255)
+    F[alpha >= .999] = a[alpha >= .999]
+    rgba = np.dstack([F, alpha * 255]).round().astype(np.uint8)
+    out = Image.fromarray(rgba, 'RGBA')
+    return out.crop(out.getbbox())
+
+def matte_jobs():
+    """cut_matte で抜く絵：カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）"""
+    j = []
+    for k, b in ex.UNITS_CAL.items():
+        for kind, box in b.items():
+            name = f'{k}.png' if kind == 'big' else f'{k}_{kind}.png'
+            # 攻撃の絵の範囲には「攻撃（剣）」の札がかかるので塗りつぶす
+            j.append((name, ex.SRC_CAL, box, {'label_box': (600, 770, 705, 790)} if kind == 'attack' else {}))
+    return j
+
 def jobs():
     """(機体名, 設定画, 範囲, オプション) の一覧。範囲は extract_sprites.py と同じ"""
     j = []
@@ -121,8 +180,7 @@ def jobs():
         j.append((k, ex.SRC_E1, b['big'], {'old_opts': {'shadow': True, 'robust_bg': True}, 'shadow': k == 'truck'}))
     for k, b in ex.UNITS_ZEKT.items():
         j.append((k, ex.SRC_ZEKT, b['big'], {'old_opts': {'tol': 24, 'robust_bg': True, 'pocket_min': 1500}}))
-    for k, b in ex.UNITS_CAL.items():
-        j.append((k, ex.SRC_CAL, b['big'], {'old_opts': {'tol': 24, 'robust_bg': True, 'pocket_min': 400}}))
+    # カラドリウスは cut_matte（matte_jobs）で抜く
     return j
 
 if __name__ == '__main__':
@@ -136,3 +194,11 @@ if __name__ == '__main__':
         im = cut_hq(cache[src], box, **opt)
         im.save(f'{OUT}{key}.png', optimize=True)
         print(f'{OUT}{key}.png', im.size)
+    for name, src, box, opt in matte_jobs():
+        if only and name.split('.')[0].split('_')[0] not in only:
+            continue
+        if src not in cache:
+            cache[src] = np.asarray(Image.open(src).convert('RGB'))
+        im = cut_matte(cache[src], box, **opt)
+        im.save(f'{OUT}{name}', optimize=True)
+        print(f'{OUT}{name}', im.size)

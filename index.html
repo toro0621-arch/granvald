@@ -457,7 +457,7 @@ const STAGES={
   lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
   loseHint:'もう一度挑戦しよう。精神コマンドの「鉄壁」「ひらめき」が鍵になる。'},
  // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
- e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis'},map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
+ e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis',end:'crisis'},map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
   goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
   roster:[
    // 南の街道から駆けつけるファルケン中隊
@@ -1334,8 +1334,9 @@ function checkBonus(){
 async function checkEnd(){
   if(over)return;
   const boss=units.find(u=>u.boss),leader=units.find(u=>u.key===ST.leader);
-  if(leader.dead||!alive('ally').length){over=true;await sleep(500);await dialog(battleLines(ST.lose));result(false);return}
-  if(boss.dead||!alive('foe').length){over=true;await sleep(500);
+  if(leader.dead||!alive('ally').length){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);await dialog(battleLines(ST.lose));result(false);return}
+  // 戦闘が終わったら、そのあとの会話はステージの music.end の曲（帝国編第1話は「戦闘準備」）
+  if(boss.dead||!alive('foe').length){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);
     await dialog(battleLines(boss.dead&&alive('foe').length?ST.bossDown:ST.allDown));
     if(ST.epilogue)await dialog(ST.epilogue(flags),{solid:true});
     result(true)}
@@ -1574,6 +1575,8 @@ function startOfPhase(team){
     u.en=Math.min(u.maxEn,u.en+5);
   }
 }
+// 敵のねらい方の補助：相手のいちばん強い武器の攻撃力（脅威度）
+const threatPow=u=>Math.max(0,...u.weapons.map(w=>w.pow));
 async function enemyAct(e){
   const guard=e.guard&&turn<3&&!alive('ally').some(p=>dist(p,e)<=6);
   if(e.guard&&!guard)e.guard=false;
@@ -1583,8 +1586,11 @@ async function enemyAct(e){
     const ox=e.x,oy=e.y;e.x=t.x;e.y=t.y;
     for(const p of alive('ally')){const d=Math.abs(t.x-p.x)+Math.abs(t.y-p.y);
       for(const w of e.weapons){if(usable(e,w)||!inRange(w,d))continue;
-        const hr=hitRate(e,p,w),dm=baseDmg(e,p,w);let sc=dm*hr/100;if(dm>=p.hp)sc+=2500*hr/100;if(p.key===ST.leader)sc*=1.1;
-        const cw=bestWeapon(p,e,d);if(cw)sc-=baseDmg(p,e,cw)*hitRate(p,e,cw)/100*.3;
+        const hr=hitRate(e,p,w),dm=baseDmg(e,p,w);let sc=dm*hr/100;if(dm>=p.hp)sc+=2500*hr/100;if(p.key===ST.leader)sc*=1.25;
+        // 脅威度：攻撃力の高い相手ほど優先する（整備車両のような、当てやすく反撃の弱い支援役ばかり狙わないように）
+        sc*=.4+.6*Math.min(1,threatPow(p)/1800);
+        // 反撃をこわがる度合いは弱め（強すぎると、反撃してこない相手ばかり狙う）
+        const cw=bestWeapon(p,e,d);if(cw)sc-=baseDmg(p,e,cw)*hitRate(p,e,cw)/100*.1;
         sc+=terOf(t.x,t.y).e*3;
         if(!best||sc>best.sc)best={sc,t,p,w}}}
     e.x=ox;e.y=oy;
