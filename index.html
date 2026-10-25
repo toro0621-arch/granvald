@@ -149,6 +149,11 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 #title .stages .btn small{display:block;font-weight:400;font-size:11.5px;opacity:.8;margin-top:1px}
 .dlg{cursor:pointer}
 #dialog.solid{background:var(--bg)}
+/* 会話の背景画（BG）。背景があるときは文字枠を下に置く */
+#dialog.hasbg{justify-content:flex-end;padding-bottom:max(7vh,env(safe-area-inset-bottom,0px));background-color:#000;background-size:cover;background-position:center}
+#dialog .msg{height:auto;min-height:96px}
+#dialog.hasbg .msg{background:#0b1220e8}
+#dialog.hasbg .skip{color:#dfe7f2;text-shadow:0 1px 3px #000}
 #dialog.narr .txt{color:#c3cfdf;font-size:14px;line-height:1.8}
 @media (prefers-reduced-motion:reduce){#banner .b,#sheet .in{animation:none}}
 </style>
@@ -405,7 +410,7 @@ const STAGES={
    ['golmkai','foe',4,1],['golm_x','foe',5,2],['zekt_x','foe',2,3],['zekt_x','foe',7,3],
    ['hound','foe',5,3],['hound','foe',3,4],['hound','foe',6,5]],
   pre:[
-   {who:'',text:'― 司令部 ―',narr:1},
+   {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
    {who:'',text:'大陸暦598年、春。ガルディア帝国の北東、国境地帯。',narr:1},
    {who:'',text:'灰の講和から27年。帝国と共和国は剣を収めたまま睨み合い、国境の村々は、その谷間で静かに痩せ細っていた。',narr:1},
    {who:'伝令',text:'申し上げます！　リンデ村より救援要請。盗賊団の襲撃を受けており、機兵を数機確認とのこと！'},
@@ -416,7 +421,7 @@ const STAGES={
    {who:'カスパー',text:'口を慎め、ファルケン大尉。妃殿下の弟君は、民草にずいぶんとお優しいようだが'},
    {who:'カスパー',text:'ここは宮廷ではない。軍だ。家柄の順に命令が下りる場所だ。……下がれ'},
    {who:'エルンスト',text:'……失礼します'},
-   {who:'',text:'― 格納庫 ―',narr:1},
+   {who:'',text:'― 格納庫 ―',narr:1,bg:'hangar'},
    {who:'マティアス',text:'お帰りなさい、大尉。……その顔は、却下されましたな'},
    {who:'エルンスト',text:'兄君の狩りのほうが大事だそうだ'},
    {who:'マティアス',text:'でしょうな。で、行くんでしょう？　カラドリウスは、もう暖めてありますぜ'},
@@ -466,11 +471,11 @@ const STAGES={
   // ボーナス：3ターン目の終わりまでに村（市街のマス）の中の敵が全滅していれば、クリア後の村長の会話が変わる
   bonus:{turn:3,tile:'C'},
   epilogue:f=>[...(f.bonus?[
-   {who:'',text:'― リンデ村 ―',narr:1},
+   {who:'',text:'― リンデ村 ―',narr:1,bg:'village'},
    {who:'村長',text:'軍の方々……来てくださったのですね。もう、誰も来ないものと……'},
    {who:'エルンスト',text:'遅くなってすまない。被害を確かめさせてくれ。必要なものは、私の名で手配する'},
    {who:'村長',text:'ありがたい……。帝国にも、あなたのような方がおられるとは'}]:[
-   {who:'',text:'― リンデ村 ―',narr:1},
+   {who:'',text:'― リンデ村 ―',narr:1,bg:'village'},
    {who:'村長',text:'……来てくださったことには、感謝します。ですが、冬を越す蓄えの半分は、もう……'},
    {who:'エルンスト',text:'……私の名で、物資を手配する。必ずだ'}]),...
    [
@@ -484,7 +489,7 @@ const STAGES={
    {who:'エルンスト',text:'なぜ、私に直接？　正式に上へ報告すればいい'},
    {who:'クラーラ',text:'上に報告すれば、握りつぶされますから。……私はそれで、ここに飛ばされたんです'},
    {who:'エルンスト',text:'……分かった。頼む、ハイム中尉'},
-   {who:'',text:'― 司令部 ―',narr:1},
+   {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
    {who:'カスパー',text:'ファルケン！　兄上の狩猟会の警護を放り出して、どこで何をしていた！'},
    {who:'エルンスト',text:'巡回訓練の途中、盗賊団と遭遇し、やむなく交戦しました。村は守られました'},
    {who:'カスパー',text:'……訓練だと？　ふん。まあいい。報告書は、私が書く'},
@@ -980,13 +985,18 @@ const FACE={'エルンスト':'ernst','ブルーノ':'bruno','オットー':'ott
  '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
 const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 function setFace(el,name){const f=faceSrc(name);if(f){el.onerror=()=>{el.hidden=true};el.src=f;el.hidden=false}else el.hidden=true}
+// 会話の背景画（assets/bg/）。会話の行に bg:'hq' のように書くと、その行から背景が変わる（マップを隠す solid の会話だけ）。
+// BG にない名前は背景なし（無地）になるので、画像ができたらここに足す
+const BG={hq:'assets/bg/hq.jpg'};
+for(const f of Object.values(BG))new Image().src=f;
 function dialog(lines,o={}){
   return new Promise(res=>{
-    const d=$('dialog');let i=0;
+    const d=$('dialog');let i=0,bg=o.bg||null;
     d.classList.toggle('solid',!!o.solid);
-    const show=()=>{const l=lines[i];setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
+    const setBg=()=>{const url=o.solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);d.style.backgroundImage=url?`linear-gradient(#0000 45%,#000b),url(${url})`:''};
+    const show=()=>{const l=lines[i];if('bg' in l)bg=l.bg;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr)};
     show();d.hidden=false;
-    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;res()}else show()};
+    d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg');d.style.backgroundImage='';res()}else show()};
   });
 }
 

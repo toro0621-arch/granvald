@@ -12,6 +12,7 @@
   - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、設定画のマップから森・山・市街・城・基地を貼り、海と平地は設定画の色で生成）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`。マップを変えたら作り直す。
   - 別の機体の画像を使うときは TPL に `spr:'zekt'` のように書く（中隊と盗賊のゼクト・ゴルム）。`tint` で色を重ねられ、`spr:false` は画像なし（図形で描く）。待機・歩行・攻撃の絵がある機体は `SPR_EXTRA`。
 - パイロットの顔グラは `assets/faces/<名前>.png`（128×128）。設定画（`empire-01-sheet.png`・`empire-01-faces.png`・`setting-sheet.png`）の人物画から切り抜いたもの。`FACE`（名前→ファイル名）で引き、戦闘画面・会話・ステータス画面に出す。新しいキャラは設定画から切り抜いて `FACE` に足す。
+- 会話の背景画は `assets/bg/<名前>.jpg`（縦長、スマホ縦画面向け）。`BG`（名前→ファイル）に登録し、会話の行に `bg:'hq'` と書くとその行から背景が変わる（マップを隠す solid の会話だけ）。背景があるときは文字枠を下に置く。`BG` にない名前は無地。帝国編第1話は hq（司令部）・hangar（格納庫、未作成）・village（リンデ村、未作成）。
 - マップ上のユニットは向きを変えない。いつも「通常時」（`_idle`）の絵、なければ正面（`_down`）で描く（ユーザーの希望）。
 - 機体デザインは既存作品に似せない。特に、頭部の V字アンテナや、ガンダム風の「二つ目＋マスク状の口元」の顔は使わない。グランヴァルドは一本角とバイザー型の目、シルフィードは後ろへ流れる耳型センサーとゴーグル型の目、カイザー・ネメシスは王冠状の角、ゼクトは歩兵の鉄兜のようなつばのある丸い頭と固定式の赤い単眼（単眼をスリットの中で動かす形にしない。紫と黒の配色、裾の広がった脚にしない）、カラドリウスはくちばし状に突き出した額の装甲と後頭部へ流れる白い羽根状のアンテナ3枚（目はくちばしの付け根の金の単眼）、ハウンドは鉄格子で囲んだむき出しの操縦席と作業灯2つ、ゴルム改はゴルムの箱型の頭に額の一本の衝角、を基本形にする。
 - スマホ縦画面が基準（幅400px前後）。
@@ -30,7 +31,7 @@
 | MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないとき・画像がない機体の代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss / knight（カラドリウス）/ truck（整備車両）/ hound（ハウンド） |
 | MAP RENDER | `SPR`（機体画像。`spr` / `tint` / `SPR_EXTRA` に対応）、`TER_IMG`（地形タイル）、`STAGE_IMG`（今のステージのマップ背景、`stageImg` で読み込み）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
 | BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
-| UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog(lines, {solid})`（narr＝ナレーション、solid＝マップを隠す）、`banner()` |
+| UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（精神・予測（武器を切り替え）・設定）、`dialog(lines, {solid})`（narr＝ナレーション、solid＝マップを隠す、行の bg＝背景画）、`banner()` |
 | COMBAT | `combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkBonus` → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵、足元にそのマスの地形タイル |
 | SAVE / LOAD | localStorage の `granvald-save-1〜3`（手動）と `granvald-save-auto`（味方フェイズ開始時に `autoSave`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 壊れたデータ）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。セーブできるのは `canSave()`（味方フェイズで誰も選んでいないとき）だけ。上書き・削除・ゲーム中のロードは `confirmSheet` で確認 |
