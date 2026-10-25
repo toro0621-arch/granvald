@@ -62,7 +62,7 @@ TILES = {
     'sea': (14, 756, 180, 940), 'city': (352, 756, 513, 940), 'base': (672, 754, 856, 940),
 }
 
-def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False, pocket_min=25):
+def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False, pocket_min=25, pocket_dark=None):
     x0, y0, x1, y1 = box
     a = img[y0:y1, x0:x1].astype(int)
     # 背景はグラデーションなので、行ごとに左右端の中央値を背景色とみなす。
@@ -94,6 +94,18 @@ def cut(img, box, tol=30, pockets=True, shadow=False, robust_bg=False, pocket_mi
         # 腕と体のすき間など、閉じた背景（pocket_min 画素以上のもの）も背景にする
         sizes = ndi.sum(np.ones_like(d), lab, range(1, lab.max() + 1))
         bgset |= {i + 1 for i, s in enumerate(sizes) if s >= pocket_min}
+        # 腕と体のすき間のような小さな閉じた背景も抜く：まわりを暗い輪郭線で囲まれているものだけ
+        # （装甲の明るいハイライトは、まわりが中間色の装甲なので残る）
+        if pocket_dark is not None:
+            lum = a.mean(2)
+            for i, sl in enumerate(ndi.find_objects(lab)):
+                k = i + 1
+                if k in bgset or sizes[i] < 12:
+                    continue
+                m = lab == k
+                ring = ndi.binary_dilation(m, iterations=2) & ~m
+                if ring.any() and (lum[ring] < 90).mean() >= pocket_dark:
+                    bgset.add(k)
     bg = np.isin(lab, list(bgset))
     # 外周に残る背景色のにじみを1px削る
     halo = ndi.binary_dilation(bg) & ((d < tol * 1.8) | (bglike & ~bg))
@@ -136,7 +148,7 @@ if __name__ == '__main__':
     for key, boxes in UNITS_ZEKT.items():
         for kind, box in boxes.items():
             name = f'{OUT}{key}.png' if kind == 'big' else f'{OUT}{key}_{kind}.png'
-            im = cut(img_z, box, tol=24, robust_bg=True, pocket_min=1500)
+            im = cut(img_z, box, tol=24, robust_bg=True, pocket_min=1500, pocket_dark=0.35)
             im.save(name, optimize=True)
             print(name, im.size)
     img_c = np.asarray(Image.open(SRC_CAL).convert('RGB')).copy()
