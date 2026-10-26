@@ -838,7 +838,8 @@ const STAGES={
    {who:'',text:'次回、第3話「末席の男爵」',narr:1}],
   loseHint:'懲罰部隊は谷の真ん中で挟まれている。レオ機を南へ下げて中隊と合流させよう。崖の上の敵は硬いので、クラーラの砲撃で削るとよい。'}
 };
-const STAGE_ORDER=['e1','e2','s1'];
+// エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
+const STAGE_ORDER=['e1','e2'];
 const stageTitle=st=>`${st.label}「${st.name}」`;
 let ST=STAGES.s1,flags={};
 // ステージの地形と背景を切り替える
