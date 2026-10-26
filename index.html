@@ -139,7 +139,14 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .st-pilot{display:flex;gap:12px;align-items:center;margin-top:4px}
 .st-pilot .face{width:88px;height:88px}
 .msg .txt{font-size:15px;line-height:1.6}
-.skip{margin-top:8px;font-size:12px;color:var(--mute)}
+.skip{margin-top:8px;font-size:12px;color:var(--mute);display:flex;align-items:center;gap:12px}
+.logbtn{font:inherit;font-size:12px;color:#dfe7f2;background:#0b1220cc;border:1px solid #3d5578;border-radius:4px;padding:3px 10px;cursor:pointer}
+#dLog{z-index:70;background:#050910f2;justify-content:flex-start;padding-top:max(16px,env(safe-area-inset-top,0px))}
+#dLog .logbox{width:min(100%,600px);display:flex;flex-direction:column;max-height:100%}
+#dLogList{flex:1;overflow-y:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-top:6px}
+#dLogList .l{padding:6px 0;border-bottom:1px solid #ffffff12;font-size:14px;line-height:1.6}
+#dLogList .l .w{font-family:var(--disp);font-size:12px;color:var(--amber)}
+#dLogList .l.n{color:#c3cfdf}
 #banner{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;pointer-events:none}
 #banner .b{font-family:var(--disp);font-size:clamp(28px,8vw,48px);letter-spacing:.18em;padding:14px 0;width:100%;text-align:center;background:linear-gradient(90deg,transparent,#000c 20%,#000c 80%,transparent);animation:ban 1.2s ease-in-out forwards}
 #banner .b small{display:block;font-size:13px;letter-spacing:.3em;color:var(--mute)}
@@ -241,8 +248,10 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 <div id="dialog" class="ov dlg" hidden>
   <div id="dMark" hidden><span class="ring"></span><span class="lbl"></span></div>
   <div class="msg" style="max-width:600px"><img class="face" id="dFace" alt="" hidden><div class="mtx"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div></div>
-  <div class="skip">タップで次へ</div>
+  <div class="skip"><span>タップで次へ</span><button class="logbtn" id="dLogBtn" type="button">ログ</button></div>
 </div>
+<!-- 会話ログ（これまでの会話を読み返す） -->
+<div id="dLog" class="ov" hidden><div class="logbox"><div class="sh-title"><span>会話ログ</span></div><div id="dLogList"></div><div class="sh-actions"><button class="btn" id="dLogClose" type="button">閉じる</button></div></div></div>
 
 <div id="title" class="ov">
   <div class="t-logo"><img src="assets/title-logo.jpg" alt="機甲戦線グランヴァルド"></div>
@@ -511,7 +520,7 @@ const STAGES={
    {who:'風間 リク',text:'湾の上はオレの空だ。陸戦機は海で足を取られる、岸沿いに回り込めよ。'},
    {who:'岩瀬 ゴウ',text:'損傷したら俺のところへ来い。ブルワークの修理装置で直してやる。'},
    {who:'総帥ザルグ',text:'旧式の寄せ集めがよく吠える。全機、蹴散らせ！'},
-   {who:'作戦目標',text:'勝利条件：敵の全滅、またはカイザー・ネメシスの撃破。敗北条件：グランヴァルドの撃墜。'}],
+   {who:'作戦目標',music:'player',text:'勝利条件：敵の全滅、またはカイザー・ネメシスの撃破。敗北条件：グランヴァルドの撃墜。'}],
   talks:[{id:'boss',when:(a,d)=>a.boss||d.boss,lines:(a,d)=>{const p=a.boss?d:a;return[
    {who:'総帥ザルグ',text:'このネメシスに挑むか。旧式の寄せ集めが……貴様たちに、帝国の力を思い知らせてやる。'},
    {who:p.pilot.name,text:p.key==='grand'?'沈むのはそっちだ！　行くぞ、グランヴァルド！':'司令機と交戦開始。ここで押し切る！'}]}}],
@@ -564,7 +573,7 @@ const STAGES={
    {who:'マティアス',text:'攻撃は、移動のあとでもできます。ただし、撃ったら動けねえ。順番を間違えなさんな。'},
    {who:'マティアス',text:'傷んだ機体は、俺の車両の隣に寄せてください。修理も補給も引き受けます。'},
    {who:'エルンスト',text:'戦いが長引けば気力が上がる。そうなれば大技も使える。焦るな、確実に一機ずつ落とせ。'},
-   {who:'作戦目標',onmap:1,text:'勝利条件：敵の全滅、またはゴルム改の撃破。敗北条件：カラドリウスの撃墜。'}],
+   {who:'作戦目標',onmap:1,music:'player',text:'勝利条件：敵の全滅、またはゴルム改の撃破。敗北条件：カラドリウスの撃墜。'}],
   talks:[
    // 味方が初めて盗賊のゼクトと戦ったとき（どちらから仕掛けても1回だけ）
    {id:'zekt',when:(a,d)=>[a,d].some(u=>u.team==='foe'&&u.key==='zekt_x'),lines:()=>[
@@ -697,7 +706,7 @@ const STAGES={
    {who:'クラーラ',text:'ゼクト・キャノンは近づかれると脆い機体です。私は後ろから撃ちます。前はお願いします。'},
    {who:'マティアス',text:'承知。若いのが前、中尉が後ろ、俺がその間で修理ですな。'},
    {who:'エルンスト',text:'狙うは砦の指揮官機だ。頭を落とせば、盗賊は崩れる。……懲罰部隊を、一機でも多く連れて帰るぞ。'},
-   {who:'作戦目標',text:'勝利条件：頭目機グラウヴォルフの撃破。敗北条件：カラドリウス、またはレオ機の撃墜。',onmap:1}],
+   {who:'作戦目標',music:'player',text:'勝利条件：頭目機グラウヴォルフの撃破。敗北条件：カラドリウス、またはレオ機の撃墜。',onmap:1}],
   talks:[
    {id:'zekt',when:(a,d)=>[a,d].some(u=>u.team==='foe'&&u.key==='zekt_x'),lines:()=>[
    {who:'オットー',text:'また、うちと同じゼクト……。どれだけ流れてるんだ……。',alt:['ブルーノ','マティアス']},
@@ -810,7 +819,7 @@ const STAGES={
    {who:'伝令',text:'辺境第三補給基地のクラーラ・ハイム中尉は、大隊付きの補給担当に転属。'},
    {who:'伝令',text:'カスパー少佐は、帝都の軍務省 記録局へ転任。……栄転、とのことです。'},
    {who:'カスパー',text:'き、記録局……？　あの、書類しかない部署に……？'},
-   {who:'カスパー',text:'……覚えていろ、ファルケン。妃の口添えで出世した男が、どこまで行けるか見ものだな。'},
+   {who:'カスパー',text:'お、覚えていろ、ファルケン！　兄上に……兄上に言いつけてやるからな！'},
    {who:'エルンスト',text:'……'},
    {who:'ブルーノ',text:'大尉……じゃなかった、少佐！　おめでとうございます！'},
    {who:'オットー',text:'でも、食堂でもう噂になってますよ。その……'},
@@ -1364,6 +1373,15 @@ const MAP_PLACES={
 };
 const BG_SIZE={map:[848,1264]};
 for(const f of Object.values(BG))new Image().src=f;
+// 会話ログ：流れた会話を覚えておき、会話中の「ログ」ボタンや設定から読み返せる（話を始めるたびに空にする）
+let DLG_LOG=[];
+function showLog(){
+  const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]);
+  $('dLogList').innerHTML=DLG_LOG.length?DLG_LOG.map(l=>`<div class="l ${l.who?'':'n'}">${l.who?`<div class="w">${esc(l.who)}</div>`:''}${esc(l.text)}</div>`).join(''):'<div class="l n">まだ会話はありません。</div>';
+  $('dLog').hidden=false;const L=$('dLogList');L.scrollTop=L.scrollHeight;
+}
+$('dLogBtn').onclick=e=>{e.stopPropagation();snd('sel');showLog()};
+$('dLogClose').onclick=e=>{e.stopPropagation();snd('cancel');$('dLog').hidden=true};
 function dialog(lines,o={}){
   return new Promise(res=>{
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
@@ -1387,7 +1405,7 @@ function dialog(lines,o={}){
       if(!p||!sz||!box){mk.hidden=true;return}
       mk.style.left=(box.left+sz[0]*box.k*p.x/100)+'px';mk.style.top=(box.top+sz[1]*box.k*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
     const onRs=()=>layout();addEventListener('resize',onRs);
-    const show=()=>{const l=lines[i];solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
+    const show=()=>{const l=lines[i];DLG_LOG.push({who:l.who,text:l.text});if(DLG_LOG.length>600)DLG_LOG.shift();if(l.music)bgm(l.music);solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
     show();d.hidden=false;layout();
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side','onmap');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
@@ -1519,9 +1537,11 @@ function settingsSheet(){
   const row=(k,t,d)=>`<div class="toggle"><div>${t}<small>${d}</small></div><button class="btn sm ${settings[k]?'pri':''}" data-set="${k}">${settings[k]?'ON':'OFF'}</button></div>`;
   openSheet(`<div class="sh-title"><span>設定</span></div>${row('anim','戦闘アニメ','OFFにするとマップ上で結果だけ表示')}${row('manualDef','反撃を手動で選ぶ','敵の攻撃ごとに 反撃／防御／回避 を選択')}${row('sound','効果音','')}<div class="toggle"><div>BGM音量<small>タップで OFF／小／中／大 を切り替え</small></div><button class="btn sm ${settings.bgmVol?'pri':''}" data-set="bgmVol">${BGM_LBL[settings.bgmVol]}</button></div>
   <div class="hint" style="margin-top:8px">戦闘の途中でやめても、味方フェイズの開始時と各機の行動のあとに自動で中断データを残すので、タイトルの「つづきから」で再開できます。</div>
+  <div class="sh-actions"><button class="btn" id="btnLog">会話ログ</button></div>
   <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">この話を最初から</button><button class="btn" id="btnToTitle">エピソード一覧へ</button></div>
   <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
   $('btnRestart').onclick=e=>{e.stopPropagation();confirmSheet('この話を最初からやり直しますか？<br><small style="color:var(--mute)">今の戦闘の続きは消えます。</small>','やり直す',()=>{closeSheet();clearSuspend();startGame(ST.id)},settingsSheet)};
+  $('btnLog').onclick=e=>{e.stopPropagation();closeSheet();showLog()};
   $('btnToTitle').onclick=e=>{e.stopPropagation();autoSave();closeSheet();snd('cancel');toTitle()};
 }
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
@@ -1990,7 +2010,7 @@ function refreshContinue(){const d=readSuspend(),b=$('btnContinue');b.hidden=!d;
 const canSave=()=>phase==='player'&&!busy&&!over&&(mode==='idle'||mode==='peek')&&!sel;
 function autoSave(){if(canSave())storeSet(SUSPEND_KEY,JSON.stringify(snapshot()))}
 function restore(d){
-  loadStage(d.stage);setup();
+  loadStage(d.stage);setup();DLG_LOG=[];
   units.forEach((u,i)=>{const s=d.units[i];
     Object.assign(u,{x:s.x,y:s.y,dir:s.dir,hp:s.hp,en:s.en,will:s.will,sp:s.sp,acted:s.acted,moved:s.moved,dead:s.dead,off:!!s.off,buf:{...s.buf}});
     if(s.guard)u.guard=true;else delete u.guard;
@@ -2014,7 +2034,7 @@ function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();$('t
 $('title').addEventListener('click',e=>{if($('tMenu').hidden)showTitleMenu()});
 // ステージを始める：戦闘前の会話（マップを隠す）→ マップに入って開始時の会話 → 味方フェイズ
 async function startGame(id){
-  loadStage(id);setup();resize();mode='busy';busy=true;renderConsole();
+  loadStage(id);setup();DLG_LOG=[];resize();mode='busy';busy=true;renderConsole();
   // 曲はステージのボタンを押したところから、頭から流す（タイトル画面は無音）
   for(const a of Object.values(BGM))a.currentTime=0;
   // 曲：ステージの music（pre＝戦闘前の会話、start＝開始時の会話）。なければ味方フェイズの曲
