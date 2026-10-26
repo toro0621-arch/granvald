@@ -6,6 +6,7 @@ docs/ref/fantasy-tiles.jpg（ファンタジー風の地形タイル）から切
   python3 tools/build_map.py S1 assets/stage1_map.png      … 鋼の目覚め（省略時）
   python3 tools/build_map.py E1 assets/stage_e1_map.png    … 帝国編 第1話「国境の村」
   python3 tools/build_map.py E2 assets/stage_e2_map.png    … 帝国編 第2話「狼の巣」（砦（E）は丸太の柵の砦、坑道の入口（K）は docs/ref/tile-mine.jpg）
+  python3 tools/build_map.py E3 assets/stage_e3_map.png    … 帝国編 第3話「末席の男爵」（川（R）は水、渡しの浅瀬（S）は砂利の川底と目印の杭）
 """
 import re
 import sys
@@ -34,7 +35,7 @@ ref = Image.open('docs/ref/fantasy-tiles.jpg').convert('RGB')
 def inset(b, m=4):
     return (b[0] + m, b[1] + m, b[2] - m, b[3] - m)
 PATCH = {'F': [inset(b) for b in MAPTILE['forest']], 'M': [inset(b) for b in MAPTILE['mountain']],
-         'C': [inset(b) for b in (MAPTILE['village'] if STAGE == 'E1' else MAPTILE['town'])]}
+         'C': [inset(b) for b in (MAPTILE['village'] if STAGE.startswith('E') else MAPTILE['town'])]}
 # 複数マスにまたがる建物：帝国の城（E）と味方基地（B＝砦）。第2話（E2）の E は盗賊の根城なので、城ではなく丸太の柵の砦の絵
 BLOCK = {'E': inset(MAPTILE['fort'] if STAGE == 'E2' else MAPTILE['castle']), 'B': inset(MAPTILE['fort'])}
 # 坑道の入口（K）：地形は山と同じ。絵は別ファイル（ユーザーが描いたタイル。今の山のタイルと同じ絵柄）
@@ -146,7 +147,7 @@ for t, box in BLOCK.items():
     canvas.paste(im, (min(xs) * CELL, min(ys) * CELL), m.filter(ImageFilter.GaussianBlur(2)))
 
 # 海：マスの境界をノイズで少し崩して自然な海岸線にする
-cellw = np.array([[1.0 if c == 'W' else 0.0 for c in row] for row in MAP])
+cellw = np.array([[1.0 if c in 'WRS' else 0.0 for c in row] for row in MAP])
 wm = np.asarray(Image.fromarray((cellw * 255).astype(np.uint8)).resize((W, H), Image.NEAREST)) / 255
 wm = ndi.gaussian_filter(wm, 12) + (noise((H, W), 14, 5) - .5) * .75 + (noise((H, W), 3, 6) - .5) * .12
 # 盤面の外周は地形どおり（にじませない）
@@ -164,5 +165,30 @@ arr[..., :3][foam] = (228, 242, 255)
 ld = ndi.distance_transform_edt(~sea)
 rock = (~sea) & (ld < 4) & (noise((H, W), 2, 11) > .25)
 arr[..., :3][rock] = arr[..., :3][rock] * .35 + np.array([120, 92, 60]) * .65
-Image.fromarray(arr[..., :3].astype(np.uint8)).save(OUT_PATH, optimize=True)
+# 渡しの浅瀬（S）：水を浅く明るくし、川底の砂利と目印の木の杭を描く
+img = Image.fromarray(arr[..., :3].astype(np.uint8))
+fd = ImageDraw.Draw(img)
+for y in range(ROWS):
+    for x in range(COLS):
+        if MAP[y][x] != 'S': continue
+        X, Y = x * CELL, y * CELL
+        a = np.asarray(img).astype(float)
+        cell = a[Y:Y + CELL, X - 6:X + CELL + 6]
+        m = np.zeros(cell.shape[:2]); m[4:-4, 6:-6] = 1; m = ndi.gaussian_filter(m, 4)[..., None]
+        sand = pixel_texture((150, 150, 120), (120, 124, 100), (186, 186, 160), .12, 20 + x, blot=.2)[Y:Y + CELL, X - 6:X + CELL + 6]
+        ford = cell * .3 + sand * .7
+        a[Y:Y + CELL, X - 6:X + CELL + 6] = cell * (1 - m) + ford * m
+        img = Image.fromarray(a.astype(np.uint8)); fd = ImageDraw.Draw(img)
+        # 小石
+        for _ in range(26):
+            px_, py_ = X + int(rng.integers(6, CELL - 8)), Y + int(rng.integers(6, CELL - 8))
+            fd.ellipse([px_, py_, px_ + 3, py_ + 2], fill=(200, 196, 170) if rng.random() < .5 else (96, 100, 88))
+        # 目印の杭（両側に一列ずつ）
+        for sx in (8, CELL - 12):
+            for k in range(3):
+                py_ = Y + 8 + k * 19
+                fd.rectangle([X + sx, py_, X + sx + 4, py_ + 10], fill=(88, 60, 34))
+                fd.rectangle([X + sx, py_, X + sx + 4, py_ + 2], fill=(140, 104, 64))
+                fd.line([X + sx - 2, py_ + 11, X + sx + 6, py_ + 11], fill=(230, 240, 250))
+img.save(OUT_PATH, optimize=True)
 print(OUT_PATH, W, H)

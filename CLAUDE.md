@@ -1,7 +1,7 @@
 # 機甲戦線グランヴァルド
 
 スパロボ風のターン制SRPG（オリジナル作品）。現状は `index.html` 1ファイル＋画像（`assets/sprites/`、マップ背景）＋BGM（`assets/bgm/`）。ビルド不要、ブラウザで直接開けば動く。
-ステージは3つ：帝国編 第1話「辺境の火」（`e1`）、第2話「狼の巣」（`e2`）、沿岸都市連合の「鋼の目覚め」（`s1`。番外編。非公開）。タイトル画面のエピソード一覧で選ぶ。
+ステージは4つ：帝国編 第1話「辺境の火」（`e1`）、第2話「狼の巣」（`e2`）、第3話「末席の男爵」（`e3`）、沿岸都市連合の「鋼の目覚め」（`s1`。番外編。非公開）。タイトル画面のエピソード一覧で選ぶ。
 
 ## ゲームの作り（エピソード方式。ユーザーの希望）
 - アニメのように、どの話からでも遊べる。全部の話を最初から開放し、くり返し遊べる。
@@ -25,7 +25,7 @@
   - 戦闘用・ステータス用の大きい絵（`<機体>.png`）は、そのあと `python3 tools/cutout_hq.py` で切り抜き直す（`extract_sprites.py` の切り抜きを土台に、ふちに残る水色・桃色のにじみと、整備車両の足元の影を消す。白い装甲や羽根は残る）。`extract_sprites.py` を実行し直したら、必ずこちらも実行する。
   - 地形の見た目はファンタジー（中世ヨーロッパ風）。ビル・舗装道路・白線など近代的なものは使わない。地形タイルの元は `docs/ref/fantasy-tiles.jpg`（背景はマゼンタ）。
   - 戦闘画面の足場（`tile_*.png`。平地・森・山・水辺・村・砦）は `python3 tools/fantasy_tiles.py` で切り抜く（マゼンタを透明に）。
-  - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、`fantasy-tiles.jpg` の森・山・市街・城（E）・砦（B）を貼る。市街は帝国編（E1）では村、それ以外は町。範囲は `fantasy_tiles.py` の `MAPTILE`。海と草地は生成し、草地の色はタイルの草地に合わせる。道路は土の道）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`、`E2 assets/stage_e2_map.png`（第2話は砦（E）を丸太の柵の砦の絵にし、坑道の入口（K）は `docs/ref/tile-mine.jpg` を貼る）。マップを変えたら作り直す。
+  - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、`fantasy-tiles.jpg` の森・山・市街・城（E）・砦（B）を貼る。市街は帝国編（E1）では村、それ以外は町。範囲は `fantasy_tiles.py` の `MAPTILE`。海と草地は生成し、草地の色はタイルの草地に合わせる。道路は土の道）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`、`E2 assets/stage_e2_map.png`（第2話は砦（E）を丸太の柵の砦の絵にし、坑道の入口（K）は `docs/ref/tile-mine.jpg` を貼る）、`E3 assets/stage_e3_map.png`（第3話。川（R）は水、渡しの浅瀬（S）は砂利の川底と目印の杭を描く）。マップを変えたら作り直す。
   - ゼクト・キャノン（クラーラ機）の絵は `python3 tools/zekt_cannon.py`（`docs/ref/zekt-cannon-sprites.png`。大きい絵は `cut_outline`、ドット絵はゼクトと同じ `cut()` の設定。足元の薄い水色の影は `drop_shadow` で消す。影は残さない）。
   - ゼクトの資料と同じ形式の機体の資料（第3話からのゼクト・ランス・アイゼンヴァハト・アッカーなど）は `python3 tools/unit_sheet.py` で切り抜く（パネルの位置は共通。新しい機体は `SHEETS` に足す。大きい絵は `cut_outline`、ドット絵は `cut()`、足元の影は `drop_shadow`）。
   - 第2話のボス・グラウヴォルフの絵は `python3 tools/graywolf.py`（元の絵の背景はマゼンタ一色。戦闘用の大きい絵は大鉈とガトリング砲で横に長いので、戦闘画面では横幅でなく高さで大きさを決める＝`BIG_BY_H`）。
@@ -49,9 +49,9 @@
 ## コード構成（index.html の <script> 内、上から順）
 | セクション | 内容 |
 |---|---|
-| DATA | ステージごとの地形 `MAP_S1` / `MAP_E1`（10×12の地形文字列）と `ROAD_S1` / `ROAD_E1`（見た目だけの道路）。今のステージのものが `MAP` / `ROAD` に入る。`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（戦術＝精神コマンドにあたるもの。名前はスパロボと変えてある：照準固定・先読み・研ぎ澄まし・渾身・不動・強行軍・応急修理・鬨の声）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
+| DATA | ステージごとの地形 `MAP_S1` / `MAP_E1` / `MAP_E2` / `MAP_E3`（10×12の地形文字列）と `ROAD_S1` / `ROAD_E1`（見た目だけの道路）。今のステージのものが `MAP` / `ROAD` に入る。`TER`（地形：移動コスト c / 防御 d / 回避 e。R＝川は c:99 で渡れない、S＝浅瀬）、`SPIRITS`（戦術＝精神コマンドにあたるもの。名前はスパロボと変えてある：照準固定・先読み・研ぎ澄まし・渾身・不動・強行軍・応急修理・鬨の声）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
-| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、エピソード一覧の表示（ep＝話数、syn＝ひとこと紹介）、レベル（lv）。第2話から使うもの：守る機体（protect。撃墜で敗北。会話は loseBy）、ボス撃破だけで勝ち（bossOnly）、話ごとの戦闘背景（battleBg）と地形の名前（terName）、ターンとフェイズのイベント（events。spawn で増援）、隣り合ったときの会話（meetTalks）、撃墜されたときの会話（downTalks）。roster の5つ目の値で `{off:true,arrive:3}`（増援。それまでマップにいないものとして扱う＝`alive`・`unitAt` から外す）、`{guard:true,guardRange:3,guardTurn:99}`（その場で待つ。味方が近づくまで動かない）。`loadStage(id)` で切り替え、`setup()` で配置（`mk` で lv の倍率をかける）。会話イベントの済みは `flags` |
+| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、エピソード一覧の表示（ep＝話数、syn＝ひとこと紹介）、レベル（lv）。第2話から使うもの：守る機体（protect。撃墜で敗北。会話は loseBy）、ボス撃破だけで勝ち（bossOnly）、話ごとの戦闘背景（battleBg）と地形の名前（terName）、ターンとフェイズのイベント（events。spawn で増援）、隣り合ったときの会話（meetTalks）、撃墜されたときの会話（downTalks）。第3話から：撃ってはいけない機体（TPL の `spare:true`＝農民兵のアッカー。撃墜で敗北（`lostUnit`、会話は loseBy.acker）、農民兵に撃たれても味方は撃ち返さない（`combat` で自動で防御）、マップに白い点線の枠と「民」の札、予測画面に警告）。会話の行に `do:()=>{…}` を書くと、その行を出すときに実行する（第3話のボス撃破後、農民兵をマップから消す）。roster の5つ目の値で `{off:true,arrive:3}`（増援。それまでマップにいないものとして扱う＝`alive`・`unitAt` から外す）、`{guard:true,guardRange:3,guardTurn:99}`（その場で待つ。味方が近づくまで動かない）。`loadStage(id)` で切り替え、`setup()` で配置（`mk` で lv の倍率をかける）。会話イベントの済みは `flags` |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
 | MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないとき・画像がない機体の代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss / knight（カラドリウス）/ truck（整備車両）/ hound（ハウンド） |
@@ -61,7 +61,7 @@
 | COMBAT | 戦闘中の会話（talks・bossDown・allDown・lose）は `battleLines` を通す：撃墜された味方のセリフは、行の `alt`（代わりに言う仲間の名前の並び）の生きている最初の人が言い、いなければ省く。`combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵。足場のタイルは置かない（ユーザーの希望）。機体は画面の下の地面の帯に立ち、足元に影を落とす（突進・回避では影ごと動く）。背景は戦うマス（攻撃を受ける側のマス）の地形の背景画（`assets/bg/battle_<plain|forest|mountain|water|village|fort>.jpg`。`BATTLE_BG_FILE`。元は `docs/ref/battle-bg.jpg` を6つに切り分けたもの。横幅いっぱいに広げて下をそろえ、上はHPの表示が読めるよう少し暗くする。読めないときは色のグラデーション）。攻撃側を後に描く。格闘の斬撃の線は1本、武器の `fx:'cross'`（カラドリウスの二段斬り）は×の字に2回斬りつける。演出：必殺技（気力が要る武器＝`isSpecial`）の前にカットイン（パイロットの顔と技名が斜めの帯で横切る）、カメラ（攻撃側に寄ってから当たる瞬間に相手へ寄る。揺れはダメージの大きさで変わる）、攻撃中は攻撃の絵（`_attack`）。攻撃の絵を使うのは `ATK_FACE` に書いた機体だけ（ゼクト・カラドリウス・ハウンド・ゴルム改・グラウヴォルフ・ゼクト・キャノン。整備車両は正面の絵で小さく見え、番外編の4機は元のドット絵が小さくぼやけるので使わない）で、`ATK_KIND`（格／射）が武器の種類と合うときだけ。武器ごとの構えの一枚絵があればそちらを優先（`ATK_W`。カラドリウスのライフル＝`caladrius_rifle.png`、マシンガン＝`caladrius_mg.png`。元は `docs/ref/caladrius-guns.jpg` で、背景が市松模様の描き込みなので `python3 tools/caladrius_guns.py` で抜く。羽根飾りは市松模様と色が近いので、輪郭線をつないだ内側を残す。銃口の火と薬莢は消してある）。絵の向きは `BIG_FACE`／`ATK_FACE`（r／l／f）に書き（ハウンドの戦闘用の絵は、鉄格子の操縦席がある側が前＝右向き）、戦闘画面では左側（敵）は右、右側（味方）は左を向くように反転して描く（後ろを向いて攻撃しないように。マップ上は反転しない）、突進・回避の残像、武器ごとの演出（銃口の火花と薬莢、ビームのため、ハンマー・ドリルの衝撃波と火花、砲弾の煙）、撃墜は小爆発3回→大爆発と破片・煙、ダメージ数字は飛び出して跳ねる（クリティカルは揺れる） |
 | SAVE / LOAD | 中断データだけ：localStorage の `granvald-suspend`。味方フェイズ開始時と各機の行動のあと（`finishUnit`）に `autoSave`、設定の「エピソード一覧へ」でも保存。クリア・敗北（`result`）とエピソードを選び直したときに消す（`clearSuspend`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 消す）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。前の形式の `granvald-save-*` は起動時に消す。やり直し・中断データを消す操作は `confirmSheet` で確認 |
-| TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価。leader を少し優先して狙う）、`startOfPhase` |
+| TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価。leader を少し優先して狙う。渡れない川があるマップでは、攻撃できないとき `pathDist`（地形をたどった道のり）で近づく）、`startOfPhase` |
 | TITLE / START | タイトル画面：背景は黒、中央にロゴの絵（`assets/title-logo.jpg`。元は `docs/ref/title-logo.jpg`。絵の背景も黒なので、円の外側をマスクでなじませる）、「TAP TO START」→ タップでメニュー（`showTitleMenu`。このタップで音も解禁）。メニューは、中断データがあれば先頭に「つづきから」、その下にエピソード一覧（`renderStageList`。`STAGE_ORDER` の順。話数・題名・ひとこと紹介。話が増えたら一覧だけスクロール）。`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle`（メニューを出した状態で戻る）。設定シートに「この話を最初から」「エピソード一覧へ」 |
 
 ## テスト

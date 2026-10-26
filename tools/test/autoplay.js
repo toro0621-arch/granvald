@@ -15,9 +15,10 @@ const [stage='e2',runs='5']=process.argv.slice(2);
     const res=await p.evaluate(async(stage)=>{
       const log=[];window.dialog=async(lines)=>{for(const l of lines)log.push(l.who+'「'+l.text.slice(0,18)+'」');};
       window.result=(win)=>{window.__res=win};
+      const trace=[];const oc=window.combat;window.combat=async(a,d,w,c)=>{trace.push(`T${turn}${phase[0]} ${a.pilot.name}(${a.x},${a.y})→${d.pilot.name}(${d.x},${d.y}) ${w.name}`);return oc(a,d,w,c)};
       $('title').hidden=true;
       await startGame(stage);
-      const foes=()=>alive('foe');
+      const foes=()=>alive('foe').filter(e=>!e.spare); // 農民兵（spare）は撃たない
       // 味方のAI：攻撃できるなら一番よい攻撃（撃墜・ボス優先）、できなければボスへ近づく。HPの減ったレオは整備車両へ下がる。整備車両は隣の傷んだ味方を修理
       async function allyAct(u){
         if(over)return;
@@ -34,7 +35,7 @@ const [stage='e2',runs='5']=process.argv.slice(2);
           if(best.rep){doRepair(u,best.a);return}
           await combat(u,best.e,best.w,{mode:'counter'})}
         else{const goal=weak?(alive('ally').find(a=>a.repair)||alive('ally').find(a=>a.key===ST.leader)):(foes().find(e=>e.boss)||foes()[0]);
-          if(goal){let bt=null,bd=1e9;for(const t of r.tiles){const d=Math.abs(t.x-goal.x)+Math.abs(t.y-goal.y);if(d<bd&&!(t.x===u.x&&t.y===u.y&&weak)){bd=d;bt=t}}if(bt)await animateMove(u,r.path(bt.x,bt.y))}}
+          if(goal){const pd=pathDist(goal);let bt=null,bd=1e9;for(const t of r.tiles){const d=pd[t.y][t.x];if(d<bd&&!(t.x===u.x&&t.y===u.y&&weak)){bd=d;bt=t}}if(bt)await animateMove(u,r.path(bt.x,bt.y))}}
         if(!over&&!u.acted)finishUnit(u);
       }
       let guard=0;
@@ -45,11 +46,12 @@ const [stage='e2',runs='5']=process.argv.slice(2);
         if(phase==='player')await endPlayerPhase();
       }
       while(window.__res===undefined&&guard++<400)await new Promise(r=>setTimeout(r,20));
-      return{win:window.__res,turn,flags:Object.keys(flags),lostAllies:units.filter(u=>u.team==='ally'&&u.dead).map(u=>u.pilot.name),
+      return{trace,win:window.__res,spareDown:units.some(u=>u.spare&&u.dead),turn,flags:Object.keys(flags),lostAllies:units.filter(u=>u.team==='ally'&&u.dead).map(u=>u.pilot.name),
         bossHp:units.find(u=>u.boss).hp,log:log.length,arrived:units.filter(u=>u.arrive).map(u=>u.off?'未着':'着')};
     },stage);
     if(res.win)sum.win++;else sum.lose++;sum.turns.push(res.turn);sum.errs+=errs.length;
-    console.log(`#${r+1}`,res.win?'勝ち':'負け','TURN',res.turn,'会話',res.flags.join(','),'撃墜された味方',res.lostAllies.join('・')||'なし','増援',res.arrived.join(','),errs.slice(0,3));
+    console.log(`#${r+1}`,res.win?'勝ち':'負け','TURN',res.turn,'会話',res.flags.join(','),'撃墜された味方',res.lostAllies.join('・')||'なし','増援',res.arrived.join(','),res.spareDown?'農民兵撃墜':'',errs.slice(0,3));
+    if(process.env.DBG)console.log(res.trace.join('\n'));
     await p.close();
   }
   console.log('合計',JSON.stringify(sum));

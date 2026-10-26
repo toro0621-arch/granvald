@@ -351,6 +351,34 @@ const ROAD_E2=[
  "....#.....",
  "....#.....",
  "....#....."];
+// 帝国編 第3話「末席の男爵」：真ん中を東西にグラウ川（R＝渡れない）。渡しの浅瀬（S）は2か所。南岸に村（C）
+const MAP_E3=[
+ "FFPPPPPPFF",
+ "FPPPPPPPPF",
+ "PPFPPPPFPP",
+ "PPPPPPPPPP",
+ "RRRSRRSRRR",
+ "PPPPPPPPPP",
+ "PFPPPPPPFP",
+ "PPPPCCPPPP",
+ "PPPPCCPPPP",
+ "FPPPPPPPPF",
+ "FFPPPPPPFF",
+ "FFPPPPPPFF"];
+// 南の街道から村を抜けて西の渡しへ、渡しの向こうは北へ（見た目だけ）
+const ROAD_E3=[
+ "...#......",
+ "...#......",
+ "...#......",
+ "...#......",
+ "..........",
+ "...##.....",
+ "....#.....",
+ "..........",
+ "..........",
+ "....#.....",
+ "....#.....",
+ "....#....."];
 // 今のステージの地形（loadStage で切り替える）
 let MAP=MAP_S1,ROAD=ROAD_S1;
 const TER={
@@ -361,7 +389,10 @@ const TER={
  W:{n:'海',c:2,d:0,e:-10},
  C:{n:'市街',c:1,d:.15,e:5},
  B:{n:'基地',c:1,d:.20,e:15,heal:true},
- E:{n:'帝国基地',c:1,d:.20,e:15,heal:true}
+ E:{n:'帝国基地',c:1,d:.20,e:15,heal:true},
+ // 帝国編 第3話：川（R）は渡れない。浅瀬（S）だけ歩いて渡れるが、足を取られる
+ R:{n:'川',c:99,d:0,e:-10},
+ S:{n:'浅瀬',c:2,d:0,e:-10}
 };
 function W(name,type,pow,min,max,o={}){return{name,type,pow,min,max,en:o.en||0,maxAmmo:o.ammo||0,ammo:o.ammo||0,will:o.will||0,hit:o.hit||0,fx:o.fx||(type==='格'?'slash':'beam')}}
 const SPIRITS={
@@ -483,7 +514,32 @@ const TPL={
   col:{main:'#8b9196',sub:'#4b5054',acc:'#c0392b',eye:'#ff3344'},
   pilot:{name:'ゲルト',melee:165,shoot:140,hit:150,eva:115,skill:140,sp:0,spirits:[]},
   lines:['捨て駒の意地を見せてやる！','軍で習わなかったか？','来い、貴族！'],
-  weapons:[W('大鉈','格',2100,1,1,{}),W('ガトリング砲','射',1600,1,3,{fx:'bullet'}),W('狼牙断ち','格',2900,1,1,{en:30,will:120,fx:'cross'})]}
+  weapons:[W('大鉈','格',2100,1,1,{}),W('ガトリング砲','射',1600,1,3,{fx:'bullet'}),W('狼牙断ち','格',2900,1,1,{en:30,will:120,fx:'cross'})]},
+ // ---- 帝国編 第3話 ----（数値は docs/prompts/empire-03-robo.md。絵は tools/unit_sheet.py で切り抜き）
+ // レオのゼクト・ランス（突撃槍と増加装甲）
+ lance:{name:'ゼクト・ランス',kind:'drone',hp:2600,en:100,armor:950,mob:85,move:5,
+  col:{main:'#7d8ea8',sub:'#3c4350',acc:'#d8b23a',eye:'#ff3344'},
+  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['渾身','強行軍']},
+  lines:['まっすぐ行って、ぶち抜く！','どけぇっ！','槍で聞くぜ！'],
+  weapons:[W('突撃槍','格',1500,1,1,{hit:5}),W('ライフル','射',1300,1,3,{fx:'bullet'}),W('ランスチャージ','格',2600,1,1,{en:30,will:110,fx:'punch'})]},
+ // 男爵家の騎士（横流しのゼクトに、男爵家のえんじ色を重ねる）
+ knight:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:80,move:5,spr:'zekt',tint:'#a8505a',
+  col:{main:'#8a3a42',sub:'#3c2a2e',acc:'#c9a23a',eye:'#ff3344'},
+  pilot:{name:'男爵家の騎士',melee:130,shoot:120,hit:125,eva:110,skill:110,sp:0,spirits:[]},
+  lines:['ブルクハルト家の名にかけて！','渡しは通さん！'],
+  weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
+ // 騎士団長ディートリヒのアイゼンヴァハト（ボス。古い騎士用の機体）
+ eisenwacht:{name:'アイゼンヴァハト',kind:'heavy',hp:7000,en:140,armor:1500,mob:80,move:4,boss:true,
+  col:{main:'#3a4440',sub:'#22282a',acc:'#c9a23a',eye:'#ffcf5a'},
+  pilot:{name:'ディートリヒ',melee:165,shoot:140,hit:150,eva:120,skill:150,sp:0,spirits:[]},
+  lines:['参る！','前は我ら騎士が受け持つ！','老いぼれと侮るな。'],
+  weapons:[W('斧槍','格',2000,1,1,{}),W('マスケット砲','射',1400,1,3,{fx:'shell'}),W('鉄壁の構え','格',2800,1,1,{en:30,will:115,fx:'punch'})]},
+ // 農民兵の作業機アッカー。spare：撃墜すると敗北。農民兵に撃たれても味方は撃ち返さない（自動で防御）
+ acker:{name:'アッカー',kind:'hound',hp:1400,en:50,armor:500,mob:55,move:3,spare:true,
+  col:{main:'#6a7a4a',sub:'#5a4a32',acc:'#a0522d',eye:'#ffde59'},
+  pilot:{name:'農民兵',melee:80,shoot:85,hit:95,eva:80,skill:70,sp:0,spirits:[]},
+  lines:['ご、ごめんなさい！','こ、来ないで……！'],
+  weapons:[W('くくり付けの猟銃','射',700,1,2,{fx:'bullet'})]}
 };
 /* ================= STATE ================= */
 let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,uid=0,over=false;
@@ -497,7 +553,7 @@ function saveSettings(){try{localStorage.setItem('granvald-settings',JSON.string
 const lvMul=lv=>1+.15*((lv||1)-1);
 function mk(key,team,x,y,extra={}){
   const t=TPL[key],m=lvMul(ST.lv),hp=Math.round(t.hp*m);
-  const u={id:++uid,key,team,x,y,lv:ST.lv||1,name:t.name,kind:t.kind,col:t.col,maxHp:hp,hp,maxEn:t.en,en:t.en,armor:Math.round(t.armor*m),mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,
+  const u={id:++uid,key,team,x,y,lv:ST.lv||1,name:t.name,kind:t.kind,col:t.col,maxHp:hp,hp,maxEn:t.en,en:t.en,armor:Math.round(t.armor*m),mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,spare:!!t.spare,
     pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w,pow:Math.round(w.pow*m)})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
   units.push(u);return u;
 }
@@ -836,10 +892,151 @@ const STAGES={
    {who:'',text:'そして大隊司令部の誰かが、今日もまた、何かを「確認」している。',narr:1},
    {who:'',text:'大隊長となったエルンストのもとに、次に届いた命令は――貴族の反乱の鎮圧だった。',narr:1},
    {who:'',text:'次回、第3話「末席の男爵」',narr:1}],
-  loseHint:'懲罰部隊は谷の真ん中で挟まれている。レオ機を南へ下げて中隊と合流させよう。崖の上の敵は硬いので、クラーラの砲撃で削るとよい。'}
+  loseHint:'懲罰部隊は谷の真ん中で挟まれている。レオ機を南へ下げて中隊と合流させよう。崖の上の敵は硬いので、クラーラの砲撃で削るとよい。'},
+ // 帝国編 第3話。台本は docs/scenario/empire-03.md
+ e3:{id:'e3',name:'末席の男爵',label:'帝国編 第3話',ep:'第3話',lv:3,syn:'園遊会の席順を恨んだ男爵が挙兵し、川の渡しを封鎖した。敵には無理やり集められた農民兵がいる。',
+  music:{pre:'story',start:'story',end:'story'},startSolid:true,map:MAP_E3,road:ROAD_E3,bg:'assets/stage_e3_map.png',leader:'caladrius',bossOnly:true,
+  // 浅瀬で戦うときは渡しの背景
+  battleBg:{S:'ford'},
+  goal:'勝利：アイゼンヴァハト撃破／敗北：カラドリウス撃墜か、農民兵の機体の撃墜',
+  roster:[
+   // 南の街道から来た討伐軍（ファルケン大隊）
+   ['zekt_b','ally',3,10],['caladrius','ally',4,10],['zekt_o','ally',5,10],['cannon','ally',3,11],['truck','ally',4,11],['lance','ally',5,11],
+   // 北岸に騎士団長、後ろに下げられた農民兵。渡しの両岸を男爵家の騎士が守る
+   ['eisenwacht','foe',4,1,{guard:true,guardRange:3,guardTurn:99}],
+   // 農民兵は騎士団長の両脇と後ろ。近づくと撃ってくるが、撃ち返せない（騎士団長への道をふさぐ）
+   ['acker','foe',3,1,{guard:true,guardRange:2,guardTurn:99}],['acker','foe',5,1,{guard:true,guardRange:2,guardTurn:99}],['acker','foe',1,2,{guard:true,guardRange:2,guardTurn:99}],['acker','foe',8,2,{guard:true,guardRange:2,guardTurn:99}],
+   ['knight','foe',3,3,{guard:true,guardRange:4,guardTurn:3}],['knight','foe',6,3,{guard:true,guardRange:4,guardTurn:3}],
+   ['knight','foe',2,2,{guard:true,guardRange:3,guardTurn:99}],['knight','foe',7,2,{guard:true,guardRange:3,guardTurn:99}],
+   ['knight','foe',3,5],['knight','foe',6,5],
+   // 3ターン目の敵フェイズに、南岸の森に伏せていた騎士（3機）が討伐軍の後ろから出る（経路が漏れていた手がかり）
+   ['knight','foe',0,10,{off:true,arrive:3}],['knight','foe',9,10,{off:true,arrive:3}],['knight','foe',0,6,{off:true,arrive:3}]],
+  pre:[
+   {who:'',text:'大陸暦598年、初夏。',narr:1,bg:'map',mark:'ford'},
+   {who:'',text:'盗賊団の討伐を終えたエルンストは少佐に昇進し、辺境の機兵大隊を任された。',narr:1},
+   {who:'',text:'その祝いの言葉が届くより早く、帝都から一通の知らせが届く。',narr:1},
+   {who:'',text:'辺境の領主、ブルクハルト男爵、挙兵。',narr:1},
+   {who:'',text:'理由は――総帥ザルグの園遊会で、席を末席にされたことだった。',narr:1},
+   {who:'',text:'― 司令部 ―',narr:1,bg:'hq'},
+   {who:'伝令',text:'申し上げます！　ブルクハルト男爵の私兵が、グラウ川の渡しを封鎖。街道の荷も人も、通れなくなっております！'},
+   {who:'クラーラ',text:'あの渡しが止まれば、南の村々は秋までに干上がります。'},
+   {who:'オットー',text:'で、でも、園遊会の席順で反乱って……本当なんですか？'},
+   {who:'マティアス',text:'貴族さまにとっちゃ、席順は命より重いらしいですぜ。'},
+   {who:'伝令',text:'それと……男爵は、領内の村々から農民を集めて、兵にしているとのことです。'},
+   {who:'エルンスト',text:'……農民を、機兵に乗せたのか。'},
+   {who:'伝令',text:'師団司令部より、命令書です。'},
+   {who:'伝令',text:'『ブルクハルト男爵の反乱を、速やかに鎮圧せよ。手段は問わず。なお、討伐には総帥閣下のご意向により、ファルケン少佐の大隊を充てる』……とのことです。'},
+   {who:'エルンスト',text:'総帥閣下の、ご意向……。'},
+   {who:'クラーラ',text:'反乱の種を蒔いたご本人が、少佐を名指しで、ですか。'},
+   {who:'マティアス',text:'しくじれば『妃の弟は役立たず』、うまくやれば『貴族を討った成り上がり』。どっちに転んでも、閣下は損をしねえ。'},
+   {who:'レオ',text:'……自分で蒔いた種を、人に刈らせる気かよ。'},
+   {who:'エルンスト',text:'そういうことだろうな。だが、困っているのは渡しの向こうの民だ。行くぞ。'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor'},
+   {who:'ブルクハルト男爵',text:'末席だぞ、末席！　三百年続くブルクハルト家の当主が、成り上がりの商人貴族より下の席だ！'},
+   {who:'ヨハン',text:'まったくです、叔父上。総帥閣下は、我が家の名誉を踏みにじりました。'},
+   {who:'ブルクハルト男爵',text:'名誉は剣で取り戻す。渡しを押さえれば、帝都も我が家を無視できまい。'},
+   {who:'ディートリヒ',text:'……閣下。村々から集めた者たちは、鍬しか握ったことのない農民です。機兵に乗せても、戦にはなりません。'},
+   {who:'ブルクハルト男爵',text:'盾にはなるだろう。農民は領主のために働くものだ。違うか、ディートリヒ。'},
+   {who:'ディートリヒ',text:'……'},
+   {who:'ヨハン',text:'騎士団長は、平民の出だからな。農民に情けをかけたくなるのだろう。'},
+   {who:'ディートリヒ',text:'……前は、我ら騎士が受け持ちます。農民兵は後ろへ。それだけは、お許しを。'},
+   {who:'ブルクハルト男爵',text:'好きにしろ。勝てばよい。'},
+   {who:'',text:'― 格納庫 ―',narr:1,bg:'hangar'},
+   {who:'マティアス',text:'少佐、懲罰部隊のゼクトを組み直しておきました。突撃槍と増加装甲。名付けて、ゼクト・ランス。'},
+   {who:'レオ',text:'へえ、悪くねえ。まっすぐ突っ込んで、まっすぐぶち抜く。俺向きだ。'},
+   {who:'エルンスト',text:'全員、聞け。今回の敵には、無理やり乗せられた農民がいる。'},
+   {who:'エルンスト',text:'農民の機体は、一機たりとも撃つな。撃たれても、撃ち返すな。狙うのは、男爵家の騎士だけだ。'},
+   {who:'ブルーノ',text:'撃たれても撃ち返すなって……そりゃ、なかなか骨ですぜ。'},
+   {who:'エルンスト',text:'分かっている。だが、農民を撃てば、我々は男爵と同じになる。'},
+   {who:'レオ',text:'……ハッ。貴族の口から、そんな言葉が聞けるとはな。いいぜ、乗った。'},
+   {who:'オットー',text:'りょ、了解です。……農民の機体、見分けられるかな……。'},
+   {who:'クラーラ',text:'農民兵の機体は、古い作業用の機兵です。印を付けて回します。'}],
+  start:[
+   {who:'',text:'― グラウ川の渡し ―',narr:1,bg:'ford'},
+   {who:'',text:'川の向こう岸に、男爵家の騎士の機兵が並ぶ。その後ろで、古い作業用の機兵が震えるように立っていた。',narr:1},
+   {who:'ディートリヒ',text:'来たか、討伐軍。……農民兵は後ろへ下がれ！　前は我ら騎士が受け持つ！'},
+   {who:'農民兵',text:'き、騎士団長様……！'},
+   {who:'ディートリヒ',text:'いいか、無理に前へ出るな。撃たれそうになったら、伏せていろ。'},
+   {who:'エルンスト',text:'（……民を、後ろに下げた？）'},
+   {who:'エルンスト',text:'全機に告ぐ。作業用の機兵は撃つな。狙うは男爵家の騎士だけだ。'},
+   {who:'クラーラ',text:'敵の騎士の機兵……リンデ村の残骸と、同じ型の部品が見えます。'},
+   {who:'エルンスト',text:'……ここにも流れていたか。その話は後だ。'},
+   {who:'作戦目標',music:'player',onmap:1,text:'勝利条件：騎士団長ディートリヒの機体の撃破。敗北条件：カラドリウスの撃墜、または農民兵の機体（「民」の印）を1機でも撃墜すること。'}],
+  talks:[
+   // 農民兵が初めて味方を撃ったとき
+   {id:'peasant',when:(a,d)=>a.spare&&d.team==='ally',lines:()=>[
+   {who:'農民兵',text:'ご、ごめんなさい！　撃たないと、村の家族が……！'},
+   {who:'エルンスト',text:'撃ち返すな！　下がって、騎士を狙え！'}]},
+   {id:'bossLeo',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='lance'),lines:()=>[
+   {who:'レオ',text:'あんた、平民の出だろ。動きで分かる。なんで、あんな男のために戦う。'},
+   {who:'ディートリヒ',text:'……答える義理はない。'},
+   {who:'レオ',text:'そうかよ。なら、槍で聞く！'}]},
+   {id:'boss',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='caladrius'),lines:()=>[
+   {who:'ディートリヒ',text:'その黒い機兵……貴公が討伐軍の将か。名を聞こう。'},
+   {who:'エルンスト',text:'エルンスト・ファルケン。帝国軍少佐、ファルケン男爵だ。'},
+   {who:'ディートリヒ',text:'男爵……。'},
+   {who:'ディートリヒ',text:'ブルクハルト家騎士団長、ディートリヒ。……同じ男爵でも、こうも違うものか。'},
+   {who:'エルンスト',text:'何の話だ。'},
+   {who:'ディートリヒ',text:'独り言だ。参る！'}]},
+   {id:'bossOther',when:(a,d)=>(a.boss||d.boss)&&![a,d].some(u=>u.key==='caladrius'||u.key==='lance'),lines:()=>[
+   {who:'ディートリヒ',text:'若いな。だが、太刀筋は悪くない。'},
+   {who:'エルンスト',text:'あれが騎士団長機だ。一機で当たるな！'}]}],
+  events:[
+   {id:'eye',turn:2,phase:'ally',lines:[
+   {who:'ディートリヒ',text:'（……一機も、農民を撃っていない。撃たれても、撃ち返さずに進んでくる）'},
+   {who:'ディートリヒ',text:'（討伐軍の将は、何者だ……）'}]},
+   {id:'reinforce',turn:3,phase:'foe',spawn:true,lines:[
+   {who:'ディートリヒ',text:'伏せていた者たち、出よ！　討伐軍の背を突け！'},
+   {who:'マティアス',text:'少佐、後ろの森から騎士の機兵です！　こっちの通る道に、最初から伏せてやがった！',alt:['クラーラ']},
+   {who:'エルンスト',text:'（……我々の経路を、知っていたのか？）'},
+   {who:'エルンスト',text:'足を止めるな。狙いは騎士団長機だけだ。農民兵の機体に気をつけて進め。'}]}],
+  bossDown:[
+   {who:'ディートリヒ',text:'ぐっ……ここまでか。'},
+   {who:'ディートリヒ',text:'農民兵、聞け！　機体を捨てて逃げろ！　罪は、すべて私が負う！'},
+   {who:'農民兵',text:'騎士団長様……！'},
+   {who:'ディートリヒ',text:'行け！　家族のところへ帰れ！'},
+   {who:'',text:'農民たちは機体を捨て、散り散りに逃げていく。騎士団長の機体も、煙を引きながら川上へ退いた。',narr:1,do:()=>{for(const u of units)if(u.spare&&!u.dead)u.off=true}},
+   {who:'レオ',text:'逃がすのかよ、少佐！',alt:['ブルーノ']},
+   {who:'エルンスト',text:'追うな。……あの男は、最後まで民を守った。'},
+   {who:'エルンスト',text:'（ディートリヒ……覚えておこう）'}],
+  lose:[
+   {who:'マティアス',text:'少佐！　くそっ、応答してください、少佐！'}],
+  loseBy:{acker:[
+   {who:'農民兵',text:'うわあああっ……！'},
+   {who:'エルンスト',text:'……撃ってしまったか。'},
+   {who:'エルンスト',text:'これでは、我々も男爵と同じだ……。'}]},
+  epilogue:f=>[
+   {who:'',text:'― グラウ川の渡し ―',narr:1,bg:'ford'},
+   {who:'オットー',text:'少佐、逃げ遅れた農民の人が……足をくじいていて。'},
+   {who:'農民兵',text:'ぐ、軍の方……お、お許しを……。'},
+   {who:'エルンスト',text:'安心しろ。お前たちを罰するつもりはない。……一つ聞かせてくれ。男爵の機兵は、どこから来た。'},
+   {who:'農民兵',text:'わ、分かりません。ただ、春ごろに、どこかの偉い方の使いが来て……荷車で、山ほど機兵が届いたんです。'},
+   {who:'クラーラ',text:'少佐。騎士の機兵の残骸、製造番号を見ました。リンデ村と狼の巣のものと、同じ流れです。'},
+   {who:'エルンスト',text:'盗賊にも、男爵にも、同じ手から機兵が流れている……。'},
+   {who:'マティアス',text:'それと、少佐。敵は、こっちが渡しのどの岸から来るか、知っていたような布陣でしたぜ。'},
+   {who:'エルンスト',text:'……経路を知っていたのは、大隊司令部だけだ。'},
+   {who:'レオ',text:'また司令部かよ。狼の巣のときと同じだな。'},
+   {who:'エルンスト',text:'ああ。……だが、まだ誰とは言えない。今は、渡しを開けることが先だ。'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor'},
+   {who:'ブルクハルト男爵',text:'負けた、だと！？　ディートリヒ、貴様それでも騎士団長か！'},
+   {who:'ディートリヒ',text:'……申し訳ございません。'},
+   {who:'ブルクハルト男爵',text:'しかも農民どもを逃がしたそうだな。裏切り者どもは、見つけ次第縛り首だ！'},
+   {who:'ディートリヒ',text:'閣下、それは……！'},
+   {who:'ヨハン',text:'叔父上。次は、私に兵をお預けください。必ずや、討伐軍に一泡吹かせてみせます。'},
+   {who:'ブルクハルト男爵',text:'分家の末席が、何を言うか。……まあよい。手はある。'},
+   {who:'ブルクハルト男爵',text:'さる筋から、討伐軍の補給の日取りが届いておる。後ろを突けば、奴らは干上がる。'},
+   {who:'ブルクハルト男爵',text:'ヨハン、お前が行け。'},
+   {who:'ヨハン',text:'はっ！　叔父上のご期待に、必ず！'},
+   {who:'ディートリヒ',text:'（……エルンスト・ファルケン。あの男なら、何と答えるだろうか）'},
+   {who:'',text:'渡しは開かれ、南の村々に荷が戻った。',narr:1,bg:'map',mark:'ford'},
+   {who:'',text:'だが、男爵の城館では、次の戦が静かに仕組まれていた。',narr:1},
+   {who:'',text:'「さる筋」から届いたという、討伐軍の補給の日取り。',narr:1},
+   {who:'',text:'その紙をしたためたのは、いったい誰なのか。',narr:1},
+   {who:'',text:'次回、第4話「後方の狙撃手」',narr:1}],
+  loseHint:'「民」の印の農民兵は撃たないこと。川は浅瀬（2か所）からしか渡れない。騎士団長機は硬いので、囲んで削ろう。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
-const STAGE_ORDER=['e1','e2'];
+const STAGE_ORDER=['e1','e2','e3'];
 const stageTitle=st=>`${st.label}「${st.name}」`;
 let ST=STAGES.s1,flags={};
 // ステージの地形と背景を切り替える
@@ -1118,7 +1315,7 @@ function tinted(src,color){
 // 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、SPR_EXTRA の機体は idle / walk / attack（待機／歩行／攻撃）も。
 // TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）。tint で画像に色を重ねられる
 // 待機・歩行・攻撃の絵がある機体
-const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf','cannon'];
+const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf','cannon','lance','eisenwacht','acker'];
 const SPR={};
 for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);
@@ -1217,6 +1414,10 @@ function drawUnit(c,u,s,now){
   // 「BOSS」は機体にかぶらないよう、マスの左下に小さな札で出す
   if(u.boss){const fs=s*.17;c.font=`${fs}px DotGothic16,monospace`;c.textAlign='left';c.textBaseline='middle';const tw=c.measureText('BOSS').width,bx=X+s*.06,by=Y+s*.68;
     c.fillStyle='#ffc23d';c.fillRect(bx,by,tw+fs*.5,fs*1.15);c.fillStyle='#1a0e04';c.fillText('BOSS',bx+fs*.25,by+fs*.6)}
+  // 撃ってはいけない機体（農民兵。ST の spare）：白い枠と「民」の札
+  if(u.spare){c.strokeStyle='#f2ead0';c.lineWidth=Math.max(1.5,s*.05);c.setLineDash([s*.1,s*.06]);c.strokeRect(X+s*.08,Y+s*.08,s*.84,s*.84);c.setLineDash([]);
+    const fs=s*.2;c.font=`${fs}px DotGothic16,monospace`;c.textAlign='center';c.textBaseline='middle';const bx=X+s*.06,by=Y+s*.62;
+    c.fillStyle='#f2ead0';c.fillRect(bx,by,fs*1.3,fs*1.2);c.fillStyle='#2a1a08';c.fillText('民',bx+fs*.65,by+fs*.62)}
 }
 function drawMap(now){
   const s=TS*DPR;
@@ -1372,7 +1573,8 @@ const BG_WHOLE=['map'];
 // 会話の行に mark:'linde' と書くとその行から印が出る（bg が変わると消える。mark:null でも消える）
 const MAP_PLACES={
  linde:{x:56.3,y:36.0,label:'リンデ村'},
- wolfsgrube:{x:59.6,y:33.0,label:'ヴォルフスグルーベ'}
+ wolfsgrube:{x:59.6,y:33.0,label:'ヴォルフスグルーベ'},
+ ford:{x:47.2,y:32.4,label:'グラウ川の渡し'}
 };
 const BG_SIZE={map:[848,1264]};
 for(const f of Object.values(BG))new Image().src=f;
@@ -1408,7 +1610,7 @@ function dialog(lines,o={}){
       if(!p||!sz||!box){mk.hidden=true;return}
       mk.style.left=(box.left+sz[0]*box.k*p.x/100)+'px';mk.style.top=(box.top+sz[1]*box.k*p.y/100)+'px';mk.querySelector('.lbl').textContent=p.label;mk.hidden=false};
     const onRs=()=>layout();addEventListener('resize',onRs);
-    const show=()=>{const l=lines[i];DLG_LOG.push({who:l.who,text:l.text});if(DLG_LOG.length>600)DLG_LOG.shift();if(l.music)bgm(l.music);solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
+    const show=()=>{const l=lines[i];if(l.do)l.do();DLG_LOG.push({who:l.who,text:l.text});if(DLG_LOG.length>600)DLG_LOG.shift();if(l.music)bgm(l.music);solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
     show();d.hidden=false;layout();
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side','onmap');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
@@ -1517,7 +1719,8 @@ function forecast(a,d,w){
   snd('sel');
   const f=forecastHtml(a,d,w,'counter'),dd=dist(a,d);
   const tabs=a.weapons.map((x,i)=>usable(a,x)||!inRange(x,dd)?'':`<button class="wtab ${x===w?'on':''}" data-fw="${i}">${x.name}<small>攻撃 ${x.pow}・命中 ${hitRate(a,d,x)}%・${x.maxAmmo?`弾 ${x.ammo}`:x.en?`EN ${x.en}`:'消費なし'}</small></button>`).join('');
-  openSheet(`<div class="sh-title"><span>戦闘予測</span><span style="color:var(--mute);font-size:12px">${a.buf.dbl?'渾身 ':''}${a.buf.hit100?'照準固定 ':''}</span></div><div class="wtabs">${tabs}</div>${f.html}<div class="sh-actions"><button class="btn pri" data-x="go">攻撃開始</button><button class="btn" data-x="close">やめる</button></div>`);
+  const warn=d.spare?'<div class="hint" style="color:var(--foe);font-weight:bold;margin-top:6px">⚠ 農民兵の機体です。撃墜するとゲームオーバー</div>':'';
+  openSheet(`<div class="sh-title"><span>戦闘予測</span><span style="color:var(--mute);font-size:12px">${a.buf.dbl?'渾身 ':''}${a.buf.hit100?'照準固定 ':''}</span></div><div class="wtabs">${tabs}</div>${f.html}${warn}<div class="sh-actions"><button class="btn pri" data-x="go">攻撃開始</button><button class="btn" data-x="close">やめる</button></div>`);
   sheet._go=async()=>{closeSheet();busy=true;renderConsole();await combat(a,d,w,{mode:'counter'});busy=false;if(!over)finishUnit(a)};
   sheet._fw=i=>forecast(a,d,a.weapons[i]);
 }
@@ -1617,6 +1820,8 @@ function battleLines(lines){
 async function combat(att,def,w,choice){
   // ステージの会話イベント（それぞれ1回だけ）
   for(const t of ST.talks||[])if(!flags[t.id]&&t.when(att,def)){flags[t.id]=true;await dialog(battleLines(t.lines(att,def)))}
+  // 農民兵に撃たれても、味方は撃ち返さない（自動で防御。うっかり反撃で撃墜して負けにならないように）
+  if(att.spare&&def.team==='ally'&&choice.mode==='counter')choice={mode:'defend'};
   att.dir=dirOf(def.x-att.x,def.y-att.y);def.dir=dirOf(att.x-def.x,att.y-def.y);
   const strikes=[strike(att,def,w,choice.mode)];
   if(def.hp>0&&choice.mode==='counter'){const cw=bestWeapon(def,att,dist(att,def));if(cw)strikes.push(strike(def,att,cw,'counter'))}
@@ -1631,7 +1836,8 @@ async function combat(att,def,w,choice){
   await checkEnd();
 }
 // 敗北：leader か、守る機体（ST.protect）が撃墜されたとき。勝利：ボス撃破か敵全滅（ST.bossOnly ならボス撃破だけ）
-const lostUnit=()=>{const leader=units.find(u=>u.key===ST.leader);if(leader.dead)return leader;return units.find(u=>(ST.protect||[]).includes(u.key)&&u.dead)||null};
+// 撃ってはいけない機体（spare＝農民兵）が撃墜されても敗北
+const lostUnit=()=>{const leader=units.find(u=>u.key===ST.leader);if(leader.dead)return leader;return units.find(u=>((ST.protect||[]).includes(u.key)||u.spare)&&u.dead)||null};
 const wonNow=()=>{const boss=units.find(u=>u.boss);return boss.dead||(!ST.bossOnly&&!alive('foe').length&&!units.some(u=>u.off))};
 const checkEndNow=()=>!!lostUnit()||!alive('ally').length||wonNow();
 async function checkEnd(){
@@ -1640,7 +1846,7 @@ async function checkEnd(){
   if(lost||!alive('ally').length){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);await dialog(battleLines((lost&&ST.loseBy&&ST.loseBy[lost.key])||ST.lose));result(false);return}
   // 戦闘が終わったら、そのあとの会話はステージの music.end の曲（帝国編第1話は「戦闘準備」）
   if(wonNow()){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);
-    await dialog(battleLines(boss.dead&&alive('foe').length?ST.bossDown:ST.allDown));
+    await dialog(battleLines(boss.dead&&alive('foe').length||!ST.allDown?ST.bossDown:ST.allDown));
     if(ST.epilogue)await dialog(ST.epilogue(flags),{solid:true});
     result(true)}
 }
@@ -1660,20 +1866,20 @@ const bcv=$('bcv'),bctx=bcv.getContext('2d');
 // 戦闘画面では、左側（敵）は右を、右側（味方）は左を向くように、向きが逆の絵は左右反転して描く
 // 横に長い武器（大鉈とガトリング砲）が付いた戦闘用の絵は、横幅ではなく高さで大きさを決める（横幅で決めると体が小さくなる）
 const BIG_BY_H={graywolf:1};
-const BIG_FACE={cannon:'l',bulwark:'l',zekt:'l',truck:'l',hound:'r'};
+const BIG_FACE={cannon:'l',bulwark:'l',zekt:'l',truck:'l',hound:'r',lance:'l',acker:'l'};
 // 整備車両の攻撃の絵は正面から見た車両で、戦闘用の絵より小さく見えるので使わない。
 // グランヴァルドたち4機（番外編）の攻撃の絵は元のドット絵が小さく、拡大するとぼやけるので使わない
-const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r',cannon:'r'};
+const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r',cannon:'r',lance:'r',eisenwacht:'r',acker:'r'};
 // 攻撃の絵が何の攻撃の絵か（格＝格闘、射＝射撃）。武器の種類と合うときだけ攻撃の絵を使う
 // （ゼクトの攻撃の絵はライフルを構えた絵なので、バトルアックスでは使わない、など）
 // 武器ごとの構えの絵（設定画の一枚絵。右向き）。ある武器はこちらを使う。大きさは戦闘用の絵と同じ背の高さにそろえる
 const ATK_W={caladrius:{'ライフル':'caladrius_rifle','マシンガン':'caladrius_mg'}};
 const ATK_W_IMG={};for(const m of Object.values(ATK_W))for(const f of Object.values(m))ATK_W_IMG[f]=img(`assets/sprites/${f}.png`);
-const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格',cannon:'射'};
+const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格',cannon:'射',lance:'格',eisenwacht:'格',acker:'射'};
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
-const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort'};
+const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort',R:'water',S:'water'};
 const BATTLE_BG={};for(const f of[...Object.values(BATTLE_BG_FILE),'bandit','ford'])if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
 // 話ごとに地形の戦闘背景を差し替える（ST.battleBg。第2話は谷の道も岩の谷、砦は盗賊の砦の背景）
 const battleBgOf=t=>BATTLE_BG[(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t]];
@@ -1926,6 +2132,14 @@ function startOfPhase(team){
 }
 // 敵のねらい方の補助：相手のいちばん強い武器の攻撃力（脅威度）
 const threatPow=u=>Math.max(0,...u.weapons.map(w=>w.pow));
+// 地形の移動コストをたどった、各マスから p までの道のり（ユニットは無視）
+function pathDist(p){
+  const D=Array.from({length:ROWS},()=>Array(COLS).fill(1e6));D[p.y][p.x]=0;const q=[[p.x,p.y]];
+  while(q.length){q.sort((a,b)=>D[a[1]][a[0]]-D[b[1]][b[0]]);const[x,y]=q.shift();
+    for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=COLS||ny>=ROWS)continue;
+      const c=terOf(x,y).c;if(c>=99)continue;const nd=D[y][x]+c;if(nd<D[ny][nx]){D[ny][nx]=nd;q.push([nx,ny])}}}
+  return D;
+}
 async function enemyAct(e){
   // guard：最初はその場で待つ。guardTurn ターン目になるか、味方が guardRange マス以内に来たら動き出す（省略時は3ターン目・6マス）
   const guard=e.guard&&turn<(e.guardTurn||3)&&!alive('ally').some(p=>dist(p,e)<=(e.guardRange||6));
@@ -1949,11 +2163,13 @@ async function enemyAct(e){
   if(best){
     await animateMove(e,r.path(best.t.x,best.t.y));await sleep(150);
     let choice={mode:'counter'};
-    if(settings.manualDef)choice={mode:await defenseChoice(e,best.p,best.w)};
+    if(settings.manualDef&&!e.spare)choice={mode:await defenseChoice(e,best.p,best.w)};
     await combat(e,best.p,best.w,choice);
   }else if(!guard){
     let tgt=null,td=1e9;for(const p of alive('ally')){const d=dist(p,e);if(d<td){td=d;tgt=p}}
-    if(tgt){let bt=null,bd=1e9;for(const t of r.tiles){const d=Math.abs(t.x-tgt.x)+Math.abs(t.y-tgt.y)-terOf(t.x,t.y).e*.02;if(d<bd){bd=d;bt=t}}
+    // 渡れない地形（川）があるステージでは、まっすぐの距離ではなく、地形をたどった道のりで近づく（川岸で止まらないように）
+    const pd=MAP.some(r=>r.includes('R'))?pathDist(tgt):null;
+    if(tgt){let bt=null,bd=1e9;for(const t of r.tiles){const d=(pd?pd[t.y][t.x]:Math.abs(t.x-tgt.x)+Math.abs(t.y-tgt.y))-terOf(t.x,t.y).e*.02;if(d<bd){bd=d;bt=t}}
       if(bt)await animateMove(e,r.path(bt.x,bt.y))}
   }
   e.acted=true;sel=null;renderConsole();await sleep(120);
