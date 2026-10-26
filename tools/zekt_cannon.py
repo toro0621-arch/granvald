@@ -8,6 +8,23 @@ from PIL import Image
 sys.path.insert(0, 'tools')
 import extract_sprites as ex
 import cutout_hq as hq
+from scipy import ndimage as ndi
+
+
+def drop_shadow(im, frac=.15):
+    """足元に残る薄い水色の影（明るく青みのある画素）を消す。下の方だけ、外の透明な部分とつながっている分を抜く"""
+    a = np.asarray(im).astype(float).copy()
+    rgb, al = a[..., :3], a[..., 3]
+    lum = rgb.mean(-1)
+    pale = (lum > 120) & (rgb[..., 2] - rgb[..., 0] > 8) & (al > 0)
+    pale[: int(a.shape[0] * (1 - frac))] = False
+    bg = al < 40
+    lab, _ = ndi.label(pale | bg)
+    ok = set(np.unique(lab[bg])) - {0}
+    kill = pale & np.isin(lab, list(ok))
+    a[..., 3][kill] = 0
+    out = Image.fromarray(a.astype(np.uint8), 'RGBA')
+    return out.crop(out.getbbox())
 
 SRC = 'docs/ref/zekt-cannon-sprites.png'
 OUT = 'assets/sprites/'
@@ -17,10 +34,10 @@ BOXES = {'down': (776, 200, 906, 425), 'up': (900, 200, 1012, 425), 'left': (101
 
 if __name__ == '__main__':
     img = np.asarray(Image.open(SRC).convert('RGB'))
-    big = hq.cut_outline(img, BIG)
+    big = drop_shadow(hq.cut_outline(img, BIG))
     big.save(OUT + 'cannon.png', optimize=True)
     print('cannon.png', big.size)
     for kind, box in BOXES.items():
-        im = ex.cut(img, box, tol=24, robust_bg=True, pocket_min=600, pocket_dark=0.35)
+        im = drop_shadow(ex.cut(img, box, tol=24, robust_bg=True, pocket_min=600, pocket_dark=0.35))
         im.save(f'{OUT}cannon_{kind}.png', optimize=True)
         print(f'cannon_{kind}.png', im.size)

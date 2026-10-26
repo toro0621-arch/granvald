@@ -25,7 +25,7 @@
   - 地形の見た目はファンタジー（中世ヨーロッパ風）。ビル・舗装道路・白線など近代的なものは使わない。地形タイルの元は `docs/ref/fantasy-tiles.jpg`（背景はマゼンタ）。
   - 戦闘画面の足場（`tile_*.png`。平地・森・山・水辺・村・砦）は `python3 tools/fantasy_tiles.py` で切り抜く（マゼンタを透明に）。
   - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、`fantasy-tiles.jpg` の森・山・市街・城（E）・砦（B）を貼る。市街は帝国編（E1）では村、それ以外は町。範囲は `fantasy_tiles.py` の `MAPTILE`。海と草地は生成し、草地の色はタイルの草地に合わせる。道路は土の道）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`、`E2 assets/stage_e2_map.png`（第2話は砦（E）を丸太の柵の砦の絵にし、坑道の入口（K）は `docs/ref/tile-mine.jpg` を貼る）。マップを変えたら作り直す。
-  - ゼクト・キャノン（クラーラ機）の絵は `python3 tools/zekt_cannon.py`（`docs/ref/zekt-cannon-sprites.png`。大きい絵は `cut_outline`、ドット絵はゼクトと同じ `cut()` の設定）。
+  - ゼクト・キャノン（クラーラ機）の絵は `python3 tools/zekt_cannon.py`（`docs/ref/zekt-cannon-sprites.png`。大きい絵は `cut_outline`、ドット絵はゼクトと同じ `cut()` の設定。足元の薄い水色の影は `drop_shadow` で消す。影は残さない）。
   - 第2話のボス・グラウヴォルフの絵は `python3 tools/graywolf.py`（元の絵の背景はマゼンタ一色。戦闘用の大きい絵は大鉈とガトリング砲で横に長いので、戦闘画面では横幅でなく高さで大きさを決める＝`BIG_BY_H`）。
   - 別の機体の画像を使うときは TPL に `spr:'zekt'` のように書く（中隊と盗賊のゼクト・ゴルム）。`tint` で色を重ねられ、`spr:false` は画像なし（図形で描く）。待機・歩行・攻撃の絵がある機体は `SPR_EXTRA`。
 - ステータス画面の機体の絵は、顔グラと同じくらいの大きさ（88px）で、背景を抜いた戦闘用の絵を出す（大きく出さない。ユーザーの希望）。別の機体の画像を使う機体（`spr`）はそのファイルを使う（`sprFile`）。
