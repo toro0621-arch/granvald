@@ -1,5 +1,7 @@
 # 帝国編 第3話「末席の男爵」 背景の指示文
 
+> できあがり：城館の広間 `docs/ref/bg-manor.jpg` → `assets/bg/manor.jpg`、グラウ川の渡し `docs/ref/bg-ford.jpg` → `assets/bg/ford.jpg`、戦闘背景 `docs/ref/battle-bg-ford.jpg` → `assets/bg/battle_ford.jpg`（どれも使う）
+
 添付：`assets/bg/linde.jpg`・`assets/bg/wolfsgrube.jpg`（会話の背景画。絵柄をそろえるため）
 会話の背景画は抜かずにそのまま使う。縦長（9:16、スマートフォンの縦画面向け）。
 

@@ -1,5 +1,7 @@
 # 帝国編 第3話「末席の男爵」 キャラ（顔グラ）の指示文
 
+> できあがり：`docs/ref/empire-03-faces.png` → `assets/faces/baron.png`・`dietrich.png`・`johann.png`・`peasant.png`（使う）
+
 添付：`docs/ref/empire-02-faces.png`（第2話の顔グラの資料。この形式で描くと絵柄がそろう）
 切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 
