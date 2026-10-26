@@ -5,6 +5,7 @@ docs/ref/fantasy-tiles.jpg（ファンタジー風の地形タイル）から切
 使い方: python3 tools/build_map.py [ステージ] [出力先]   （numpy, scipy, Pillow が必要）
   python3 tools/build_map.py S1 assets/stage1_map.png      … 鋼の目覚め（省略時）
   python3 tools/build_map.py E1 assets/stage_e1_map.png    … 帝国編 第1話「国境の村」
+  python3 tools/build_map.py E2 assets/stage_e2_map.png    … 帝国編 第2話「狼の巣」（砦（E）は丸太の柵の砦、坑道の入口（K）は docs/ref/tile-mine.jpg）
 """
 import re
 import sys
@@ -34,8 +35,10 @@ def inset(b, m=4):
     return (b[0] + m, b[1] + m, b[2] - m, b[3] - m)
 PATCH = {'F': [inset(b) for b in MAPTILE['forest']], 'M': [inset(b) for b in MAPTILE['mountain']],
          'C': [inset(b) for b in (MAPTILE['village'] if STAGE == 'E1' else MAPTILE['town'])]}
-# 複数マスにまたがる建物：帝国の城（E）と味方基地（B＝砦）
-BLOCK = {'E': inset(MAPTILE['castle']), 'B': inset(MAPTILE['fort'])}
+# 複数マスにまたがる建物：帝国の城（E）と味方基地（B＝砦）。第2話（E2）の E は盗賊の根城なので、城ではなく丸太の柵の砦の絵
+BLOCK = {'E': inset(MAPTILE['fort'] if STAGE == 'E2' else MAPTILE['castle']), 'B': inset(MAPTILE['fort'])}
+# 坑道の入口（K）：地形は山と同じ。絵は別ファイル（ユーザーが描いたタイル。今の山のタイルと同じ絵柄）
+MINE = Image.open('docs/ref/tile-mine.jpg').convert('RGB')
 
 def noise(shape, scale, seed):
     r = np.random.default_rng(seed).random((shape[0] // scale + 2, shape[1] // scale + 2))
@@ -111,9 +114,18 @@ for y in range(ROWS):
             dr.rectangle([px_, py_, px_ + 1, py_ + 1], fill=(126, 100, 62) if rng.random() < .6 else (190, 166, 120))
 
 # 森・山・市街・基地を設定画から貼る（山は少し大きめに貼って重ねる）
-order = sorted(((y, x) for y in range(ROWS) for x in range(COLS)), key=lambda p: (MAP[p[0]][p[1]] == 'M', p))
+order = sorted(((y, x) for y in range(ROWS) for x in range(COLS)), key=lambda p: (MAP[p[0]][p[1]] in 'MK', p))
 for y, x in order:
     t = MAP[y][x]
+    if t == 'K':
+        # 坑道の入口の絵は横長なので、横幅をマスに合わせ、上下は草地のまま（ふちはにじませる）
+        size = CELL + 2 * FE + 10
+        hh = round(size * MINE.height / MINE.width)
+        im = MINE.resize((size, hh), Image.LANCZOS)
+        m = Image.new('L', (size, hh), 0); ImageDraw.Draw(m).rectangle([FE // 2, FE // 2, size - FE // 2, hh - FE // 2], fill=255)
+        off = (size - CELL) // 2
+        canvas.paste(im, (x * CELL - off, y * CELL + CELL - hh + FE // 2), m.filter(ImageFilter.GaussianBlur(FE / 2.5)))
+        continue
     if t not in PATCH: continue
     box = PATCH[t][rng.integers(len(PATCH[t]))]
     size = CELL + 2 * FE + (10 if t == 'M' else 0)

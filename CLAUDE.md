@@ -1,7 +1,7 @@
 # 機甲戦線グランヴァルド
 
 スパロボ風のターン制SRPG（オリジナル作品）。現状は `index.html` 1ファイル＋画像（`assets/sprites/`、マップ背景）＋BGM（`assets/bgm/`）。ビルド不要、ブラウザで直接開けば動く。
-ステージは2つ：帝国編 第1話「辺境の火」（`e1`）と、沿岸都市連合の「鋼の目覚め」（`s1`）。タイトル画面のエピソード一覧で選ぶ。
+ステージは3つ：帝国編 第1話「辺境の火」（`e1`）、第2話「狼の巣」（`e2`）、沿岸都市連合の「鋼の目覚め」（`s1`。番外編）。タイトル画面のエピソード一覧で選ぶ。
 
 ## ゲームの作り（エピソード方式。ユーザーの希望）
 - アニメのように、どの話からでも遊べる。全部の話を最初から開放し、くり返し遊べる。
@@ -24,7 +24,8 @@
   - 戦闘用・ステータス用の大きい絵（`<機体>.png`）は、そのあと `python3 tools/cutout_hq.py` で切り抜き直す（`extract_sprites.py` の切り抜きを土台に、ふちに残る水色・桃色のにじみと、整備車両の足元の影を消す。白い装甲や羽根は残る）。`extract_sprites.py` を実行し直したら、必ずこちらも実行する。
   - 地形の見た目はファンタジー（中世ヨーロッパ風）。ビル・舗装道路・白線など近代的なものは使わない。地形タイルの元は `docs/ref/fantasy-tiles.jpg`（背景はマゼンタ）。
   - 戦闘画面の足場（`tile_*.png`。平地・森・山・水辺・村・砦）は `python3 tools/fantasy_tiles.py` で切り抜く（マゼンタを透明に）。
-  - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、`fantasy-tiles.jpg` の森・山・市街・城（E）・砦（B）を貼る。市街は帝国編（E1）では村、それ以外は町。範囲は `fantasy_tiles.py` の `MAPTILE`。海と草地は生成し、草地の色はタイルの草地に合わせる。道路は土の道）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`。マップを変えたら作り直す。
+  - マップ背景はステージごとに `python3 tools/build_map.py <ステージ> <出力先>` で作る（`MAP_<ステージ>` / `ROAD_<ステージ>` を読み、`fantasy-tiles.jpg` の森・山・市街・城（E）・砦（B）を貼る。市街は帝国編（E1）では村、それ以外は町。範囲は `fantasy_tiles.py` の `MAPTILE`。海と草地は生成し、草地の色はタイルの草地に合わせる。道路は土の道）。`S1 assets/stage1_map.png`、`E1 assets/stage_e1_map.png`、`E2 assets/stage_e2_map.png`（第2話は砦（E）を丸太の柵の砦の絵にし、坑道の入口（K）は `docs/ref/tile-mine.jpg` を貼る）。マップを変えたら作り直す。
+  - 第2話のボス・グラウヴォルフの絵は `python3 tools/graywolf.py`（元の絵の背景はマゼンタ一色。戦闘用の大きい絵は大鉈とガトリング砲で横に長いので、戦闘画面では横幅でなく高さで大きさを決める＝`BIG_BY_H`）。
   - 別の機体の画像を使うときは TPL に `spr:'zekt'` のように書く（中隊と盗賊のゼクト・ゴルム）。`tint` で色を重ねられ、`spr:false` は画像なし（図形で描く）。待機・歩行・攻撃の絵がある機体は `SPR_EXTRA`。
 - ステータス画面の機体の絵は、顔グラと同じくらいの大きさ（88px）で、背景を抜いた戦闘用の絵を出す（大きく出さない。ユーザーの希望）。別の機体の画像を使う機体（`spr`）はそのファイルを使う（`sprFile`）。
 - パイロットの顔グラは `assets/faces/<名前>.png`（128×128）。設定画（`empire-01-sheet.png`・`empire-01-faces.png`・`setting-sheet.png`）の人物画から切り抜いたもの。`FACE`（名前→ファイル名）で引き、戦闘画面・会話・ステータス画面に出す。起動時に全員分を先読みし（`FACE_IMG`）、読み込みが終わっていない顔は表示しない（前の人の顔が残って見えるのを防ぐ）。新しいキャラは設定画から切り抜いて `FACE` に足す。
@@ -45,7 +46,7 @@
 |---|---|
 | DATA | ステージごとの地形 `MAP_S1` / `MAP_E1`（10×12の地形文字列）と `ROAD_S1` / `ROAD_E1`（見た目だけの道路）。今のステージのものが `MAP` / `ROAD` に入る。`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（戦術＝精神コマンドにあたるもの。名前はスパロボと変えてある：照準固定・先読み・研ぎ澄まし・渾身・不動・強行軍・応急修理・鬨の声）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
-| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、エピソード一覧の表示（ep＝話数、syn＝ひとこと紹介）、レベル（lv）。`loadStage(id)` で切り替え、`setup()` で配置（`mk` で lv の倍率をかける）。会話イベントの済みは `flags` |
+| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、エピソード一覧の表示（ep＝話数、syn＝ひとこと紹介）、レベル（lv）。第2話から使うもの：守る機体（protect。撃墜で敗北。会話は loseBy）、ボス撃破だけで勝ち（bossOnly）、話ごとの戦闘背景（battleBg）と地形の名前（terName）、ターンとフェイズのイベント（events。spawn で増援）、隣り合ったときの会話（meetTalks）、撃墜されたときの会話（downTalks）。roster の5つ目の値で `{off:true,arrive:3}`（増援。それまでマップにいないものとして扱う＝`alive`・`unitAt` から外す）、`{guard:true,guardRange:3,guardTurn:99}`（その場で待つ。味方が近づくまで動かない）。`loadStage(id)` で切り替え、`setup()` で配置（`mk` で lv の倍率をかける）。会話イベントの済みは `flags` |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
 | MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないとき・画像がない機体の代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss / knight（カラドリウス）/ truck（整備車両）/ hound（ハウンド） |
@@ -59,6 +60,7 @@
 | TITLE / START | タイトル画面：背景は黒、中央にロゴの絵（`assets/title-logo.jpg`。元は `docs/ref/title-logo.jpg`。絵の背景も黒なので、円の外側をマスクでなじませる）、「TAP TO START」→ タップでメニュー（`showTitleMenu`。このタップで音も解禁）。メニューは、中断データがあれば先頭に「つづきから」、その下にエピソード一覧（`renderStageList`。`STAGE_ORDER` の順。話数・題名・ひとこと紹介。話が増えたら一覧だけスクロール）。`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle`（メニューを出した状態で戻る）。設定シートに「この話を最初から」「エピソード一覧へ」 |
 
 ## テスト
+- 通しプレイ：`node tools/test/autoplay.js <ステージ> <回数>`（味方も簡単なAIで動かして最後まで遊ぶ。会話はすぐ閉じる。勝敗・ターン数・流れた会話・撃墜された味方・増援・例外を出す。味方のAIは雑なので、勝率はバランスの目安。第1話で8割くらい勝つ）。
 - 戦闘アニメの総当たり：`python3 -m http.server 8765` を立ててから `node tools/test/battle_anim_test.js <出力フォルダ> <周回1〜5>`（全ユニット×全武装×6パターン＝命中・回避・クリティカル・撃墜・反撃・反撃で撃墜。ゲームの時計を早送りし、例外・描画へのNaN・終わらない・画面が閉じない・何も描かれない・違う名前を自動で調べる。周回1＝400×800、2＝320×568、3＝横向き844×390、4＝地形を順番に、5＝途中でタップしてスキップ）。コマは `<出力>/bd_r<周回>/` に保存され、`python3 tools/test/battle_anim_sheets.py <出力> <周回>` で一覧画像にできる（目で見る用）。file:// だと canvas が読めないので必ず http で開く。
 
 ## 計算式

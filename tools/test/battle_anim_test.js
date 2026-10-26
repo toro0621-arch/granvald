@@ -26,8 +26,8 @@ const res=await p.evaluate(async({ROUND})=>{
   const PAT=['hit','miss','crit','kill','counter','counterKill'];
   const TERR=['P','F','M','W','C','B','E'];
   const jobs=[];
-  for(const st of ['e1','s1']){loadStage(st);setup();
-    const seen=new Set();
+  const seen=new Set();
+  for(const st of STAGE_ORDER){loadStage(st);setup();
     for(const u of units){if(seen.has(u.key))continue;seen.add(u.key);
       u.weapons.forEach((w,wi)=>{for(const pat of PAT)jobs.push({st,key:u.key,wi,wname:w.name,pat})})}}
   const log=[],shots=[];let n=0;
