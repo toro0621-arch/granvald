@@ -644,8 +644,10 @@ const STAGES={
    // 盗賊団：砦にボス、崖の上にゼクト（崖から動かずに撃ってくる）、谷にハウンド
    ['graywolf','foe',4,1,{guard:true,guardRange:3,guardTurn:99}],['zekt_x','foe',5,2],['zekt_x','foe',2,4,{guard:true,guardRange:2,guardTurn:99}],['zekt_x','foe',7,4,{guard:true,guardRange:2,guardTurn:99}],
    ['hound','foe',3,4],['hound','foe',5,4],['hound','foe',6,7],
-   // 3ターン目の敵フェイズに、西の崖の坑道 (1,8) から増援
-   ['golmkai2','foe',1,8,{off:true,arrive:3}],['hound','foe',2,8,{off:true,arrive:3}]],
+   // 3ターン目の敵フェイズに、西の崖の坑道 (1,8) から増援（3機）
+   ['golmkai2','foe',1,8,{off:true,arrive:3}],['hound','foe',2,8,{off:true,arrive:3}],['zekt_x','foe',1,10,{off:true,arrive:3}],
+   // 5ターン目の敵フェイズに、砦から残りの手下（2機）
+   ['zekt_x','foe',5,0,{off:true,arrive:5}],['hound','foe',4,0,{off:true,arrive:5}]],
   pre:[
    {who:'',text:'大陸暦598年、春。ガルディア帝国の南、ドルン公国との国境の山あい。',narr:1,bg:'map',mark:'wolfsgrube'},
    {who:'',text:'盗賊団に襲われたリンデ村を、エルンストの中隊は上官の命令に背いて救った。',narr:1},
@@ -734,6 +736,10 @@ const STAGES={
    {who:'ゲルト',text:'ボルツ、聞こえるか。坑道を抜けて、軍の連中の背中を取れ。'},
    {who:'ボルツ',text:'へい、頭！　リンデ村の借り、きっちり返してやりますぜ！'},
    {who:'エルンスト',text:'（坑道……？　この山は廃鉱山だ。どこかに抜け道があるのか）'}]},
+   {id:'reinforce2',turn:5,phase:'foe',spawn:true,lines:[
+   {who:'ゲルト',text:'砦の残りも全部出せ！　ここが踏ん張りどころだ！'},
+   {who:'クラーラ',text:'砦からさらに二機！　大尉、敵はまだ温存していました！'},
+   {who:'エルンスト',text:'構わん。頭を叩けば終わる。押し込め！'}]},
    {id:'reinforce',turn:3,phase:'foe',spawn:true,lines:[
    {who:'ボルツ',text:'待たせたな、頭！　坑道の中から回り込んでやったぜ！'},
    {who:'ブルーノ',text:'あいつ、リンデ村の赤いやつ！　生きてやがったか！',alt:['オットー','マティアス']},
