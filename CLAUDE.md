@@ -1,7 +1,13 @@
 # 機甲戦線グランヴァルド
 
 スパロボ風のターン制SRPG（オリジナル作品）。現状は `index.html` 1ファイル＋画像（`assets/sprites/`、マップ背景）＋BGM（`assets/bgm/`）。ビルド不要、ブラウザで直接開けば動く。
-ステージは2つ：帝国編 第1話「辺境の火」（`e1`）と、沿岸都市連合の「鋼の目覚め」（`s1`）。タイトル画面で選ぶ。
+ステージは2つ：帝国編 第1話「辺境の火」（`e1`）と、沿岸都市連合の「鋼の目覚め」（`s1`）。タイトル画面のエピソード一覧で選ぶ。
+
+## ゲームの作り（エピソード方式。ユーザーの希望）
+- アニメのように、どの話からでも遊べる。全部の話を最初から開放し、くり返し遊べる。
+- セーブ・ロードの枠はなし。戦闘を途中でやめたときの中断データ1つだけ（`granvald-suspend`）。
+- 育成（経験値・改造）・ボーナス・会話の分岐はなし。話ごとのレベル（`STAGES.<id>.lv`）で敵味方そろって HP・装甲・武器の攻撃力を上げる（`lvMul`：1レベルにつき+15%）。
+- 1話は今の第1話くらいの長さ。第2話からは冒頭に「前回までのあらすじ」を入れる。
 
 ## 方針
 - 既存ゲームのROM・画像・音楽・セリフ・キャラクター・ロボットは使わない。参考にするのはゲームシステム（気力、精神コマンド、地形効果など）だけ。
@@ -36,18 +42,18 @@
 |---|---|
 | DATA | ステージごとの地形 `MAP_S1` / `MAP_E1`（10×12の地形文字列）と `ROAD_S1` / `ROAD_E1`（見た目だけの道路）。今のステージのものが `MAP` / `ROAD` に入る。`TER`（地形：移動コスト c / 防御 d / 回避 e）、`SPIRITS`（戦術＝精神コマンドにあたるもの。名前はスパロボと変えてある：照準固定・先読み・研ぎ澄まし・渾身・不動・強行軍・応急修理・鬨の声）、`TPL`（機体・パイロット・武器テンプレート。武器は `W()` で定義） |
 | STATE | グローバル状態。`mode` は title / idle / peek / select / moving / menu / target / busy |
-| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、ボーナス（bonus）。`loadStage(id)` で切り替え、`setup()` で配置。会話イベントの済み・ボーナス達成は `flags` |
+| STAGES | ステージデータ `STAGES.s1` / `STAGES.e1`：地形（map/road/bg）、初期配置（roster）、敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue＝クリア後）、エピソード一覧の表示（ep＝話数、syn＝ひとこと紹介）、レベル（lv）。`loadStage(id)` で切り替え、`setup()` で配置（`mk` で lv の倍率をかける）。会話イベントの済みは `flags` |
 | RULES | `hitRate` / `baseDmg` / `critRate` / `strike`（1回の攻撃を解決し、記録を返す） |
 | MOVEMENT | `computeReach`（ダイクストラ法で移動範囲を求める）、`animateMove` |
 | MECH DRAWING | `drawMech(ctx, unit, t)`：画像が読めないとき・画像がない機体の代わり。単位座標（-1〜1）で描画。kind は super / real / tank / jet / drone / heavy / wasp / boss / knight（カラドリウス）/ truck（整備車両）/ hound（ハウンド） |
 | MAP RENDER | `SPR`（機体画像。`spr` / `tint` / `SPR_EXTRA` に対応）、`TER_IMG`（地形タイル）、`STAGE_IMG`（今のステージのマップ背景、`stageImg` で読み込み）を読み込む。`resize` で空いた高さに合わせてマス目の大きさを決める。地形はオフスクリーンにキャッシュし、`drawMap` を毎フレーム実行。ユニットは `u.dir`（up/down/left/right）の向きの絵で描く |
 | BGM | `bgm('player' / 'enemy' / null)` でフェイズごとに曲を切り替え（フェードあり、曲の続きから再開）。音量は設定の `bgmVol`（OFF／小／中／大） |
 | UI | 1画面に収まるレイアウト（スクロールなし）。下部コンソール（`renderConsole`、高さ固定）、移動後のコマンドはユニット横のポップアップ（`renderPop`）。敵をタップすると届くマスへ移動して戦闘予測（`attackFromSelect`）。ボトムシート（戦術・予測（武器を切り替え。味方はいつも右側＝戦闘画面と同じ並び。ユーザーの希望）・設定）、`dialog(lines, {solid})`（narr＝ナレーション、solid＝マップを隠す、行の bg＝背景画）、`banner()` |
-| COMBAT | 戦闘中の会話（talks・bossDown・allDown・lose）は `battleLines` を通す：撃墜された味方のセリフは、行の `alt`（代わりに言う仲間の名前の並び）の生きている最初の人が言い、いなければ省く。`combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkBonus` → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
+| COMBAT | 戦闘中の会話（talks・bossDown・allDown・lose）は `battleLines` を通す：撃墜された味方のセリフは、行の `alt`（代わりに言う仲間の名前の並び）の生きている最初の人が言い、いなければ省く。`combat()`（ステージの会話イベント → 攻撃 → 反撃 → 戦闘アニメ → 撃墜処理 → `checkEnd`）。`checkEnd` は leader の撃墜で敗北、ボス撃破か敵全滅で勝利（epilogue があればクリア後の会話） |
 | BATTLE SCENE | `playBattle`：canvas で戦闘演出。敵が左、味方が右。機体は大きい絵。足場のタイルは置かない（ユーザーの希望）。機体は画面の下の地面の帯に立ち、足元に影を落とす（突進・回避では影ごと動く）。背景は戦うマス（攻撃を受ける側のマス）の地形の背景画（`assets/bg/battle_<plain|forest|mountain|water|village|fort>.jpg`。`BATTLE_BG_FILE`。元は `docs/ref/battle-bg.jpg` を6つに切り分けたもの。横幅いっぱいに広げて下をそろえ、上はHPの表示が読めるよう少し暗くする。読めないときは色のグラデーション）。攻撃側を後に描く。格闘の斬撃の線は1本、武器の `fx:'cross'`（カラドリウスの二段斬り）は×の字に2回斬りつける。演出：必殺技（気力が要る武器＝`isSpecial`）の前にカットイン（パイロットの顔と技名が斜めの帯で横切る）、カメラ（攻撃側に寄ってから当たる瞬間に相手へ寄る。揺れはダメージの大きさで変わる）、攻撃中は攻撃の絵（`_attack`）。攻撃の絵を使うのは `ATK_FACE` に書いた機体だけ（ゼクト・カラドリウス・ハウンド・ゴルム改。整備車両は正面の絵で小さく見え、番外編の4機は元のドット絵が小さくぼやけるので使わない）で、`ATK_KIND`（格／射）が武器の種類と合うときだけ。武器ごとの構えの一枚絵があればそちらを優先（`ATK_W`。カラドリウスのライフル＝`caladrius_rifle.png`、マシンガン＝`caladrius_mg.png`。元は `docs/ref/caladrius-guns.jpg` で、背景が市松模様の描き込みなので `python3 tools/caladrius_guns.py` で抜く。羽根飾りは市松模様と色が近いので、輪郭線をつないだ内側を残す。銃口の火と薬莢は消してある）。絵の向きは `BIG_FACE`／`ATK_FACE`（r／l／f）に書き（ハウンドの戦闘用の絵は、鉄格子の操縦席がある側が前＝右向き）、戦闘画面では左側（敵）は右、右側（味方）は左を向くように反転して描く（後ろを向いて攻撃しないように。マップ上は反転しない）、突進・回避の残像、武器ごとの演出（銃口の火花と薬莢、ビームのため、ハンマー・ドリルの衝撃波と火花、砲弾の煙）、撃墜は小爆発3回→大爆発と破片・煙、ダメージ数字は飛び出して跳ねる（クリティカルは揺れる） |
-| SAVE / LOAD | localStorage の `granvald-save-1〜3`（手動）と `granvald-save-auto`（味方フェイズ開始時に `autoSave`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 壊れたデータ）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。セーブできるのは `canSave()`（味方フェイズで誰も選んでいないとき）だけ。上書き・削除・ゲーム中のロードは `confirmSheet` で確認 |
+| SAVE / LOAD | 中断データだけ：localStorage の `granvald-suspend`。味方フェイズ開始時と各機の行動のあと（`finishUnit`）に `autoSave`、設定の「エピソード一覧へ」でも保存。クリア・敗北（`result`）とエピソードを選び直したときに消す（`clearSuspend`）。`snapshot` で保存（ステージ ID と `flags` も）、`validSave` で中身を検査（`SAVE_VER` が違う・値がおかしい・JSONが壊れている → 消す）、`restore` で `loadStage` → `setup` 後に roster の順で上書き。読み書きは `storeGet/storeSet/storeDel`（try/catch）。前の形式の `granvald-save-*` は起動時に消す。やり直し・中断データを消す操作は `confirmSheet` で確認 |
 | TURN FLOW | `endPlayerPhase`、`enemyAct`（AI：期待ダメージ＋撃墜ボーナス−反撃リスクで行動を評価。leader を少し優先して狙う）、`startOfPhase` |
-| TITLE / START | タイトル画面：背景は黒、中央にロゴの絵（`assets/title-logo.jpg`。元は `docs/ref/title-logo.jpg`。絵の背景も黒なので、円の外側をマスクでなじませる）、「TAP TO START」→ タップでメニュー（`showTitleMenu`。このタップで音も解禁）。メニューは `renderStageList`：はじめから（`STAGE_ORDER` の先頭＝帝国編第1話）、つづきから、番外編（残りのステージ）。`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle`（メニューを出した状態で戻る） |
+| TITLE / START | タイトル画面：背景は黒、中央にロゴの絵（`assets/title-logo.jpg`。元は `docs/ref/title-logo.jpg`。絵の背景も黒なので、円の外側をマスクでなじませる）、「TAP TO START」→ タップでメニュー（`showTitleMenu`。このタップで音も解禁）。メニューは、中断データがあれば先頭に「つづきから」、その下にエピソード一覧（`renderStageList`。`STAGE_ORDER` の順。話数・題名・ひとこと紹介。話が増えたら一覧だけスクロール）。`startGame(id)`（戦闘前の会話 → マップ → 開始時の会話 → 味方フェイズ）、`toTitle`（メニューを出した状態で戻る）。設定シートに「この話を最初から」「エピソード一覧へ」 |
 
 ## テスト
 - 戦闘アニメの総当たり：`python3 -m http.server 8765` を立ててから `node tools/test/battle_anim_test.js <出力フォルダ> <周回1〜5>`（全ユニット×全武装×6パターン＝命中・回避・クリティカル・撃墜・反撃・反撃で撃墜。ゲームの時計を早送りし、例外・描画へのNaN・終わらない・画面が閉じない・何も描かれない・違う名前を自動で調べる。周回1＝400×800、2＝320×568、3＝横向き844×390、4＝地形を順番に、5＝途中でタップしてスキップ）。コマは `<出力>/bd_r<周回>/` に保存され、`python3 tools/test/battle_anim_sheets.py <出力> <周回>` で一覧画像にできる（目で見る用）。file:// だと canvas が読めないので必ず http で開く。
@@ -61,6 +67,5 @@
 
 ## 今後の候補
 - 第2話以降のステージ（`STAGES` に追加する）
-- パイロットのレベルと経験値、機体改造、インターミッション画面
 - 援護攻撃・援護防御、地形適応（A/B/C）、増援イベント
 - ファイルが大きくなったら `src/` に分割し、Vite でビルドする

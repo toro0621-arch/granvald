@@ -158,11 +158,13 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.t-press{animation:none}}
 .t-menu{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(100%,320px);margin:1vh 0 2vh;animation:tmenu .35s ease-out}
 @keyframes tmenu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.t-menu .stages{display:flex;flex-direction:column;gap:8px;width:100%}
+.t-menu .stages{display:flex;flex-direction:column;gap:8px;width:100%;max-height:52vh;overflow-y:auto} /* 話が増えたら一覧だけスクロール */
 .t-menu .btn{width:100%;text-align:left;padding:9px 16px;min-height:54px;background:#0b1424e0;border-color:#3d5578;backdrop-filter:blur(4px)}
 .t-menu .btn.pri{background:linear-gradient(90deg,#1d5fa8,#2f86e0);border-color:#7cc0ff}
 .t-menu .btn small{display:block;font-weight:400;font-size:11.5px;opacity:.8;margin-top:1px}
-.t-menu #btnContinue{text-align:left;min-height:46px}
+.t-menu #btnContinue{text-align:left;min-height:50px}
+.t-head{font-family:var(--disp);font-size:12px;letter-spacing:.3em;color:#8fb4dd;margin:6px 2px 0;text-shadow:0 1px 2px #000}
+.t-menu .btn.ep .no{display:inline-block;min-width:3.6em;color:#ffc23d;font-family:var(--disp)}
 .t-menu .btn:disabled{opacity:1;color:#6f7f95;background:#0b1424e8}
 .t-credit{font-size:11px;color:#8a99ad;text-shadow:0 1px 2px #000}
 .dlg{cursor:pointer}
@@ -246,8 +248,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
   <div class="t-logo"><img src="assets/title-logo.jpg" alt="機甲戦線グランヴァルド"></div>
   <div class="t-press" id="tPress">TAP TO START</div>
   <div class="t-menu" id="tMenu" hidden>
+    <button class="btn pri" id="btnContinue" hidden>つづきから</button>
     <div class="stages" id="stageList"></div>
-    <button class="btn" id="btnContinue">つづきから</button>
   </div>
   <div class="t-credit">BGM：OpenTracks（フリー素材）</div>
 </div>
@@ -421,17 +423,20 @@ const settings={anim:true,manualDef:false,sound:true,bgmVol:2};
 try{Object.assign(settings,JSON.parse(localStorage.getItem('granvald-settings')||localStorage.getItem('gv-settings')||'{}'))}catch(e){}
 function saveSettings(){try{localStorage.setItem('granvald-settings',JSON.stringify(settings))}catch(e){}}
 
+// 話ごとのレベル（ST.lv）。育成はなく、話が進むほど敵味方そろって HP・装甲・武器の攻撃力が上がる（成長感を出すため。ユーザーの希望）。
+// 3つを同じ倍率で上げるので、何発で落ちるかは変わらず、数字だけが大きくなる
+const lvMul=lv=>1+.15*((lv||1)-1);
 function mk(key,team,x,y,extra={}){
-  const t=TPL[key];
-  const u={id:++uid,key,team,x,y,name:t.name,kind:t.kind,col:t.col,maxHp:t.hp,hp:t.hp,maxEn:t.en,en:t.en,armor:t.armor,mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,
-    pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
+  const t=TPL[key],m=lvMul(ST.lv),hp=Math.round(t.hp*m);
+  const u={id:++uid,key,team,x,y,lv:ST.lv||1,name:t.name,kind:t.kind,col:t.col,maxHp:hp,hp,maxEn:t.en,en:t.en,armor:Math.round(t.armor*m),mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,
+    pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w,pow:Math.round(w.pow*m)})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
   units.push(u);return u;
 }
 /* ================= STAGES ================= */
 // ステージデータ。地形（map/road/bg）、初期配置（roster：[機体, 陣営, x, y, 追加の値]。セーブデータのユニットもこの順）、
 // 敗北条件の機体（leader）、会話（pre＝マップに入る前、start＝開始時、talks＝戦闘で1回だけ流れる会話、bossDown／allDown／lose／epilogue）
 const STAGES={
- s1:{id:'s1',name:'鋼の目覚め',label:'沿岸都市連合',map:MAP_S1,road:ROAD_S1,bg:'assets/stage1_map.png',leader:'grand',
+ s1:{id:'s1',name:'鋼の目覚め',label:'沿岸都市連合',ep:'番外編',lv:1,syn:'湾岸の街に帝国の大部隊が迫る。旧式機を寄せ集めた小隊が、街を守るために立ち上がる。',map:MAP_S1,road:ROAD_S1,bg:'assets/stage1_map.png',leader:'grand',
   goal:'勝利：敵全滅かネメシス撃破／敗北：グランヴァルド撃墜',
   roster:[
    // 味方は設定画どおり市街の最下段に並ぶ
@@ -455,7 +460,7 @@ const STAGES={
   lose:[{who:'天城 ミオ',text:'迅！　応答して、迅！'},{who:'SYSTEM',text:'グランヴァルドが撃墜された……。'}],
   loseHint:'もう一度挑戦しよう。戦術の「不動」「先読み」が鍵になる。'},
  // 帝国編 第1話。会話は docs/scenario/empire-01.md、配置と数値は STORY.md の「第1話のステージ（案）」
- e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',music:{pre:'story',start:'crisis',end:'crisis'},startSolid:true,map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
+ e1:{id:'e1',name:'辺境の火',label:'帝国編 第1話',ep:'第1話',lv:1,syn:'国境の村が盗賊団に襲われた。上官の命令に背き、エルンストは中隊を率いて村へ向かう。',music:{pre:'story',start:'crisis',end:'crisis'},startSolid:true,map:MAP_E1,road:ROAD_E1,bg:'assets/stage_e1_map.png',leader:'caladrius',
   goal:'勝利：敵全滅かゴルム改撃破／敗北：カラドリウス撃墜',
   roster:[
    // 南の街道から駆けつけるファルケン中隊
@@ -527,17 +532,11 @@ const STAGES={
    {who:'エルンスト',text:'よくやった。……だが、頭目はここにいなかった。まだ終わりではない。'}],
   lose:[
    {who:'マティアス',text:'大尉！　くそっ、応答してください、大尉！'}],
-  // ボーナス：3ターン目の終わりまでに村（市街のマス）の中の敵が全滅していれば、クリア後の村長の会話が変わる
-  bonus:{turn:3,tile:'C'},
-  epilogue:f=>[...(f.bonus?[
+  epilogue:f=>[
    {who:'',text:'― リンデ村 ―',narr:1,bg:'linde'},
    {who:'村長',text:'軍の方々……来てくださったのですね。もう、誰も来ないものと……'},
    {who:'エルンスト',text:'遅くなってすまない。被害を確かめさせてくれ。必要なものは、私の名で手配する。'},
-   {who:'村長',text:'ありがたい……。帝国にも、あなたのような方がおられるとは。'}]:[
-   {who:'',text:'― リンデ村 ―',narr:1,bg:'linde'},
-   {who:'村長',text:'……来てくださったことには、感謝します。ですが、冬を越す蓄えの半分は、もう……'},
-   {who:'エルンスト',text:'……私の名で、物資を手配する。必ずだ。'}]),...
-   [
+   {who:'村長',text:'ありがたい……。帝国にも、あなたのような方がおられるとは。'},
    {who:'マティアス',text:'大尉、ちょっと見てくだせえ。盗賊のゼクトの残骸です。'},
    {who:'マティアス',text:'製造番号を削ってある。だが、この削り方は素人じゃねえ。工具も手順も、軍の整備場のやり方だ。'},
    {who:'マティアス',text:'こいつは盗賊の持ち物じゃねえな。軍の倉庫から、まとめて出てきたもんですぜ。'},
@@ -558,7 +557,7 @@ const STAGES={
    {who:'',text:'盗賊の機兵は、どこから来たのか。',narr:1},
    {who:'',text:'「軍は来ない」と、誰が盗賊に教えたのか。',narr:1},
    {who:'',text:'辺境に上がった小さな火は、やがて帝国の奥深くまで燃え広がっていく。',narr:1},
-   {who:'',text:'次回、第2話「狼の巣」',narr:1}]],
+   {who:'',text:'次回、第2話「狼の巣」',narr:1}],
   loseHint:'村の建物（市街）は守りに有利。傷んだ機体はマティアスの整備車両の隣へ。'}
 };
 const STAGE_ORDER=['e1','s1'];
@@ -1199,7 +1198,7 @@ function onAction(e){
 }
 consoleEl.addEventListener('click',onAction);
 pop.addEventListener('click',onAction);
-function finishUnit(u){u.acted=true;sel=null;reach=null;targets=null;mode='idle';info=null;closeSheet();renderConsole();
+function finishUnit(u){u.acted=true;sel=null;reach=null;targets=null;mode='idle';info=null;closeSheet();renderConsole();autoSave();
   // 400ms の間にロードされることもあるので、実行時にもう一度確かめる
   if(!over&&alive('ally').every(a=>a.acted))setTimeout(()=>{if(phase==='player'&&!busy&&!over&&alive('ally').every(a=>a.acted))endPlayerPhase()},400)}
 function spiritSheet(u){
@@ -1229,10 +1228,7 @@ function forecast(a,d,w){
 }
 sheet.addEventListener('click',async e=>{
   const x=e.target.closest('[data-x]'),sp=e.target.closest('[data-sp]'),fw=e.target.closest('[data-fw]'),df=e.target.closest('[data-def]'),tg=e.target.closest('[data-set]');
-  const sl=e.target.closest('[data-slot]');
-  if(sl&&!sl.disabled&&sheet._slot){sheet._slot(sl.dataset.slot,sl.dataset.act);return}
-  if(x&&!x.disabled&&['save','load','yes','no'].includes(x.dataset.x)){const k=x.dataset.x;
-    if(k==='save'){snd('sel');saveSheet()}else if(k==='load'){snd('sel');loadSheet()}else{const f=k==='yes'?sheet._yes:sheet._no;sheet._yes=sheet._no=null;f&&f()}return}
+  if(x&&!x.disabled&&['yes','no'].includes(x.dataset.x)){const f=x.dataset.x==='yes'?sheet._yes:sheet._no;sheet._yes=sheet._no=null;f&&f();return}
   if(x){if(x.dataset.x==='close'){snd('cancel');closeSheet();if(mode==='target'&&tgtKind==='attack'){mode='menu';targets=null}renderConsole()}else if(x.dataset.x==='go'&&sheet._go){const g=sheet._go;sheet._go=null;g()}return}
   if(fw&&sheet._fw){sheet._fw(+fw.dataset.fw);return}
   const st=e.target.closest('[data-st]');if(st){const u=units.find(v=>v.id===+st.dataset.st);if(u)statusSheet(u,true);return}
@@ -1248,10 +1244,11 @@ sheet.addEventListener('click',async e=>{
 function settingsSheet(){
   const row=(k,t,d)=>`<div class="toggle"><div>${t}<small>${d}</small></div><button class="btn sm ${settings[k]?'pri':''}" data-set="${k}">${settings[k]?'ON':'OFF'}</button></div>`;
   openSheet(`<div class="sh-title"><span>設定</span></div>${row('anim','戦闘アニメ','OFFにするとマップ上で結果だけ表示')}${row('manualDef','反撃を手動で選ぶ','敵の攻撃ごとに 反撃／防御／回避 を選択')}${row('sound','効果音','')}<div class="toggle"><div>BGM音量<small>タップで OFF／小／中／大 を切り替え</small></div><button class="btn sm ${settings.bgmVol?'pri':''}" data-set="bgmVol">${BGM_LBL[settings.bgmVol]}</button></div>
-  <div class="sh-actions"><button class="btn" data-x="save" ${canSave()?'':'disabled'}>セーブ</button><button class="btn" data-x="load">ロード</button></div>
-  ${canSave()?'':'<div class="hint" style="margin-top:6px">セーブは味方フェイズで、誰も選んでいないときだけできます</div>'}
-  <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">最初からやり直す</button><button class="btn" data-x="close">閉じる</button></div>`);
-  $('btnRestart').onclick=e=>{e.stopPropagation();closeSheet();startGame(ST.id)};
+  <div class="hint" style="margin-top:8px">戦闘の途中でやめても、味方フェイズの開始時と各機の行動のあとに自動で中断データを残すので、タイトルの「つづきから」で再開できます。</div>
+  <div class="sh-actions"><button class="btn warn" data-x="restart" id="btnRestart">この話を最初から</button><button class="btn" id="btnToTitle">エピソード一覧へ</button></div>
+  <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
+  $('btnRestart').onclick=e=>{e.stopPropagation();confirmSheet('この話を最初からやり直しますか？<br><small style="color:var(--mute)">今の戦闘の続きは消えます。</small>','やり直す',()=>{closeSheet();clearSuspend();startGame(ST.id)},settingsSheet)};
+  $('btnToTitle').onclick=e=>{e.stopPropagation();autoSave();closeSheet();snd('cancel');toTitle()};
 }
 $('btnCfg').onclick=()=>{if(!busy){snd('sel');settingsSheet()}};
 /* ================= STATUS ================= */
@@ -1270,7 +1267,7 @@ function statusSheet(u,fromRoster){
   openSheet(`<div class="sh-title"><span>ステータス</span>${fromRoster?'<button class="btn sm" data-roster="1">部隊一覧へ</button>':''}</div>
   <div class="st-top"><img class="st-mech" src="${sprSrc(u)}" alt="${u.name}" onerror="this.remove()"><div style="flex:1;min-width:0">
     <div class="uhead"><span class="uname">${u.name}</span><span class="tag ${u.team}">${ally?'味方':'敵'}・${u.air?'空':'陸'}</span>${u.dead?'<span class="tag">撃墜</span>':u.acted?'<span class="tag">行動済</span>':''}</div>
-    <div class="upil">パイロット：${P.name}</div>
+    <div class="upil">パイロット：${P.name}　Lv.${u.lv}</div>
     <div class="stats" style="grid-template-columns:1fr;margin-top:6px">${meter('HP',u.hp,u.maxHp,u.hp/u.maxHp>.5?'var(--good)':u.hp/u.maxHp>.25?'var(--amber)':'var(--foe)')}${meter('EN',u.en,u.maxEn,'var(--ally)')}</div>
   </div></div>
   <div class="st-sec">機体</div>
@@ -1331,14 +1328,8 @@ async function combat(att,def,w,choice){
   else{for(const s of strikes){snd(s.hit?'hit':'miss');floats.push({x:s.def.x,y:s.def.y,text:s.hit?(s.crit?'!':'')+s.dmg:'MISS',color:s.hit?'#fff':'#9fb3cc',t0:performance.now()});await sleep(650)}}
   delete att._atk;
   for(const u of[att,def])if(u.hp<=0&&!u.dead){u.dead=true;mapFx.push({x:u.x,y:u.y,t0:performance.now()});snd('boom')}
-  checkBonus();
   await sleep(250);
   await checkEnd();
-}
-// ボーナス条件（ST.bonus）：決められたターンの終わりまでに、指定の地形（村＝市街）の上の敵がいなくなったか
-function checkBonus(){
-  const b=ST.bonus;if(!b||flags.bonus||turn>b.turn)return;
-  if(!alive('foe').some(e=>MAP[e.y][e.x]===b.tile))flags.bonus=true;
 }
 async function checkEnd(){
   if(over)return;
@@ -1351,14 +1342,12 @@ async function checkEnd(){
     result(true)}
 }
 function result(win){
-  bgm(null);
+  bgm(null);clearSuspend(); // 話が終わったら中断データは消す
   const el=document.createElement('div');el.className='ov';el.innerHTML=`<div class="logo" style="font-family:var(--disp);font-size:clamp(32px,9vw,52px);letter-spacing:.12em;color:${win?'var(--amber)':'var(--foe)'}">${win?'MISSION CLEAR':'GAME OVER'}</div>
-  <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${stageTitle(ST)}<br>${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}${ST.bonus?`<br>村の防衛 ${flags.bonus?'達成':'未達成'}`:''}`:ST.loseHint}</div>
+  <div class="sub" style="color:var(--mute);margin:14px 0 22px;text-align:center;line-height:1.8">${stageTitle(ST)}<br>${win?`クリアターン数 ${turn}<br>撃墜数 ${units.filter(u=>u.team==='foe'&&u.dead).length} / ${units.filter(u=>u.team==='foe').length}`:ST.loseHint}</div>
   <button class="btn pri" style="min-width:180px">${win?'もう一度プレイ':'リトライ'}</button>
-  <button class="btn" data-r="title" style="min-width:180px;margin-top:10px">タイトルへ</button>
-  <button class="btn" data-r="load" style="min-width:180px;margin-top:10px" ${hasSave()?'':'disabled'}>ロード</button>`;
+  <button class="btn" data-r="title" style="min-width:180px;margin-top:10px">エピソード一覧へ</button>`;
   el.id='result';document.body.appendChild(el);el.querySelector('.pri').onclick=()=>{el.remove();startGame(ST.id)};
-  el.querySelector('[data-r=load]').onclick=()=>{snd('sel');loadSheet()};
   el.querySelector('[data-r=title]').onclick=()=>{snd('cancel');el.remove();toTitle()};
 }
 
@@ -1588,7 +1577,6 @@ async function endPlayerPhase(){
     await enemyAct(e);
   }
   if(over){busy=false;return}
-  checkBonus();
   for(const e of alive('foe'))e.acted=false;
   turn++;phase='player';
   for(const u of alive('ally')){u.acted=false;u.moved=false;u.buf={...(u.buf.dodge?{dodge:1}:{}),...(u.buf.dbl?{dbl:1}:{})}}
@@ -1651,15 +1639,17 @@ function defenseChoice(a,d,w){
 }
 
 /* ================= SAVE / LOAD ================= */
-// localStorage の granvald-save-1〜3（手動）と granvald-save-auto（味方フェイズ開始時に自動）。
-// 形式が変わったら SAVE_VER を上げる（2：ステージとイベントのフラグを追加）。バージョンが違うデータは壊れたデータとして扱う
-const SAVE_VER=2,SAVE_KEY='granvald-save-',SLOTS=['auto','1','2','3'];
-const SLOT_NAME=id=>id==='auto'?'オートセーブ':'スロット'+id;
+// セーブ枠はなし。どの話からでも始められる（アニメの話数選びの感覚。ユーザーの希望）。
+// 戦闘の途中でやめたときのために、中断データを1つだけ残す（granvald-suspend）。味方フェイズの開始時と、各機の行動のあとに自動で上書きし、
+// 話が終わったら（クリア・敗北）消す。形式が変わったら SAVE_VER を上げる。バージョンが違うデータは壊れたデータとして扱う
+const SAVE_VER=3,SUSPEND_KEY='granvald-suspend';
 const BUF_KEYS=Object.values(SPIRITS).map(s=>s.key).filter(Boolean);
 // 読み書きは必ず try/catch で（プライベートブラウズなどで localStorage が使えなくても止まらないように）
 function storeGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function storeSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
 function storeDel(k){try{localStorage.removeItem(k)}catch(e){}}
+// 前の形式のセーブ（granvald-save-1〜3・auto）は使わなくなったので消す
+for(const id of['auto','1','2','3'])storeDel('granvald-save-'+id);
 function snapshot(){
   return{ver:SAVE_VER,stage:ST.id,savedAt:Date.now(),turn,phase,flags:{...flags},
     units:units.map(u=>({key:u.key,team:u.team,x:u.x,y:u.y,dir:u.dir,hp:u.hp,en:u.en,will:u.will,sp:u.sp,
@@ -1669,27 +1659,28 @@ function snapshot(){
 function validSave(d){
   const int=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b,bool=v=>typeof v==='boolean';
   if(!d||typeof d!=='object'||d.ver!==SAVE_VER||!Object.hasOwn(STAGES,d.stage)||!int(d.turn,1,999)||d.phase!=='player'||!Number.isFinite(d.savedAt))return false;
-  const st=STAGES[d.stage],ROSTER=st.roster,FLAGS=[...(st.talks||[]).map(t=>t.id),'bonus'];
+  const st=STAGES[d.stage],ROSTER=st.roster,FLAGS=(st.talks||[]).map(t=>t.id);
   if(!d.flags||typeof d.flags!=='object'||Array.isArray(d.flags)||!Object.entries(d.flags).every(([k,v])=>FLAGS.includes(k)&&bool(v)))return false;
   if(!Array.isArray(d.units)||d.units.length!==ROSTER.length)return false;
   return d.units.every((s,i)=>{
     const[key,team]=ROSTER[i],t=TPL[key];
     return s&&s.key===key&&s.team===team&&int(s.x,0,COLS-1)&&int(s.y,0,ROWS-1)&&['up','down','left','right'].includes(s.dir)&&
-      int(s.hp,0,t.hp)&&int(s.en,0,t.en)&&int(s.will,0,150)&&int(s.sp,0,t.pilot.sp)&&bool(s.acted)&&bool(s.moved)&&bool(s.dead)&&bool(s.guard)&&
+      int(s.hp,0,Math.round(t.hp*lvMul(st.lv)))&&int(s.en,0,t.en)&&int(s.will,0,150)&&int(s.sp,0,t.pilot.sp)&&bool(s.acted)&&bool(s.moved)&&bool(s.dead)&&bool(s.guard)&&
       Array.isArray(s.ammo)&&s.ammo.length===t.weapons.length&&s.ammo.every((a,j)=>int(a,0,t.weapons[j].ammo||0))&&
       s.buf&&typeof s.buf==='object'&&!Array.isArray(s.buf)&&Object.entries(s.buf).every(([k,v])=>BUF_KEYS.includes(k)&&v===1)&&(s.dead||s.hp>0);
   });
 }
-// null＝データなし、{broken:true}＝壊れている、それ以外＝読み込めるデータ
-function readSlot(id){
-  const raw=storeGet(SAVE_KEY+id);if(raw==null)return null;
-  try{const d=JSON.parse(raw);return validSave(d)?d:{broken:true}}catch(e){return{broken:true}}
+// null＝データなし（壊れたデータも消して null）、それ以外＝読み込めるデータ
+function readSuspend(){
+  const raw=storeGet(SUSPEND_KEY);if(raw==null)return null;
+  try{const d=JSON.parse(raw);if(validSave(d))return d}catch(e){}
+  storeDel(SUSPEND_KEY);return null;
 }
-const hasSave=()=>SLOTS.some(id=>{const d=readSlot(id);return d&&!d.broken});
-function refreshContinue(){$('btnContinue').disabled=!hasSave()}
-function writeSlot(id){const ok=storeSet(SAVE_KEY+id,JSON.stringify(snapshot()));refreshContinue();return ok}
+function clearSuspend(){storeDel(SUSPEND_KEY);refreshContinue()}
+function refreshContinue(){const d=readSuspend(),b=$('btnContinue');b.hidden=!d;
+  if(d)b.innerHTML=`つづきから<small>${STAGES[d.stage].ep}「${STAGES[d.stage].name}」 TURN ${d.turn}　${fmtDate(d.savedAt)}</small>`}
 const canSave=()=>phase==='player'&&!busy&&!over&&(mode==='idle'||mode==='peek')&&!sel;
-function autoSave(){if(canSave())writeSlot('auto')}
+function autoSave(){if(canSave())storeSet(SUSPEND_KEY,JSON.stringify(snapshot()))}
 function restore(d){
   loadStage(d.stage);setup();
   units.forEach((u,i)=>{const s=d.units[i];
@@ -1701,47 +1692,10 @@ function restore(d){
   sel=null;reach=null;info=null;targets=null;mode='idle';busy=false;over=false;
 }
 function fmtDate(t){const d=new Date(t),z=n=>String(n).padStart(2,'0');return`${d.getFullYear()}/${z(d.getMonth()+1)}/${z(d.getDate())} ${z(d.getHours())}:${z(d.getMinutes())}`}
-function slotRow(id,act){
-  const d=readSlot(id);let body,ok=true;
-  if(!d){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d">データなし</span>`;ok=act==='save'}
-  else if(d.broken){body=`<span class="n">${SLOT_NAME(id)}</span><span class="p"></span><span class="d"><span class="ng">壊れたデータ（読み込めません）</span></span>`;ok=act==='save'}
-  else{const al=d.units.filter(u=>u.team==='ally'),left=al.filter(u=>!u.dead).length;
-    body=`<span class="n">${SLOT_NAME(id)}　${stageTitle(STAGES[d.stage])}</span><span class="p">TURN ${d.turn}</span><span class="d">${fmtDate(d.savedAt)}　味方 残り ${left}/${al.length} 機</span>`}
-  const del=d?`<button class="btn del" data-slot="${id}" data-act="del">削除</button>`:'';
-  return`<div class="slot"><button class="wrow" data-slot="${id}" data-act="${act}" ${ok?'':'disabled'}>${body}</button>${del}</div>`;
-}
 // ページ内の確認（confirm() は使わない）
 function confirmSheet(msg,yesLabel,onYes,onNo){
   openSheet(`<div class="sh-title"><span>確認</span></div><div class="confirm">${msg}</div><div class="sh-actions"><button class="btn warn" data-x="yes">${yesLabel}</button><button class="btn" data-x="no">やめる</button></div>`);
   sheet._yes=onYes;sheet._no=onNo;
-}
-function deleteFlow(id,back){
-  confirmSheet(`${SLOT_NAME(id)}のデータを削除しますか？<br><small style="color:var(--mute)">削除したデータは元に戻せません。</small>`,'削除する',()=>{storeDel(SAVE_KEY+id);refreshContinue();snd('cancel');toast(`${SLOT_NAME(id)}を削除しました`);back()},back);
-}
-function saveSheet(){
-  if(!canSave()){toast('今はセーブできません');return}
-  openSheet(`<div class="sh-title"><span>セーブ</span><span style="color:var(--mute);font-size:12px">TURN ${turn}</span></div><div class="slots">${['1','2','3'].map(id=>slotRow(id,'save')).join('')}</div>
-  <div class="hint" style="margin-top:8px">オートセーブは味方フェイズの開始時に自動で上書きされます</div><div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
-  sheet._slot=(id,act)=>{
-    if(act==='del')return deleteFlow(id,saveSheet);
-    const doSave=()=>{if(writeSlot(id)){snd('ok');toast(`${SLOT_NAME(id)}にセーブしました`);closeSheet()}else{snd('cancel');toast('セーブできませんでした（ブラウザの保存領域が使えません）');saveSheet()}};
-    if(readSlot(id))confirmSheet(`${SLOT_NAME(id)}に上書きしますか？<br><small style="color:var(--mute)">前のデータは消えます。</small>`,'上書きする',doSave,saveSheet);
-    else doSave();
-  };
-}
-function loadSheet(){
-  const inGame=$('title').hidden&&!$('result');
-  openSheet(`<div class="sh-title"><span>ロード</span></div><div class="slots">${SLOTS.map(id=>slotRow(id,'load')).join('')}</div>
-  <div class="sh-actions"><button class="btn" data-x="close">閉じる</button></div>`);
-  sheet._slot=(id,act)=>{
-    if(act==='del')return deleteFlow(id,loadSheet);
-    const d=readSlot(id);if(!d||d.broken){toast('このデータは読み込めません');loadSheet();return}
-    const doLoad=()=>{closeSheet();restore(d);$('title').hidden=true;$('result')?.remove();resize();buildTerrain();renderConsole();
-      bgm('player');snd('ok');toast(`${SLOT_NAME(id)}をロードしました（TURN ${d.turn}）`)};
-    // 遊んでいる途中なら、今の進行が消えることを確かめてから
-    if(inGame)confirmSheet(`${SLOT_NAME(id)}（TURN ${d.turn}）をロードしますか？<br><small style="color:var(--mute)">セーブしていない今の進行は失われます。</small>`,'ロードする',doLoad,loadSheet);
-    else doLoad();
-  };
 }
 
 /* ================= TITLE / START ================= */
@@ -1767,18 +1721,20 @@ async function startGame(id){
   mode='idle';busy=false;renderConsole();
   autoSave();
 }
-// タイトルのメニュー：「はじめから」＝帝国編第1話、そのほかのステージは番外編
+// タイトルのメニュー：エピソード一覧。どの話も最初から選べる（アニメの話数選びの感覚）。中断データがあれば「つづきから」を先頭に出す
 function renderStageList(){
-  $('stageList').innerHTML=STAGE_ORDER.map((id,i)=>{const st=STAGES[id];
-    return i===0?`<button class="btn pri" data-stage="${id}">はじめから<small>${st.label}「${st.name}」</small></button>`
-      :`<button class="btn" data-stage="${id}">番外編「${st.name}」<small>${st.label}の物語</small></button>`}).join('');
-  // 「つづきから」はメニューの2番目（「はじめから」の次）に置く
-  $('stageList').firstElementChild.after($('btnContinue'));
+  $('stageList').innerHTML=`<div class="t-head">エピソード</div>`+STAGE_ORDER.map(id=>{const st=STAGES[id];
+    return`<button class="btn ep" data-stage="${id}"><span class="no">${st.ep}</span>「${st.name}」<small>${st.syn}</small></button>`}).join('');
 }
-$('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;snd('ok');unlockBgm();$('title').hidden=true;startGame(b.dataset.stage)};
+function playEpisode(id){snd('ok');unlockBgm();$('title').hidden=true;clearSuspend();startGame(id)}
+$('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;
+  // 中断データがあるときは、消えることを確かめてから
+  if(readSuspend())confirmSheet(`「${STAGES[b.dataset.stage].name}」を最初から始めますか？<br><small style="color:var(--mute)">中断している戦闘のデータは消えます。</small>`,'始める',()=>{closeSheet();playEpisode(b.dataset.stage)},closeSheet);
+  else playEpisode(b.dataset.stage)};
 // 結果画面からタイトルへ戻る
 function toTitle(){bgm(null);closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
-$('btnContinue').onclick=()=>{snd('sel');unlockBgm();loadSheet()};
+$('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();return}
+  snd('ok');unlockBgm();restore(d);$('title').hidden=true;resize();buildTerrain();renderConsole();bgm('player');toast(`${STAGES[d.stage].ep}「${STAGES[d.stage].name}」TURN ${d.turn} から再開`)};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
