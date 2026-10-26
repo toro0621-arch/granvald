@@ -621,7 +621,8 @@ const STAGES={
   loseHint:'村の建物（市街）は守りに有利。傷んだ機体はマティアスの整備車両の隣へ。'},
  // 帝国編 第2話。台本は docs/scenario/empire-02.md
  e2:{id:'e2',name:'狼の巣',label:'帝国編 第2話',ep:'第2話',lv:2,syn:'盗賊団の根城「狼の巣」。手柄を焦る上官は懲罰部隊を囮にして逃げ出した。エルンストは谷へ救援に向かう。',
-  music:{pre:'story',start:'crisis',end:'crisis'},startSolid:true,map:MAP_E2,road:ROAD_E2,bg:'assets/stage_e2_map.png',leader:'caladrius',protect:['leo'],bossOnly:true,
+  // 第2話の会話はすべて「作戦会議２」（戦闘中は第1話と同じ味方・敵フェイズの曲。ユーザーの希望）
+  music:{pre:'story',start:'story',end:'story'},startSolid:true,map:MAP_E2,road:ROAD_E2,bg:'assets/stage_e2_map.png',leader:'caladrius',protect:['leo'],bossOnly:true,
   // 谷の道（平地）も岩の谷の背景、砦は盗賊の砦の背景
   battleBg:{P:'mountain',E:'bandit'},
   terName:{E:'盗賊の砦',P:'谷',K:'坑道'},
