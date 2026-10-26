@@ -36,7 +36,7 @@
 | No. | 絵 | 判定 | 保存先 |
 |---|---|---|---|
 | 1〜3 | 顔グラ3枚 | 描き直したもの（第1話と同じ設定資料の形式）を使う | `docs/ref/empire-02-faces.png` → `assets/faces/leo.png`・`gert.png`・`penal.png` |
-| 4 | ゼクト・キャノン | 描き直し（肩のとげ・口元のパイプ・腰のスカートなど、既存作品の機体に似すぎ）→ 下の「描き直し用」 | — |
+| 4 | ゼクト・キャノン | 描き直したもの（ゼクトの資料と同じ形式）を使う | `docs/ref/zekt-cannon-sprites.png` → `assets/sprites/cannon*.png`（`tools/zekt_cannon.py`） |
 | 5 | グラウヴォルフ | 使う。左腕の武器はガトリング砲になったので、武器名もガトリング砲にする。鉈は攻撃の絵と立ち絵にだけある | `docs/ref/graywolf-big.jpg`、`docs/ref/graywolf-sprites.jpg` |
 | 6 | 会話の背景 ヴォルフスグルーベ | 使う | `docs/ref/bg-wolfsgrube.jpg` |
 | 7 | 坑道の入口のマス | 描き直したものを使う（今の山のタイルと同じ絵柄）。ユーザーが地形タイルの画像の中に描き足したもので、その画像では森のマス2枚の場所に入っているので、元の `fantasy-tiles.jpg` は差し替えない | `docs/ref/tile-mine.jpg`（切り抜き。元は `docs/ref/fantasy-tiles-mine.jpg`） |

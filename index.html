@@ -457,8 +457,8 @@ const TPL={
   pilot:{name:'懲罰兵',melee:105,shoot:105,hit:110,eva:100,skill:90,sp:0,spirits:[]},
   lines:['生きて帰るんだ……！','レオさんに続け！'],
   weapons:[W('バトルアックス','格',1200,1,1,{}),W('ライフル','射',1300,1,3,{fx:'bullet'})]},
- // クラーラのゼクト・キャノン（絵が届くまではゼクトの絵を仮に使う）
- cannon:{name:'ゼクト・キャノン',kind:'drone',hp:2400,en:100,armor:800,mob:70,move:4,spr:'zekt',
+ // クラーラのゼクト・キャノン（絵は docs/ref/zekt-cannon-sprites.png から tools/zekt_cannon.py で切り抜き）
+ cannon:{name:'ゼクト・キャノン',kind:'drone',hp:2400,en:100,armor:800,mob:70,move:4,
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#eef0f2',eye:'#ff3344'},
   pilot:{name:'クラーラ',melee:90,shoot:150,hit:155,eva:110,skill:140,sp:50,spirits:['照準固定','先読み']},
   lines:['照準よし。撃ちます！','後ろは任せてください。','そこ、狙えます。'],
@@ -1106,7 +1106,7 @@ function tinted(src,color){
 // 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、SPR_EXTRA の機体は idle / walk / attack（待機／歩行／攻撃）も。
 // TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）。tint で画像に色を重ねられる
 // 待機・歩行・攻撃の絵がある機体
-const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf'];
+const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf','cannon'];
 const SPR={};
 for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);
@@ -1637,16 +1637,16 @@ const bcv=$('bcv'),bctx=bcv.getContext('2d');
 // 戦闘画面では、左側（敵）は右を、右側（味方）は左を向くように、向きが逆の絵は左右反転して描く
 // 横に長い武器（大鉈とガトリング砲）が付いた戦闘用の絵は、横幅ではなく高さで大きさを決める（横幅で決めると体が小さくなる）
 const BIG_BY_H={graywolf:1};
-const BIG_FACE={bulwark:'l',zekt:'l',truck:'l',hound:'r'};
+const BIG_FACE={cannon:'l',bulwark:'l',zekt:'l',truck:'l',hound:'r'};
 // 整備車両の攻撃の絵は正面から見た車両で、戦闘用の絵より小さく見えるので使わない。
 // グランヴァルドたち4機（番外編）の攻撃の絵は元のドット絵が小さく、拡大するとぼやけるので使わない
-const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r'};
+const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r',cannon:'r'};
 // 攻撃の絵が何の攻撃の絵か（格＝格闘、射＝射撃）。武器の種類と合うときだけ攻撃の絵を使う
 // （ゼクトの攻撃の絵はライフルを構えた絵なので、バトルアックスでは使わない、など）
 // 武器ごとの構えの絵（設定画の一枚絵。右向き）。ある武器はこちらを使う。大きさは戦闘用の絵と同じ背の高さにそろえる
 const ATK_W={caladrius:{'ライフル':'caladrius_rifle','マシンガン':'caladrius_mg'}};
 const ATK_W_IMG={};for(const m of Object.values(ATK_W))for(const f of Object.values(m))ATK_W_IMG[f]=img(`assets/sprites/${f}.png`);
-const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格'};
+const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格',cannon:'射'};
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
