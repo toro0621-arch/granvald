@@ -1,5 +1,7 @@
 # 帝国編 第3話「末席の男爵」 ロボ（機体）の指示文
 
+> できあがり：ゼクト・ランス `docs/ref/zekt-lance-sprites.png`、アイゼンヴァハト `docs/ref/eisenwacht-sprites.png`、アッカー `docs/ref/acker-sprites.png`（どれも使う）→ `python3 tools/unit_sheet.py` で `assets/sprites/lance*.png`・`eisenwacht*.png`・`acker*.png` に切り抜き
+
 添付：`docs/ref/zekt-v2-sprites.png`（ゼクトの資料。この形式で描くと絵柄と大きさがそろう）
 資料の形式（パネルの背景は明るい水色の無地）で頼む。切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 男爵家の騎士の機体は横流しのゼクトなので、新しく描かない（ゼクトの絵に男爵家の色を重ねる）。
