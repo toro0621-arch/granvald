@@ -18,6 +18,8 @@ OUT = 'assets/sprites/'
 # 機体の名前（assets/sprites/<名前>.png）→ 資料
 SHEETS = {
     'lance': 'docs/ref/zekt-lance-sprites.png',        # ゼクト・ランス（レオ。第3話から）
+    'schutze': 'docs/ref/zekt-schutze-sprites.png',    # ゼクト・シュッツェ（ニーナ。第4話から）
+    'ehre': 'docs/ref/zekt-ehre-sprites.png',          # ゼクト・エーレ（ヨハン。第4話のボス）
     'eisenwacht': 'docs/ref/eisenwacht-sprites.png',   # アイゼンヴァハト（ディートリヒ。第3話のボス）
     'acker': 'docs/ref/acker-sprites.png',             # アッカー（農民兵の作業機）
 }

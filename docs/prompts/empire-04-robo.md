@@ -1,5 +1,7 @@
 # 帝国編 第4話「後方の狙撃手」 ロボ（機体）の指示文
 
+> できあがり：ゼクト・シュッツェ `docs/ref/zekt-schutze-sprites.png`、ゼクト・エーレ `docs/ref/zekt-ehre-sprites.png`（どちらも使う）→ `python3 tools/unit_sheet.py` で `assets/sprites/schutze*.png`・`ehre*.png` に切り抜き（待機・歩行・攻撃の下のふちに残ったパネルの青い線は消した）
+
 添付：`docs/ref/zekt-v2-sprites.png`（ゼクトの資料。この形式で描くと絵柄と大きさがそろう）
 資料の形式（パネルの背景は明るい水色の無地）で頼む。切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 ヨハン機は、描かずにゼクトの絵に色を重ねるだけでも済む（男爵家の騎士と見分けがつきにくくなるので、できれば描く）。
