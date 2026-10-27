@@ -43,7 +43,7 @@
 - localStorage のキーは必ず `granvald-` で始める（GitHub Pages では toro0621-arch.github.io の他のページと保存領域を共有するため）。設定は `granvald-settings`、セーブデータは `granvald-save-*`。セーブデータの形式を変えたら `SAVE_VER` を上げる。
 - BGMはユーザーが用意したフリー素材（OpenTracks＝旧DOVA-SYNDROME。`assets/bgm/`、クレジットは README）。−16 LUFS に音量をそろえて 128kbps で再エンコードする（iOS ではページ側の音量変更が効かないため）。
   - OpenTracks の規約で「エンドユーザーが容易に音源ファイルにアクセス・複製できる状態での利用」が禁止されている（このリポジトリは公開）。mp3 はコミットせず（`.gitignore`）、`python3 tools/pack_bgm.py pack <mp3> <名前>` で `assets/bgm/<名前>.dat` に変換して置く。ゲームは `loadBgm` で fetch して元に戻し、Blob URL で再生する（file:// で直接開くと fetch できず BGM なし）。
-  - 曲：story（「作戦会議２」。ステージのボタン（はじめから）を押してから最初の出撃前の会話まで。タイトル画面は無音）、crisis（「戦闘準備」。村が襲われている場面＝帝国編第1話の開始時の会話）、player／enemy（各フェイズ）。ステージごとの会話の曲は `STAGES.<id>.music`（pre＝戦闘前、start＝開始時、end＝戦闘が終わったあとの会話。帝国編第1話の end は「戦闘準備」。第2話の会話はすべて「作戦会議２」）。
+  - 曲：story（「作戦会議２」。ステージのボタン（はじめから）を押してから最初の出撃前の会話まで。タイトル画面は無音）、crisis（「戦闘準備」。村が襲われている場面＝帝国編第1話の開始時の会話）、player／enemy（各フェイズ）。ステージごとの会話の曲は `STAGES.<id>.music`（pre＝戦闘前、start＝開始時、end＝戦闘が終わったあとの会話。帝国編第1話の end は「戦闘準備」。第2話の会話はすべて「作戦会議２」。第3話は、戦闘前の男爵の城館から戦闘開始まで（start も crisis）と、戦闘後の男爵の城館から最後までが「戦闘準備」。会話の行の `music:'crisis'` で切り替える）。
 - 機体・地形のデザインと数値の元は `docs/ref/` の設定画（帝国編第1話は `empire-01-sheet.png`／`-sprites.png`／`-heads.png`）。内容は `SETTING.md` にまとめてある。
 
 ## コード構成（index.html の <script> 内、上から順）

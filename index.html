@@ -895,7 +895,8 @@ const STAGES={
   loseHint:'懲罰部隊は谷の真ん中で挟まれている。レオ機を南へ下げて中隊と合流させよう。崖の上の敵は硬いので、クラーラの砲撃で削るとよい。'},
  // 帝国編 第3話。台本は docs/scenario/empire-03.md
  e3:{id:'e3',name:'末席の男爵',label:'帝国編 第3話',ep:'第3話',lv:3,syn:'園遊会の席順を恨んだ男爵が挙兵し、川の渡しを封鎖した。敵には無理やり集められた農民兵がいる。',
-  music:{pre:'story',start:'story',end:'story'},startSolid:true,map:MAP_E3,road:ROAD_E3,bg:'assets/stage_e3_map.png',leader:'caladrius',bossOnly:true,
+  // 曲：会話は「作戦会議２」。戦闘前の男爵の城館から戦闘開始まで、戦闘後の男爵の城館から最後までは「戦闘準備」（ユーザーの希望）
+  music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E3,road:ROAD_E3,bg:'assets/stage_e3_map.png',leader:'caladrius',bossOnly:true,
   // 浅瀬で戦うときは渡しの背景
   battleBg:{S:'ford'},
   goal:'勝利：アイゼンヴァハト撃破／敗北：カラドリウス撃墜か、農民兵の機体の撃墜',
@@ -931,7 +932,7 @@ const STAGES={
    {who:'マティアス',text:'しくじれば『妃の弟は役立たず』、うまくやれば『貴族を討った成り上がり』。どっちに転んでも、閣下は損をしねえ。'},
    {who:'レオ',text:'……自分で蒔いた種を、人に刈らせる気かよ。'},
    {who:'エルンスト',text:'そういうことだろうな。だが、困っているのは渡しの向こうの民だ。行くぞ。'},
-   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor',music:'crisis'},
    {who:'ブルクハルト男爵',text:'末席だぞ、末席！　三百年続くブルクハルト家の当主が、成り上がりの商人貴族より下の席だ！'},
    {who:'ヨハン',text:'まったくです、叔父上。総帥閣下は、我が家の名誉を踏みにじりました。'},
    {who:'ブルクハルト男爵',text:'名誉は剣で取り戻す。渡しを押さえれば、帝都も我が家を無視できまい。'},
@@ -1017,7 +1018,7 @@ const STAGES={
    {who:'エルンスト',text:'……経路を知っていたのは、大隊司令部だけだ。'},
    {who:'レオ',text:'また司令部かよ。狼の巣のときと同じだな。'},
    {who:'エルンスト',text:'ああ。……だが、まだ誰とは言えない。今は、渡しを開けることが先だ。'},
-   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor',music:'crisis'},
    {who:'ブルクハルト男爵',text:'負けた、だと！？　ディートリヒ、貴様それでも騎士団長か！'},
    {who:'ディートリヒ',text:'……申し訳ございません。'},
    {who:'ブルクハルト男爵',text:'しかも農民どもを逃がしたそうだな。裏切り者どもは、見つけ次第縛り首だ！'},
