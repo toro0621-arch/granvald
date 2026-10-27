@@ -379,6 +379,34 @@ const ROAD_E3=[
  "....#.....",
  "....#.....",
  "....#....."];
+// 帝国編 第4話「後方の狙撃手」：南の真ん中に補給基地（B、2×2。回復地形）。西の森からヨハンの隊、北の街道から大隊が駆けつける
+const MAP_E4=[
+ "FFPPPPPPFF",
+ "FPPPPPPPPF",
+ "FPPFPPPPPP",
+ "PPPPPPFPPP",
+ "FFPPPPPPPP",
+ "FFPPPPPPFF",
+ "FFPPPPPPFF",
+ "PPPPPPPPPP",
+ "FPPPPPPPPP",
+ "FPPPBBPPPF",
+ "FFPPBBPPFF",
+ "FFFPPPPFFF"];
+// 北の街道から基地へ、西の街道から基地へ（見た目だけ）
+const ROAD_E4=[
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "#####.....",
+ "....#.....",
+ "..........",
+ "..........",
+ "....#....."];
 // 今のステージの地形（loadStage で切り替える）
 let MAP=MAP_S1,ROAD=ROAD_S1;
 const TER={
@@ -539,7 +567,20 @@ const TPL={
   col:{main:'#6a7a4a',sub:'#5a4a32',acc:'#a0522d',eye:'#ffde59'},
   pilot:{name:'農民兵',melee:80,shoot:85,hit:95,eva:80,skill:70,sp:0,spirits:[]},
   lines:['ご、ごめんなさい！','こ、来ないで……！'],
-  weapons:[W('くくり付けの猟銃','射',700,1,2,{fx:'bullet'})]}
+  weapons:[W('くくり付けの猟銃','射',700,1,2,{fx:'bullet'})]},
+ // ---- 帝国編 第4話 ----（数値は docs/prompts/empire-04-robo.md）
+ // ニーナの狙撃機。狙撃銃は3マス以上離れた敵にしか撃てない（近づかれると拳銃だけ）
+ schutze:{name:'ゼクト・シュッツェ',kind:'drone',hp:2600,en:100,armor:800,mob:85,move:4,
+  col:{main:'#7d8ea8',sub:'#5a5a3a',acc:'#eef0f2',eye:'#ff3344'},
+  pilot:{name:'ニーナ',melee:90,shoot:165,hit:170,eva:120,skill:150,sp:50,spirits:['照準固定','研ぎ澄まし']},
+  lines:['一つ目。','距離よし。撃ちます。','数えています。'],
+  weapons:[W('拳銃','射',900,1,2,{fx:'bullet'}),W('狙撃銃','射',1800,3,6,{hit:10,fx:'bullet'}),W('一点狙撃','射',2700,3,6,{en:30,will:110,hit:20,fx:'beam'})]},
+ // ヨハンのゼクト・エーレ（ボス。見栄を張って飾り立てた横流しのゼクト）
+ ehre:{name:'ゼクト・エーレ',kind:'drone',hp:4500,en:110,armor:1100,mob:80,move:5,boss:true,
+  col:{main:'#8a2a3a',sub:'#3c2a2e',acc:'#d8b23a',eye:'#ff3344'},
+  pilot:{name:'ヨハン',melee:140,shoot:125,hit:130,eva:115,skill:110,sp:0,spirits:[]},
+  lines:['ブルクハルトの名にかけて！','叔父上に、手柄を！','平民どもが！'],
+  weapons:[W('長剣','格',1600,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'}),W('名誉の突撃','格',2600,1,1,{en:30,will:110})]}
 };
 /* ================= STATE ================= */
 let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,uid=0,over=false;
@@ -1034,10 +1075,189 @@ const STAGES={
    {who:'',text:'「さる筋」から届いたという、討伐軍の補給の日取り。',narr:1},
    {who:'',text:'その紙をしたためたのは、いったい誰なのか。',narr:1},
    {who:'',text:'次回、第4話「後方の狙撃手」',narr:1}],
-  loseHint:'「民」の印の農民兵は撃たないこと。川は浅瀬（2か所）からしか渡れない。騎士団長機は硬いので、囲んで削ろう。'}
+  loseHint:'「民」の印の農民兵は撃たないこと。川は浅瀬（2か所）からしか渡れない。騎士団長機は硬いので、囲んで削ろう。'},
+ // 帝国編 第4話。台本は docs/scenario/empire-04.md
+ e4:{id:'e4',name:'後方の狙撃手',label:'帝国編 第4話',ep:'第4話',lv:4,syn:'討伐軍の背後、手薄な補給基地を男爵家の分家の若者ヨハンが襲う。守るのは、後方に回された平民の狙撃手ただ一人。',
+  // 曲：第3話と同じく、男爵の城館の場面から「戦闘準備」。野営地（味方）で「作戦会議２」に戻し、戦闘開始の場面で「戦闘準備」
+  music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E4,road:ROAD_E4,bg:'assets/stage_e4_map.png',leader:'caladrius',protect:['schutze'],bossOnly:true,
+  terName:{B:'補給基地'},
+  goal:'勝利：ゼクト・エーレ撃破／敗北：ニーナ機かカラドリウスの撃墜',
+  roster:[
+   // 補給基地を一人で守るニーナ
+   ['schutze','ally',5,9],
+   // 2ターン目の味方フェイズに、北の街道から大隊が駆けつける
+   ['caladrius','ally',4,2,{off:true,arrive:2}],['zekt_b','ally',3,2,{off:true,arrive:2}],['zekt_o','ally',5,2,{off:true,arrive:2}],
+   ['lance','ally',6,2,{off:true,arrive:2}],['cannon','ally',4,1,{off:true,arrive:2}],['truck','ally',5,1,{off:true,arrive:2}],
+   // ヨハンの隊：西の森から
+   ['ehre','foe',0,4,{guard:true,guardRange:3,guardTurn:3}],
+   ['knight','foe',1,5,{guard:true,guardRange:4,guardTurn:2}],['knight','foe',2,6,{guard:true,guardRange:4,guardTurn:2}],['knight','foe',0,6,{guard:true,guardRange:4,guardTurn:2}],['knight','foe',2,8],
+   // 3ターン目の敵フェイズに、東の森から別動隊（2機）
+   ['knight','foe',9,5,{off:true,arrive:3}],['knight','foe',9,6,{off:true,arrive:3}]],
+  pre:[
+   {who:'',text:'大陸暦598年、初夏。',narr:1,bg:'map',mark:'ford'},
+   {who:'',text:'園遊会の席順を恨んだブルクハルト男爵が挙兵し、街道の要所、グラウ川の渡しを封鎖した。',narr:1},
+   {who:'',text:'討伐を命じられたエルンストの大隊は、農民兵を一機も撃たずに渡しを破る。',narr:1},
+   {who:'',text:'敵の騎士団長ディートリヒは、農民たちを逃がして退いた。',narr:1},
+   {who:'',text:'討伐軍は男爵の城館へ向けて北へ進む。その背後、街道沿いの小さな補給基地には、わずかな兵だけが残された。',narr:1},
+   {who:'',text:'― 第七補給基地 ―',narr:1,bg:'depot'},
+   {who:'ニーナ',text:'……弾薬、ライフル用が四十箱。予定より二箱少ない。'},
+   {who:'補給兵',text:'少尉どの、また数え直しですかい。三度目ですぜ。'},
+   {who:'ニーナ',text:'数が合わないものは、合うまで数えます。それが、ここでの私の仕事ですから。'},
+   {who:'補給兵',text:'士官学校を首席で出た方が、こんな後ろで箱の数をねえ……。'},
+   {who:'ニーナ',text:'首席でも、平民は平民です。前線の席は、子爵家のご子息に回りました。'},
+   {who:'ニーナ',text:'『平民の女が先陣では、兵の士気に関わる』……だそうです。'},
+   {who:'補給兵',text:'そりゃあ……。'},
+   {who:'ニーナ',text:'構いません。どこにいても、撃つべきものは撃ちます。……届くところに、来てくれれば。'},
+   {who:'補給兵',text:'明後日には、大隊への補給の荷が出ますな。道は西の街道で。'},
+   {who:'ニーナ',text:'ええ。日取りも道順も、大隊司令部しか知らないはずです。……静かな仕事になりますよ。'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor',music:'crisis'},
+   {who:'ヨハン',text:'騎士団長。補給の荷は明後日、西の街道を通る。基地の守りは機兵がたった一機だそうだ。'},
+   {who:'ディートリヒ',text:'……その知らせは、どこから。'},
+   {who:'ヨハン',text:'叔父上がおっしゃった。『さる筋』からだ。お前が知る必要はない。'},
+   {who:'ディートリヒ',text:'ヨハン様。補給基地には、兵のほかに、荷運びや炊き出しの村の者もおります。'},
+   {who:'ヨハン',text:'それがどうした。平民は、貴族のために働くものだ。'},
+   {who:'ディートリヒ',text:'……退き際だけは、お誤りなきよう。勝てぬと見たら、すぐにお戻りください。'},
+   {who:'ヨハン',text:'平民上がりが、私に説教か！　渡しで負けて、農民どもを逃がしたのは誰だ。'},
+   {who:'ディートリヒ',text:'……'},
+   {who:'ヨハン',text:'見ていろ。分家の末席でも、ブルクハルトの血は本物だと、叔父上に見せてやる。'},
+   {who:'ディートリヒ',text:'……ご武運を。'},
+   {who:'',text:'― 西の街道 ―',narr:1,bg:'road_night'},
+   {who:'',text:'夜の街道を、えんじ色の機兵の列が南へ進む。',narr:1},
+   {who:'男爵家の騎士',text:'ヨハン様。その機体の紋章、新しく描き直されたのですね。'},
+   {who:'ヨハン',text:'ああ。母上が、最後の首飾りを売ってくださった。分家の紋章を描くための金だ。'},
+   {who:'ヨハン',text:'父上は借金だけを残して死んだ。本家の者は、我が家を『末席』と呼んで笑う。'},
+   {who:'ヨハン',text:'だが、この戦で手柄を立てれば、叔父上も私を認めてくださる。母上にも、胸を張って帰れる。'},
+   {who:'男爵家の騎士',text:'……はっ。'},
+   {who:'ヨハン',text:'行くぞ。夜明けとともに、基地を焼く。'},
+   {who:'',text:'― 第七補給基地 ―',narr:1,bg:'depot_night'},
+   {who:'',text:'同じ夜。補給基地の物見やぐらに、小さな明かりが一つ灯っていた。',narr:1},
+   {who:'補給兵',text:'少尉どの、まだ起きておいでで。見張りは交代しますぜ。'},
+   {who:'ニーナ',text:'もう少しだけ。……西の街道の向こうで、さっきから鳥が鳴きやんでいます。'},
+   {who:'補給兵',text:'鳥、ですかい。'},
+   {who:'ニーナ',text:'夜の鳥は、大きなものが通ると黙ります。……念のため、私の機体に火を入れておいてください。'},
+   {who:'補給兵',text:'へ、へい！'},
+   {who:'ニーナ',text:'（……静かな仕事には、なりそうにありませんね）'},
+   {who:'',text:'― 討伐軍の野営地 ―',narr:1,bg:'hq',music:'story'},
+   {who:'オットー',text:'しょ、少佐！　後ろの補給基地から、救援の要請です！　男爵家の機兵が、西の街道から……！'},
+   {who:'エルンスト',text:'補給基地を、だと。'},
+   {who:'クラーラ',text:'明後日の補給の日取りに合わせています。……荷の出る日を、正確に知っている動きです。'},
+   {who:'マティアス',text:'渡しのときは、こっちの通る道。今度は補給の日取り。ずいぶん耳のいい敵ですな。'},
+   {who:'レオ',text:'言ってる場合か。基地の守りは何機だ。'},
+   {who:'オットー',text:'き、機兵は一機だけです。新任の少尉が一人で……。'},
+   {who:'エルンスト',text:'全機、反転。補給基地へ戻る。'},
+   {who:'ブルーノ',text:'城館を目の前にして、ですかい。'},
+   {who:'エルンスト',text:'補給が焼かれれば、城館を囲む前に我々が干上がる。それに……基地には、兵と村の者がいる。'},
+   {who:'エルンスト',text:'オットー、基地に伝えろ。半刻で着く。それまで持ちこたえろ、と。'}],
+  start:[
+   {who:'',text:'― 第七補給基地 ―',narr:1,bg:'depot'},
+   {who:'',text:'夜が明ける。補給基地の西の森から、えんじ色の機兵が次々に姿を現した。',narr:1},
+   {who:'補給兵',text:'しょ、少尉どの！　敵が、あんなに……！'},
+   {who:'ニーナ',text:'荷運びの人たちを、基地の奥へ。それから、私の機体の弾を、全部前に並べてください。'},
+   {who:'ヨハン',text:'守りは機兵が一機か。……なんだ、女の声か。'},
+   {who:'ヨハン',text:'聞け、基地の兵！　ブルクハルト家のヨハンである。荷を置いて逃げるなら、命までは取らぬ。'},
+   {who:'ニーナ',text:'こちら、第七補給基地。守備隊長、ニーナ・ブラント少尉です。荷は渡しません。'},
+   {who:'ヨハン',text:'平民の女が、機兵乗りの真似事か。……いいだろう、まとめて焼いてやる！'},
+   {who:'ニーナ',text:'（大隊の到着まで、半刻。……距離、六百。風、なし）'},
+   {who:'ニーナ',text:'一発ずつ、数えていきます。'},
+   {who:'作戦目標',music:'player',onmap:1,text:'勝利条件：ヨハンの機体（ゼクト・エーレ）の撃破。敗北条件：ニーナの機体の撃墜、またはカラドリウスの撃墜。'}],
+  talks:[
+   {id:'first',when:(a,d)=>a.key==='schutze',lines:()=>[
+   {who:'ニーナ',text:'狙撃位置、よし。……一つ目。'}]},
+   {id:'bossNina',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='schutze'),lines:()=>[
+   {who:'ヨハン',text:'女！　平民の分際で、貴族の機兵に弾を向けるか！'},
+   {who:'ニーナ',text:'弾は、相手の家柄を選びません。'},
+   {who:'ヨハン',text:'黙れ！　私はブルクハルトの……！'},
+   {who:'ニーナ',text:'存じています。分家の方ですよね。……私も、首席でしたけど末席に回されました。'},
+   {who:'ヨハン',text:'き、貴様と一緒にするなっ！'}]},
+   {id:'boss',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='caladrius'),lines:()=>[
+   {who:'ヨハン',text:'黒い機兵……ファルケンか！　妃の七光りで男爵になった、成り上がりが！'},
+   {who:'エルンスト',text:'七光りで結構。だが、お前の叔父は、お前に何の光をくれた。'},
+   {who:'ヨハン',text:'黙れ！　叔父上は……叔父上は、この戦で手柄を立てれば、私を認めてくださる！'},
+   {who:'エルンスト',text:'認められるために、民の荷を焼くのか。'},
+   {who:'ヨハン',text:'民など知ったことか！　私は、ブルクハルトの名に恥じぬ騎士になるのだ！'}]},
+   {id:'bossLeo',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='lance'),lines:()=>[
+   {who:'レオ',text:'貴族の坊っちゃんが、補給基地の炊き出しを狙うとはな。騎士道ってのは、ずいぶん安いんだな。'},
+   {who:'ヨハン',text:'懲罰兵あがりが、騎士を語るな！'},
+   {who:'レオ',text:'語りゃしねえよ。槍で黙らせるだけだ！'}]},
+   {id:'bossOther',when:(a,d)=>(a.boss||d.boss)&&![a,d].some(u=>['caladrius','lance','schutze'].includes(u.key)),lines:()=>[
+   {who:'ヨハン',text:'雑兵が、どけ！　私の相手はファルケンだ！'},
+   {who:'エルンスト',text:'指揮官機だ。焦っている。囲んで、退路を断て。'}]}],
+  events:[
+   {id:'arrive',turn:2,phase:'ally',spawn:true,lines:[
+   {who:'エルンスト',text:'ファルケン大隊、到着した。ブラント少尉、よく持ちこたえた。'},
+   {who:'ニーナ',text:'……本当に、半刻で。'},
+   {who:'エルンスト',text:'約束したからな。君は基地から動くな。敵は我々が引きつける。'},
+   {who:'ヨハン',text:'北から……討伐軍だと!?　城館に向かったはずでは……！'},
+   {who:'レオ',text:'残念だったな、坊っちゃん。こっちにも、足の速い隊長がいるんでね。'}]},
+   {id:'panic',turn:3,phase:'foe',spawn:true,lines:[
+   {who:'ヨハン',text:'東の隊、回り込め！　基地に火を放て！　荷さえ焼けば、我らの勝ちだ！'},
+   {who:'男爵家の騎士',text:'ヨハン様、しかし基地には村の者が……！'},
+   {who:'ヨハン',text:'構うな！　手柄の前に、平民の一人や二人！'},
+   {who:'エルンスト',text:'（……ディートリヒとは、まるで違うな）'}]}],
+  meetTalks:[{id:'meet',a:'schutze',b:'caladrius',lines:[
+   {who:'ニーナ',text:'少佐。……一つ、伺っても。'},
+   {who:'エルンスト',text:'何だ。'},
+   {who:'ニーナ',text:'なぜ、城館を後回しにしてまで、こんな後ろの基地に。'},
+   {who:'エルンスト',text:'後ろにいる者を見捨てる軍は、いずれ前からも崩れる。……それに、首席の狙撃手を焼かせるのは惜しい。'},
+   {who:'ニーナ',text:'……私の成績を、ご存じなのですか。'},
+   {who:'エルンスト',text:'平民の首席を後方に回した、という話は、大隊長の耳にも届く。腹の立つ話としてな。'}]}],
+  bossDown:[
+   {who:'ヨハン',text:'ば、馬鹿な……私の、紋章が……。'},
+   {who:'ヨハン',text:'ま、まだだ……叔父上に……叔父上に、手柄を……。'},
+   {who:'エルンスト',text:'機体を捨てろ、ヨハン！　脱出しろ！'},
+   {who:'ヨハン',text:'捨てられるか……この紋章は、母上が……。'},
+   {who:'ヨハン',text:'叔父上……私は……お役に……。'},
+   {who:'',text:'えんじ色の機体が、炎に包まれた。紋章を描き直したばかりの肩が、黒く焼け落ちていく。',narr:1},
+   {who:'ニーナ',text:'……。'},
+   {who:'レオ',text:'最後まで、叔父上、かよ。'},
+   {who:'エルンスト',text:'……末席の者ほど、上を見る。見上げた先に、何もないとも知らずに。'}],
+  lose:[
+   {who:'マティアス',text:'少佐！　くそっ、応答してください、少佐！'}],
+  loseBy:{schutze:[
+   {who:'ニーナ',text:'……弾が、足りなかった……。'},
+   {who:'エルンスト',text:'ブラント少尉！　……間に合わなかったか。'}]},
+  epilogue:f=>[
+   {who:'',text:'― 第七補給基地 ―',narr:1,bg:'depot'},
+   {who:'補給兵',text:'少尉どの！　荷は無事です！　村の者も、誰も……！'},
+   {who:'ニーナ',text:'……数え直しは、あとにしましょう。'},
+   {who:'エルンスト',text:'ブラント少尉。君が持ちこたえたから、補給は残った。礼を言う。'},
+   {who:'ニーナ',text:'仕事をしただけです。……それより、少佐。お聞きしたいことがあります。'},
+   {who:'ニーナ',text:'補給の日取りも、西の街道の道順も、知っていたのは大隊司令部だけです。'},
+   {who:'ニーナ',text:'なのに敵は、荷が出る二日前に、ちょうど守りの薄いところを突いてきました。'},
+   {who:'クラーラ',text:'渡しのときと同じです。……もう、偶然ではありません。'},
+   {who:'マティアス',text:'狼の巣の帳簿にも『大隊司令部より確認』。三度目ですな。'},
+   {who:'レオ',text:'司令部の中に、男爵に飼われてる奴がいる。そういうことだろ。'},
+   {who:'エルンスト',text:'ああ。……もう疑いではない。確かだ。'},
+   {who:'オットー',text:'で、でも、誰なんですか……？'},
+   {who:'エルンスト',text:'まだ分からん。だが、向こうが耳を使うなら、こちらはその耳に聞かせればいい。'},
+   {who:'クラーラ',text:'……偽の知らせを、流すおつもりですか。'},
+   {who:'エルンスト',text:'城館を攻める日取りと道を、司令部にだけ伝える。偽の日取りと道をな。'},
+   {who:'エルンスト',text:'それが男爵の側に漏れれば、漏らした者は、司令部の中でも限られる。'},
+   {who:'マティアス',text:'ネズミ捕りですな。いい趣味だ。'},
+   {who:'エルンスト',text:'ブラント少尉。城館攻めには、腕のいい狙撃手が要る。……私の大隊に来ないか。'},
+   {who:'ニーナ',text:'……私は平民で、女です。前線の席には、ふさわしくないそうですが。'},
+   {who:'エルンスト',text:'私の大隊で席を決めるのは、腕だけだ。家柄の順なら、私が一番後ろになる。'},
+   {who:'レオ',text:'ハッ、言うねえ。うちの隊長は、変な貴族なんだよ。'},
+   {who:'ニーナ',text:'……ここより退屈な場所はないと思っていました。お供します、少佐。'},
+   {who:'',text:'― 男爵の城館 ―',narr:1,bg:'manor',music:'crisis'},
+   {who:'男爵家の騎士',text:'申し上げます……ヨハン様、討ち死に。補給基地の襲撃は、失敗いたしました。'},
+   {who:'ブルクハルト男爵',text:'何だと！？　……ふん、役立たずめ。'},
+   {who:'ブルクハルト男爵',text:'分家の末席など、やはりその程度か。家名に泥を塗りおって。'},
+   {who:'ディートリヒ',text:'……閣下。ヨハン様は、最期まで閣下のお名前を呼んでおられたそうです。'},
+   {who:'ブルクハルト男爵',text:'それがどうした。名を呼ぶだけなら、犬でもできる。'},
+   {who:'ディートリヒ',text:'……'},
+   {who:'ディートリヒ',text:'（……あの時と、同じだ。あの子の時も、閣下は同じ顔で、同じことを）'},
+   {who:'ブルクハルト男爵',text:'ディートリヒ。城の守りは貴様に任せる。今度こそ、討伐軍を追い返せ。'},
+   {who:'ディートリヒ',text:'……はっ。この命に代えましても。'},
+   {who:'',text:'補給は守られ、狙撃手ニーナが大隊に加わった。',narr:1,bg:'map',mark:'ford'},
+   {who:'',text:'そしてエルンストは、司令部に潜む「耳」へ、偽の知らせを仕掛ける。',narr:1},
+   {who:'',text:'一方、城館では老騎士が一人、静かに覚悟を決めていた。',narr:1},
+   {who:'',text:'主のために死ぬのではない。かつて、主のために死んだ者のために。',narr:1},
+   {who:'',text:'次回、第5話「城館の夜」',narr:1}],
+  loseHint:'ニーナ機は補給基地（毎ターン回復）から出さないこと。狙撃銃は3マス以上離れた敵にしか撃てない。2ターン目に大隊が北から着く。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
-const STAGE_ORDER=['e1','e2','e3'];
+const STAGE_ORDER=['e1','e2','e3','e4'];
 const stageTitle=st=>`${st.label}「${st.name}」`;
 let ST=STAGES.s1,flags={};
 // ステージの地形と背景を切り替える
@@ -1316,7 +1536,7 @@ function tinted(src,color){
 // 機体：big（戦闘シーン）、up / down / left / right（マップ。設定画の背面／正面／左／右）、SPR_EXTRA の機体は idle / walk / attack（待機／歩行／攻撃）も。
 // TPL の spr で別の機体の画像を使い、spr:false なら画像なし（drawMech で描く）。tint で画像に色を重ねられる
 // 待機・歩行・攻撃の絵がある機体
-const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf','cannon','lance','eisenwacht','acker'];
+const SPR_EXTRA=['grand','sylph','bulwark','raven','zekt','caladrius','truck','hound','golmkai','graywolf','cannon','lance','eisenwacht','acker','schutze','ehre'];
 const SPR={};
 for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   const f=t.spr||k,load=src=>t.tint?tinted(src,t.tint):img(src);
@@ -1867,16 +2087,16 @@ const bcv=$('bcv'),bctx=bcv.getContext('2d');
 // 戦闘画面では、左側（敵）は右を、右側（味方）は左を向くように、向きが逆の絵は左右反転して描く
 // 横に長い武器（大鉈とガトリング砲）が付いた戦闘用の絵は、横幅ではなく高さで大きさを決める（横幅で決めると体が小さくなる）
 const BIG_BY_H={graywolf:1};
-const BIG_FACE={cannon:'l',bulwark:'l',zekt:'l',truck:'l',hound:'r',lance:'l',acker:'l'};
+const BIG_FACE={cannon:'l',bulwark:'l',zekt:'l',truck:'l',hound:'r',lance:'l',acker:'l',schutze:'l',ehre:'l'};
 // 整備車両の攻撃の絵は正面から見た車両で、戦闘用の絵より小さく見えるので使わない。
 // グランヴァルドたち4機（番外編）の攻撃の絵は元のドット絵が小さく、拡大するとぼやけるので使わない
-const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r',cannon:'r',lance:'r',eisenwacht:'r',acker:'r'};
+const ATK_FACE={zekt:'r',caladrius:'l',hound:'r',golmkai:'l',graywolf:'r',cannon:'r',lance:'r',eisenwacht:'r',acker:'r',schutze:'r',ehre:'l'};
 // 攻撃の絵が何の攻撃の絵か（格＝格闘、射＝射撃）。武器の種類と合うときだけ攻撃の絵を使う
 // （ゼクトの攻撃の絵はライフルを構えた絵なので、バトルアックスでは使わない、など）
 // 武器ごとの構えの絵（設定画の一枚絵。右向き）。ある武器はこちらを使う。大きさは戦闘用の絵と同じ背の高さにそろえる
 const ATK_W={caladrius:{'ライフル':'caladrius_rifle','マシンガン':'caladrius_mg'}};
 const ATK_W_IMG={};for(const m of Object.values(ATK_W))for(const f of Object.values(m))ATK_W_IMG[f]=img(`assets/sprites/${f}.png`);
-const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格',cannon:'射',lance:'格',eisenwacht:'格',acker:'射'};
+const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',caladrius:'格',truck:'射',hound:'格',golmkai:'格',graywolf:'格',cannon:'射',lance:'格',eisenwacht:'格',acker:'射',schutze:'射',ehre:'格'};
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの

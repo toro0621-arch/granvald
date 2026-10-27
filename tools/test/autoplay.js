@@ -24,8 +24,10 @@ const [stage='e2',runs='5']=process.argv.slice(2);
         if(over)return;
         const r=computeReach(u);let best=null;
         if(u.repair){for(const t of r.tiles){for(const a of alive('ally'))if(a!==u&&a.hp<a.maxHp*.6&&Math.abs(t.x-a.x)+Math.abs(t.y-a.y)===1){const sc=a.maxHp-a.hp+(a.key===ST.leader||(ST.protect||[]).includes(a.key)?3000:0);if(!best||sc>best.sc)best={sc,t,a,rep:1}}}}
-        const weak=(ST.protect||[]).includes(u.key)&&(u.hp<u.maxHp*.7||dist(u,alive('ally').find(a=>a.key===ST.leader))>2);
-        if(!best&&!weak)for(const t of r.tiles){const ox=u.x,oy=u.y;u.x=t.x;u.y=t.y;
+        // 守る機体が回復地形（基地）にいるときは、基地から出ずに戦う
+        const holdBase=(ST.protect||[]).includes(u.key)&&terOf(u.x,u.y).heal;
+        const weak=!holdBase&&(ST.protect||[]).includes(u.key)&&(u.hp<u.maxHp*.7||(alive('ally').some(a=>a.key===ST.leader)&&dist(u,alive('ally').find(a=>a.key===ST.leader))>2));
+        if(!best&&!weak)for(const t of r.tiles){if(holdBase&&!terOf(t.x,t.y).heal)continue;const ox=u.x,oy=u.y;u.x=t.x;u.y=t.y;
           for(const e of foes()){const d=dist(u,e);for(const w of u.weapons){if(usable(u,w)||!inRange(w,d))continue;
             const hr=hitRate(u,e,w),dm=baseDmg(u,e,w);let sc=dm*hr/100;if(dm>=e.hp)sc+=3000*hr/100;if(e.boss)sc*=1.3;
             const cw=bestWeapon(e,u,d);if(cw)sc-=baseDmg(e,u,cw)*hitRate(e,u,cw)/100*.5;sc+=terOf(t.x,t.y).e*5;
