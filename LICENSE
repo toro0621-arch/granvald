@@ -1,0 +1,44 @@
+機甲戦線グランヴァルド ライセンス
+Copyright (c) 2026 toro0621-arch
+
+このリポジトリの中身は、種類によってライセンスが違います。
+
+1. プログラム（MIT License）
+   index.html のプログラム部分（HTML・CSS・JavaScript）と tools/ の中身。
+   下の MIT License の条件で、自由に使用・改変・再配布できます。
+
+2. 画像・設定・ストーリー・キャラクター（無断使用・転載禁止）
+   assets/ の画像（機体・地形・顔・背景・マップ・タイトルロゴ）、docs/ の中身、
+   SETTING.md、STORY.md、ゲーム内のセリフ、キャラクター・機体・世界観。
+   著作権は toro0621-arch にあります。All rights reserved.
+   許可なく使用・改変・転載・再配布することを禁止します。
+
+3. BGM（OpenTracks の利用規約に従う）
+   assets/bgm/ の音楽は OpenTracks（https://opentracks.com/）のフリー素材で、
+   このリポジトリのライセンスの対象外です。各曲の著作権は作曲者にあり、
+   利用は OpenTracks の利用規約に従ってください。曲名と作曲者は README.md の
+   「クレジット」を見てください。
+
+--------------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 toro0621-arch
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

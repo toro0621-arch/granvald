@@ -11,3 +11,10 @@ BGM はすべて OpenTracks（旧 DOVA-SYNDROME、https://opentracks.com/ ）の
 
 どれも音量をそろえるために再エンコードしています。
 OpenTracks の規約で「音源ファイルを容易にアクセス・複製できる状態での利用」が禁止されているため、mp3 はそのまま置かず、`tools/pack_bgm.py` で変換した `.dat` を置いてゲーム内で元に戻して再生しています（ローカルで `index.html` を直接開いた場合は BGM が鳴りません。ローカルで鳴らすときは `python3 -m http.server` などで開いてください）。
+
+## ライセンス
+
+種類によって分かれています（詳しくは [LICENSE](LICENSE)）。
+- プログラム（`index.html` のコード、`tools/`）：MIT License
+- 画像・設定・ストーリー・キャラクター：© toro0621-arch、無断使用・転載禁止
+- BGM：OpenTracks の利用規約に従います（上の「クレジット」）
