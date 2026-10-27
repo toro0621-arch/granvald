@@ -1781,7 +1781,8 @@ const FACE={'ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'
  '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
 const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 // 顔グラは最初に全員分を先読みしておく（初めて出す顔の読み込み待ちで、前の人の顔が残って見えるのを防ぐ）
-const FACE_IMG={};for(const n of Object.keys(FACE)){const im=new Image();im.src=faceSrc(n);FACE_IMG[n]=im}
+// 読み込みに失敗したら読み直す（img()。スマホで一部の読み込みが失敗し、カットインの顔が出ないことがあったため）
+const FACE_IMG={};for(const n of Object.keys(FACE))FACE_IMG[n]=img(faceSrc(n));
 function setFace(el,name){const f=faceSrc(name);
   if(!f){el.hidden=true;return}
   el.onerror=()=>{el.hidden=true};el.hidden=false;
