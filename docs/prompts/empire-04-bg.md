@@ -1,6 +1,6 @@
 # 帝国編 第4話「後方の狙撃手」 背景の指示文
 
-> できあがり：`docs/ref/bg-depot.jpg` → `assets/bg/depot.jpg`（使う）。夜の場面用に、暗く青くした `assets/bg/depot_night.jpg` も作った
+> できあがり：`docs/ref/bg-depot.jpg` → `assets/bg/depot.jpg`（使う）。補給基地（夜）は別に描いてもらった `docs/ref/bg-depot-night.jpg` → `assets/bg/depot_night.jpg`（使う。台本に、ニーナが夜の見張りで異変に気づく場面を足した）
 
 添付：`assets/bg/ford.jpg`・`assets/bg/manor.jpg`（会話の背景画。絵柄をそろえるため）
 会話の背景画は抜かずにそのまま使う。縦長（9:16、スマートフォンの縦画面向け）。
