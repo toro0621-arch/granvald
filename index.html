@@ -1409,7 +1409,8 @@ const STAGES={
    {who:'ディートリヒ',text:'分かっている。全機、西門の守りにつけ。城下には一歩も入れるな。'},
    {who:'レオ',text:'ハッ、今さら戻ってきても遅えよ！'}]}],
   bossDown:[
-   {who:'ディートリヒ',text:'……見事だ。'},
+   // ディートリヒが撃破されてから息を引き取るまでは farewell の曲（ユーザーの希望）
+   {who:'ディートリヒ',text:'……見事だ。',music:'farewell'},
    {who:'',text:'煙を噴く古い機兵が、西門の前に膝をついた。エルンストはカラドリウスを降り、操縦席に駆け寄る。',narr:1},
    {who:'エルンスト',text:'ディートリヒ！'},
    {who:'ディートリヒ',text:'……ファルケン男爵。最後に、これを。'},
@@ -1421,7 +1422,7 @@ const STAGES={
    {who:'ディートリヒ',text:'あなたのようなお方に……お仕え、したかった。'},
    {who:'エルンスト',text:'……。'},
    {who:'ディートリヒ',text:'カール……父は、最後まで……騎士で……。'},
-   {who:'',text:'夜明けの光が、西門の古い石を照らし始めた。',narr:1},
+   {who:'',text:'夜明けの光が、西門の古い石を照らし始めた。',narr:1,music:'story'},
    {who:'レオ',text:'……死んだのか。'},
    {who:'エルンスト',text:'ああ。最後まで、男爵家の騎士として。'},
    {who:'',text:'騎士団長が倒れると、残った騎士たちは、一機、また一機と武器を下ろした。',narr:1,do:()=>{for(const u of units)if(u.team==='foe'&&!u.dead)u.off=true}},
@@ -1919,8 +1920,8 @@ function snd(type){
 // BGM は OpenTracks（旧 DOVA-SYNDROME）のフリー素材。規約で「音源ファイルを容易にアクセス・複製できる状態」が禁止なので、
 // mp3 をそのまま置かず、バイト列を混ぜた .dat を置いて、ここで元に戻して再生する（tools/pack_bgm.py と同じ鍵・式）。
 // story＝タイトルから最初の出撃前まで、crisis＝村が襲われている場面（戦闘開始時の会話）、player／enemy＝各フェイズ
-// victory＝戦闘に勝ったとき（ボス撃破・敵全滅の直後の会話）
-const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),victory:new Audio()};
+// farewell＝第5話でディートリヒが撃破されてから息を引き取るまで（会話の行の music で流す）
+const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio()};
 const BGM_KEY=new TextEncoder().encode('granvald-bgm-2026');
 function loadBgm(name){
   return fetch(`assets/bgm/${name}.dat`).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(buf=>{
@@ -2298,10 +2299,9 @@ async function checkEnd(){
   const boss=units.find(u=>u.boss),lost=lostUnit();
   if(lost||!alive('ally').length){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);await dialog(battleLines((lost&&ST.loseBy&&ST.loseBy[lost.key])||ST.lose));result(false);return}
   // 戦闘が終わったら、そのあとの会話はステージの music.end の曲（帝国編第1話は「戦闘準備」）
-  // 勝ったら勝利の曲（ボス撃破・敵全滅の直後の会話）。クリア後の会話（epilogue）からはステージの music.end の曲に戻す（ユーザーの希望）
-  if(wonNow()){over=true;await sleep(500);bgm('victory');
+  if(wonNow()){over=true;await sleep(500);if(ST.music&&ST.music.end)bgm(ST.music.end);
     await dialog(battleLines(boss.dead&&alive('foe').length||!ST.allDown?ST.bossDown:ST.allDown));
-    if(ST.epilogue){bgm((ST.music&&ST.music.end)||'story');await dialog(ST.epilogue(flags),{solid:true})}
+    if(ST.epilogue)await dialog(ST.epilogue(flags),{solid:true});
     result(true)}
 }
 function result(win){
