@@ -1,5 +1,7 @@
 # 帝国編 第5話「城館の夜」 背景の指示文
 
+> できあがり：城館（夜）`docs/ref/bg-castle-night.jpg` → `assets/bg/castle_night.jpg`、戦闘背景 `docs/ref/battle-bg-castle-night.jpg` → `assets/bg/battle_castle_night.jpg`（916×614 に縮小。どちらも使う）
+
 添付：`assets/bg/manor.jpg`・`assets/bg/depot_night.jpg`（会話の背景画。絵柄と、夜の色合いをそろえるため）
 会話の背景画は抜かずにそのまま使う。縦長（9:16、スマートフォンの縦画面向け）。
 城館の広間・司令部・格納庫は今の絵を使う。
