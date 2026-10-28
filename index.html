@@ -1440,7 +1440,7 @@ const STAGES={
    {who:'エルンスト',text:'……その騎士団長は、最後まであなたの城の門を守って死んだ。'},
    {who:'ブルクハルト男爵',text:'そ、それがどうした！　わしは……わしは何も知らん！'},
    {who:'エルンスト',text:'連れて行け。'},
-   {who:'',text:'― 討伐軍の野営地 ―',narr:1,bg:'hq',music:'story'},
+   {who:'',text:'― 討伐軍の野営地 ―',narr:1,bg:'hq',music:'radix'},
    {who:'クラーラ',text:'少佐。……伝令のフランツを、陣の外で捕らえました。城の騒ぎを聞いて、逃げようとしていたそうです。'},
    {who:'エルンスト',text:'話を聞く。牢に入れておけ。誰も近づけるな。'},
    {who:'クラーラ',text:'はい。'},
@@ -1921,7 +1921,8 @@ function snd(type){
 // mp3 をそのまま置かず、バイト列を混ぜた .dat を置いて、ここで元に戻して再生する（tools/pack_bgm.py と同じ鍵・式）。
 // story＝タイトルから最初の出撃前まで、crisis＝村が襲われている場面（戦闘開始時の会話）、player／enemy＝各フェイズ
 // farewell＝第5話でディートリヒが撃破されてから息を引き取るまで（会話の行の music で流す）
-const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio()};
+// radix＝第5話の戦闘後、討伐軍の野営地の場面から最後まで
+const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio(),radix:new Audio()};
 const BGM_KEY=new TextEncoder().encode('granvald-bgm-2026');
 function loadBgm(name){
   return fetch(`assets/bgm/${name}.dat`).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(buf=>{
