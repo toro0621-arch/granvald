@@ -1,5 +1,7 @@
 # 帝国編 第7話「兵站局の判」 背景の指示文
 
+> できあがり（全部使う）：記録局 `docs/ref/bg-records.jpg` → BG の `records`、書記官室 `bg-scribe.jpg` → `scribe`、元帥府 `bg-marshal.jpg` → `marshal`（壁の地図が現実の世界地図に見えたので、`python3 tools/marshal_map.py` でこのゲームの大陸の地図に貼り替えた）、兵站倉庫 `bg-warehouse.jpg` → `warehouse`、牢 `bg-cell.jpg` → `cell`
+
 添付：`assets/bg/hall.jpg`・`assets/bg/hq.jpg`（会話の背景画。絵柄をそろえるため）
 会話の背景画は抜かずにそのまま使う。縦長（9:16、スマートフォンの縦画面向け）。
 宿舎は今の司令部の絵、貴族会議は第6話の宮殿の大広間を使う。戦闘の背景は今の砦の背景を使う。
