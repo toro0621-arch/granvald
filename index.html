@@ -166,6 +166,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .t-menu{display:flex;flex-direction:column;align-items:center;gap:8px;width:min(100%,320px);margin:1vh 0 2vh;animation:tmenu .35s ease-out}
 @keyframes tmenu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .t-menu .stages{display:flex;flex-direction:column;gap:8px;width:100%;max-height:52vh;overflow-y:auto} /* 話が増えたら一覧だけスクロール */
+/* 一覧の中身は縮めない（縮むと紹介文が枠からはみ出して重なる。話が増えたら縮めずにスクロールさせる） */
+.t-menu .stages>*{flex-shrink:0}
 .t-menu .btn{width:100%;text-align:left;padding:9px 16px;min-height:54px;background:#0b1424e0;border-color:#3d5578;backdrop-filter:blur(4px)}
 .t-menu .btn.pri{background:linear-gradient(90deg,#1d5fa8,#2f86e0);border-color:#7cc0ff}
 .t-menu .btn small{display:block;font-weight:400;font-size:11.5px;opacity:.8;margin-top:1px}
@@ -651,12 +653,6 @@ const TPL={
   pilot:{name:'護送兵',melee:90,shoot:110,hit:115,eva:85,skill:100,sp:0,spirits:[]},
   lines:['護送車、前進！','近づけるな！'],
   weapons:[W('機銃','射',900,1,2,{fx:'bullet'})]},
- // 近衛の小隊（2ターン目に駆けつける、操作できる味方。ゼクトの絵に黒と銀を重ねる）
- konoe:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#a4a8b8',
-  col:{main:'#2a2c34',sub:'#9aa0aa',acc:'#c8ccd4',eye:'#ff3344'},
-  pilot:{name:'近衛兵',melee:130,shoot:130,hit:135,eva:120,skill:120,sp:0,spirits:[]},
-  lines:['近衛の名にかけて！','護送車には近づけさせん！'],
-  weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  // 紋章を削った刺客のゼクト（黒塗り。盗賊や私兵より腕がいい）
  shade:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#5a5a64',
   col:{main:'#1e1e24',sub:'#3a3a44',acc:'#5a5a64',eye:'#ff3344'},
@@ -1550,8 +1546,6 @@ const STAGES={
   roster:[
    // 南から峠を北へ。護送車を囲んで進む
    ['caladrius','ally',4,9],['lance','ally',5,9],['zekt_b','ally',3,10],['convoy','ally',4,10],['zekt_o','ally',5,10],['schutze','ally',3,11],['cannon','ally',4,11],['truck','ally',5,11],
-   // 2ターン目の味方フェイズに、帝都の側から近衛の小隊が駆けつける
-   ['konoe','ally',3,0,{off:true,arrive:2}],['konoe','ally',4,0,{off:true,arrive:2}],['konoe','ally',3,1,{off:true,arrive:2}],
    // 刺客の頭は峠の北東の崖の上で指揮をとる（味方が2マス以内に来るか、4ターン目まで動かない）。崖の上に刺客
    ['shadecap','foe',8,0,{guard:true,guardRange:2,guardTurn:4}],
    ['shade','foe',1,2],['shade','foe',8,2],['shade','foe',1,4],['shade','foe',8,4],
@@ -1634,20 +1628,19 @@ const STAGES={
    {who:'エルンスト',text:'オットー、ブルーノ、護送車の前に立て！'},
    {who:'オットー',text:'は、はいっ！',alt:['ブルーノ']}]}],
   events:[
-   {id:'konoe',turn:2,phase:'ally',spawn:true,lines:[
-   {who:'',text:'峠の北、帝都の側から、黒と銀に塗られた機兵の小隊が駆け下りてきた。',narr:1},
-   {who:'近衛の小隊長',text:'近衛第三中隊！　レーゲン少佐の命により、護送を出迎えに参った！'},
-   {who:'レオ',text:'近衛だと？　あのいけすかねえ監察役の部下かよ。',alt:['マティアス']},
-   {who:'近衛の小隊長',text:'少佐は、護送が峠で狙われると読んでおられた。これより、ファルケン大隊を援護する！'},
-   {who:'エルンスト',text:'……読んでいた、か。助かる。護送車の北を固めてくれ。'}]},
    {id:'ambush',turn:3,phase:'foe',spawn:true,lines:[
-   {who:'刺客の頭',text:'近衛まで出てきたか。……構わん、裏の者も出せ。護送車さえ潰せば、それで仕事は終わりだ。'},
+   {who:'刺客の頭',text:'しぶとい連中だ。……構わん、裏の者も出せ。護送車さえ潰せば、それで仕事は終わりだ。'},
    {who:'クラーラ',text:'南の崖の裏からも来ます！　挟まれます！',alt:['ニーナ']},
-   {who:'エルンスト',text:'慌てるな。護送車を北へ寄せろ。近衛と挟み返す。'}]}],
+   {who:'エルンスト',text:'慌てるな。護送車を北へ寄せろ。南の敵は、護送車に着く前に叩く。'}]}],
   bossDown:[
    {who:'刺客の頭',text:'くっ……割に合わん仕事だ……！'},
    {who:'',text:'刺客の頭の機兵が崖下へ転げ落ち、炎に包まれた。残った刺客たちは、散り散りに逃げていく。',narr:1,do:()=>{for(const u of units)if(u.team==='foe'&&!u.dead)u.off=true}},
-   {who:'近衛の小隊長',text:'追いますか、ファルケン少佐。'},
+   {who:'',text:'峠の北、帝都の側から、黒と銀に塗られた機兵の小隊が駆け下りてきた。',narr:1},
+   {who:'近衛の小隊長',text:'近衛第三中隊！　レーゲン少佐の命により、護送を出迎えに参った！'},
+   {who:'レオ',text:'近衛だと？　片付いてから来やがって。',alt:['マティアス']},
+   {who:'近衛の小隊長',text:'少佐は、護送が峠で狙われると読んでおられた。……間に合わず、申し訳ない。'},
+   {who:'エルンスト',text:'読んでいた、か。……いや、来てくれて助かる。ここから先の出迎えを頼む。'},
+   {who:'近衛の小隊長',text:'刺客の残りを追いますか、ファルケン少佐。'},
    {who:'エルンスト',text:'いや、深追いはしない。護送車を帝都へ届けるのが先だ。'},
    {who:'マティアス',text:'燃え残りを見てきました。機体の番号は、きれいに削られてます。……手慣れたもんだ。',alt:['クラーラ']},
    {who:'ブルクハルト男爵',text:'わ、わしを……殺そうとした。あのお方が……わしを……。'},
@@ -1670,12 +1663,12 @@ const STAGES={
    {who:'レオ',text:'……うるせえ。'},
    {who:'',text:'城門の内側で、黒と銀の軍服の将校が待っていた。',narr:1},
    {who:'ヴォルフ',text:'護送、ご苦労だった。ファルケン少佐。男爵の身柄は、ここから近衛が預かる。'},
-   {who:'エルンスト',text:'レーゲン少佐。峠では、貴官の部下に助けられた。礼を言う。'},
+   {who:'エルンスト',text:'レーゲン少佐。峠に部下を寄こしてくれたそうだな。礼を言う。'},
    {who:'ヴォルフ',text:'礼を言われる筋合いはない。陛下の裁きの前に、罪人に死なれては困る。それだけだ。'},
    {who:'ヴォルフ',text:'……それと、勲章の式は明後日だ。妃殿下の兄上として、恥ずかしくない格好で来ることだな。'},
    {who:'',text:'ヴォルフは男爵を乗せた車とともに、近衛の詰所の方へ去っていった。',narr:1},
    {who:'マティアス',text:'相変わらず、やな野郎ですな。'},
-   {who:'エルンスト',text:'峠のことを読んで、部下を寄こした。……仕事のできる男だ。'},
+   {who:'エルンスト',text:'峠で狙われると読んで、部下を寄こしていた。……仕事のできる男だ。'},
    {who:'',text:'宿舎へ向かう大通りの途中、大きな石の門の前を通りかかった。',narr:1},
    {who:'ニーナ',text:'……士官学校です。'},
    {who:'クラーラ',text:'二十八年前、陛下の勅令で、平民にも門が開かれた学校ですね。'},
@@ -1752,7 +1745,7 @@ const STAGES={
    {who:'',text:'だが、エルンストの手には、宰相府でしか使われない蝋のかけらがある。',narr:1},
    {who:'',text:'剣ではなく、帳簿と封蝋の戦い。帝都の戦いが、静かに始まった。',narr:1},
    {who:'',text:'次回、第7話「兵站局の判」',narr:1}],
-  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。2ターン目に北から近衛が駆けつけ、3ターン目に南の崖の裏から刺客が来る。護送車を北へ進めておこう。刺客の頭は北東の崖の上。'}
+  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。3ターン目に南の崖の裏から刺客が来る。護送車を北へ進めておこう。刺客の頭は北東の崖の上。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6'];
