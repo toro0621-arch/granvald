@@ -1,5 +1,7 @@
 # 帝国編 第6話「鉄の護送」 背景の指示文
 
+> できあがり（全部使う）：峠道 `docs/ref/bg-pass.jpg` → `assets/bg/pass.jpg`（BG の `pass`。夜は `python3 tools/night_bg.py docs/ref/bg-pass.jpg assets/bg/pass_night.jpg` で作った `pass_night`）、帝都の城門 `docs/ref/bg-capital-gate.jpg` → `gate`、宮殿の大広間 `docs/ref/bg-palace-hall.jpg` → `hall`、後宮の庭園 `docs/ref/bg-harem-garden.jpg` → `garden`
+
 添付：`assets/bg/manor.jpg`・`assets/bg/hq.jpg`（会話の背景画。絵柄をそろえるため）
 会話の背景画は抜かずにそのまま使う。縦長（9:16、スマートフォンの縦画面向け）。
 司令部は今の絵を使う。峠道（夜）は、峠道（昼）をゲーム側で暗くして使う（夜の絵も別に描くなら、1の時間と空気を夜に変えて頼む）。
