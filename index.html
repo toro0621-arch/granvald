@@ -701,7 +701,7 @@ const TPL={
   lines:['少将閣下の命令だ！','倉庫には近づけさせん！'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  // 兵站局長ベルトルトの機体（ボス。ゼクトの指揮官仕様。操縦は下手だが装甲が厚い）
- logi:{name:'ゼクト（指揮官）',kind:'drone',hp:6000,en:110,armor:1400,mob:65,move:4,boss:true,spr:'zekt',tint:'#b8a070',
+ logi:{name:'ゼクト（指揮官）',kind:'drone',hp:8000,en:110,armor:1500,mob:65,move:4,boss:true,spr:'zekt',tint:'#b8a070',
   col:{main:'#3a3a58',sub:'#c9a23a',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'ベルトルト',melee:105,shoot:115,hit:110,eva:80,skill:90,sp:0,spirits:[]},
   lines:['寄るな、寄るな！','わしを誰だと思っておる！','帳簿ごと灰にしてくれる！'],
@@ -1796,12 +1796,13 @@ const STAGES={
   goal:'勝利：6ターン以内にベルトルト機を撃破／敗北：6ターン目の敵フェイズが終わる・カラドリウス撃墜',
   roster:[
    ['zekt_b','ally',2,10],['caladrius','ally',4,10],['lance','ally',5,10],['zekt_o','ally',7,10],['schutze','ally',3,11],['cannon','ally',4,11],['truck','ally',6,11],
-   // 倉庫の前にベルトルト。倉庫から動かない
-   ['logi','foe',4,1,{guard:true,guardRange:1,guardTurn:99}],
+   // 倉庫の中（入口）にベルトルト。倉庫から動かない（倉庫は回復地形）。両脇を護衛が固める
+   ['logi','foe',4,0,{guard:true,guardRange:1,guardTurn:99}],
+   ['depotz','foe',3,1,{guard:true,guardRange:2,guardTurn:4}],['depotz','foe',5,1,{guard:true,guardRange:2,guardTurn:4}],
    // 帳簿から消えた「廃棄済み」のゼクト
    ['depotz','foe',2,2],['depotz','foe',7,2],['depotz','foe',3,3],['depotz','foe',6,3],['depotz','foe',1,4],['depotz','foe',8,4],['depotz','foe',4,6],['depotz','foe',5,6],
    // 2ターン目の敵フェイズに、倉庫の奥から
-   ['depotz','foe',4,0,{off:true,arrive:2}],['depotz','foe',5,0,{off:true,arrive:2}],['depotz','foe',3,0,{off:true,arrive:2}],['depotz','foe',6,0,{off:true,arrive:2}]],
+   ['depotz','foe',5,0,{off:true,arrive:2}],['depotz','foe',3,0,{off:true,arrive:2}],['depotz','foe',6,0,{off:true,arrive:2}],['depotz','foe',2,1,{off:true,arrive:2}]],
   pre:[
    {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'teito'},
    {who:'',text:'反乱の首謀者ブルクハルト男爵は、峠で命を狙われながらも、帝都へ送り届けられた。',narr:1},
@@ -2025,7 +2026,7 @@ const STAGES={
    {who:'',text:'伸ばしすぎた手は、腕ごと失う。',narr:1},
    {who:'',text:'その言葉の意味を、エルンストはまもなく知ることになる。',narr:1},
    {who:'',text:'次回、第8話「夜明けの印」',narr:1}],
-  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは倉庫の前から動かない。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'}
+  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは倉庫の入口から動かず、倉庫の中で傷も直す。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6','e7'];
