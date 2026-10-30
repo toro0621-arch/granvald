@@ -646,25 +646,25 @@ const TPL={
   weapons:[W('城壁砲','射',1500,2,5,{fx:'shell'})]},
  // ---- 帝国編 第6話 ----
  // 男爵を乗せた護送車（守る機体。整備車両の絵に色を重ねる）
- convoy:{name:'護送車',kind:'truck',hp:3600,en:100,armor:1100,mob:45,move:4,spr:'truck',tint:'#5a6070',
+ convoy:{name:'護送車',kind:'truck',hp:3600,en:100,armor:1100,mob:45,move:4,spr:'truck',tint:'#9aa0ac',
   col:{main:'#3a4048',sub:'#7a8088',acc:'#8f959c',eye:'#ffd24a'},
   pilot:{name:'護送兵',melee:90,shoot:110,hit:115,eva:85,skill:100,sp:0,spirits:[]},
   lines:['護送車、前進！','近づけるな！'],
   weapons:[W('機銃','射',900,1,2,{fx:'bullet'})]},
  // 近衛の小隊（2ターン目に駆けつける、操作できる味方。ゼクトの絵に黒と銀を重ねる）
- konoe:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#4c5160',
+ konoe:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#a4a8b8',
   col:{main:'#2a2c34',sub:'#9aa0aa',acc:'#c8ccd4',eye:'#ff3344'},
   pilot:{name:'近衛兵',melee:130,shoot:130,hit:135,eva:120,skill:120,sp:0,spirits:[]},
   lines:['近衛の名にかけて！','護送車には近づけさせん！'],
   weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  // 紋章を削った刺客のゼクト（黒塗り。盗賊や私兵より腕がいい）
- shade:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#2c2c34',
+ shade:{name:'ゼクト',kind:'drone',hp:2600,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#5a5a64',
   col:{main:'#1e1e24',sub:'#3a3a44',acc:'#5a5a64',eye:'#ff3344'},
   pilot:{name:'刺客',melee:135,shoot:130,hit:135,eva:120,skill:115,sp:0,spirits:[]},
   lines:['護送車を狙え。','仕事だ。悪く思うな。'],
   weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  // 刺客の頭（ボス）
- shadecap:{name:'ゼクト',kind:'drone',hp:5200,en:120,armor:1100,mob:95,move:5,boss:true,spr:'zekt',tint:'#3c2c36',
+ shadecap:{name:'ゼクト',kind:'drone',hp:6500,en:120,armor:1100,mob:95,move:5,boss:true,spr:'zekt',tint:'#9a6080',
   col:{main:'#2a1e24',sub:'#4a3a44',acc:'#8a2a3a',eye:'#ff3344'},
   pilot:{name:'刺客の頭',melee:155,shoot:145,hit:150,eva:130,skill:140,sp:0,spirits:[]},
   lines:['金の分は働く。','割に合わん仕事だ。','名乗る家などない。'],
@@ -1551,12 +1551,12 @@ const STAGES={
    // 南から峠を北へ。護送車を囲んで進む
    ['caladrius','ally',4,9],['lance','ally',5,9],['zekt_b','ally',3,10],['convoy','ally',4,10],['zekt_o','ally',5,10],['schutze','ally',3,11],['cannon','ally',4,11],['truck','ally',5,11],
    // 2ターン目の味方フェイズに、帝都の側から近衛の小隊が駆けつける
-   ['konoe','ally',4,0,{off:true,arrive:2}],['konoe','ally',5,0,{off:true,arrive:2}],['konoe','ally',4,1,{off:true,arrive:2}],
-   // 刺客の頭は峠の北。崖の上に刺客
-   ['shadecap','foe',6,2,{guard:true,guardRange:3,guardTurn:3}],
+   ['konoe','ally',3,0,{off:true,arrive:2}],['konoe','ally',4,0,{off:true,arrive:2}],['konoe','ally',3,1,{off:true,arrive:2}],
+   // 刺客の頭は峠の北東の崖の上で指揮をとる（味方が2マス以内に来るか、4ターン目まで動かない）。崖の上に刺客
+   ['shadecap','foe',8,0,{guard:true,guardRange:2,guardTurn:4}],
    ['shade','foe',1,2],['shade','foe',8,2],['shade','foe',1,4],['shade','foe',8,4],
-   // 3ターン目の敵フェイズに、南の崖の裏から挟み撃ち
-   ['shade','foe',0,9,{off:true,arrive:3}],['shade','foe',9,9,{off:true,arrive:3}],['shade','foe',1,11,{off:true,arrive:3}],['shade','foe',8,11,{off:true,arrive:3}]],
+   // 2ターン目の敵フェイズ（近衛が着いた直後）に、南の崖の裏から挟み撃ち
+   ['shade','foe',0,9,{off:true,arrive:2}],['shade','foe',9,9,{off:true,arrive:2}],['shade','foe',1,11,{off:true,arrive:2}],['shade','foe',8,11,{off:true,arrive:2}]],
   pre:[
    {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'burghardt'},
    {who:'',text:'ブルクハルト男爵の反乱は、城館の西門で終わった。',narr:1},
@@ -1640,7 +1640,7 @@ const STAGES={
    {who:'レオ',text:'近衛だと？　あのいけすかねえ監察役の部下かよ。',alt:['マティアス']},
    {who:'近衛の小隊長',text:'少佐は、護送が峠で狙われると読んでおられた。これより、ファルケン大隊を援護する！'},
    {who:'エルンスト',text:'……読んでいた、か。助かる。護送車の北を固めてくれ。'}]},
-   {id:'ambush',turn:3,phase:'foe',spawn:true,lines:[
+   {id:'ambush',turn:2,phase:'foe',spawn:true,lines:[
    {who:'刺客の頭',text:'近衛まで出てきたか。……構わん、裏の者も出せ。護送車さえ潰せば、それで仕事は終わりだ。'},
    {who:'クラーラ',text:'南の崖の裏からも来ます！　挟まれます！',alt:['ニーナ']},
    {who:'エルンスト',text:'慌てるな。護送車を北へ寄せろ。近衛と挟み返す。'}]}],
@@ -1752,7 +1752,7 @@ const STAGES={
    {who:'',text:'だが、エルンストの手には、宰相府でしか使われない蝋のかけらがある。',narr:1},
    {who:'',text:'剣ではなく、帳簿と封蝋の戦い。帝都の戦いが、静かに始まった。',narr:1},
    {who:'',text:'次回、第7話「兵站局の判」',narr:1}],
-  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。2ターン目に北から近衛が駆けつけ、3ターン目に南の崖の裏から刺客が来る。'}
+  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。2ターン目に北から近衛が駆けつけるが、すぐあとに南の崖の裏から刺客が来る。刺客の頭は北東の崖の上。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6'];
