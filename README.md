@@ -10,7 +10,8 @@ BGM はすべて OpenTracks（旧 DOVA-SYNDROME、https://opentracks.com/ ）の
 - 敵フェイズ：「Deckrail」 — `assets/bgm/enemy.dat`
 - 第5話、ディートリヒの最期：（曲名を確認中） — `assets/bgm/farewell.dat`
 - 第5話、戦闘後の野営地から最後まで：「Radix」 — `assets/bgm/radix.dat`
-- 第6話、宮殿の場面（大広間と後宮の庭）：（曲名を確認中） — `assets/bgm/palace.dat`
+- 第6話、宮殿の大広間の場面：（曲名を確認中） — `assets/bgm/palace.dat`
+- リディアたちの場面（第6話の後宮の庭）：（曲名を確認中） — `assets/bgm/lidia.dat`
 
 どれも音量をそろえるために再エンコードしています。
 OpenTracks の規約で「音源ファイルを容易にアクセス・複製できる状態での利用」が禁止されているため、mp3 はそのまま置かず、`tools/pack_bgm.py` で変換した `.dat` を置いてゲーム内で元に戻して再生しています（ローカルで `index.html` を直接開いた場合は BGM が鳴りません。ローカルで鳴らすときは `python3 -m http.server` などで開いてください）。

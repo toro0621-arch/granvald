@@ -1693,7 +1693,7 @@ const STAGES={
    {who:'エルンスト',text:'……ありがたき幸せ。'},
    {who:'皇帝',text:'うむ、うむ。さて、式は終わりかな？　わしは昼寝の時間なのだが。'},
    {who:'',text:'大貴族たちのあいだから、くすくすと笑い声が漏れた。',narr:1},
-   {who:'',text:'― 後宮の庭 ―',narr:1,bg:'garden'},
+   {who:'',text:'― 後宮の庭 ―',narr:1,bg:'garden',music:'lidia'},
    {who:'リディア',text:'兄上！'},
    {who:'',text:'庭の小道を、若い妃が裾をつまんで駆けてきた。',narr:1},
    {who:'リディア',text:'勲章ですって？　陛下ったら、私にも内緒にしてたのよ。ひどいと思わない？'},
@@ -2183,8 +2183,8 @@ function snd(type){
 // story＝タイトルから最初の出撃前まで、crisis＝村が襲われている場面（戦闘開始時の会話）、player／enemy＝各フェイズ
 // farewell＝第5話でディートリヒが撃破されてから息を引き取るまで（会話の行の music で流す）
 // radix＝第5話の戦闘後、討伐軍の野営地の場面から最後まで
-// palace＝第6話の宮殿の場面（勲章の式の大広間と後宮の庭）
-const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio(),radix:new Audio(),palace:new Audio()};
+// palace＝第6話の宮殿の場面（勲章の式の大広間）、lidia＝リディアたちの場面（第6話の後宮の庭）
+const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio(),radix:new Audio(),palace:new Audio(),lidia:new Audio()};
 const BGM_KEY=new TextEncoder().encode('granvald-bgm-2026');
 function loadBgm(name){
   return fetch(`assets/bgm/${name}.dat`).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(buf=>{
