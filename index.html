@@ -2265,7 +2265,7 @@ function openSheet(html){sheet.innerHTML=`<div class="in">${html}</div>`;sheet.h
 function banner(text,sub,color){return new Promise(r=>{const b=$('banner');b.innerHTML=`<div class="b" style="color:${color}">${text}<small>${sub}</small></div>`;b.hidden=false;snd('phase');setTimeout(()=>{b.hidden=true;r()},1250)})}
 // 会話を1行ずつ表示する。narr はナレーション（名前なし）。solid:true はマップを隠す（戦闘前・クリア後の場面）
 // パイロットの顔グラ（設定画から切り抜いた assets/faces/*.png）。名前で引く
-const FACE={'皇帝':'emperor','マリアンネ':'marianne','リディア':'lidia','ザルグ':'zarg','ヴェルナ':'werner','フェリクス':'felix','近衛の小隊長':'guard','刺客の頭':'assassin','ヴォルフ':'wolf','ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'baron','ディートリヒ':'dietrich','ヨハン':'johann','農民兵':'peasant','レオ':'leo','ゲルト':'gert','懲罰兵':'penal','エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara','伝令':'messenger','村人':'villager','村長':'elder',
+const FACE={'シュタール':'stahl','ユリウス':'julius','ベルトルト':'berthold','皇帝':'emperor','マリアンネ':'marianne','リディア':'lidia','ザルグ':'zarg','ヴェルナ':'werner','フェリクス':'felix','近衛の小隊長':'guard','刺客の頭':'assassin','ヴォルフ':'wolf','ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'baron','ディートリヒ':'dietrich','ヨハン':'johann','農民兵':'peasant','レオ':'leo','ゲルト':'gert','懲罰兵':'penal','エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara','伝令':'messenger','村人':'villager','村長':'elder',
  '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
 const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 // 顔グラは最初に全員分を先読みしておく（初めて出す顔の読み込み待ちで、前の人の顔が残って見えるのを防ぐ）

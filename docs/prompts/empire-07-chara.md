@@ -1,5 +1,7 @@
 # 帝国編 第7話「兵站局の判」 キャラ（顔グラ）の指示文
 
+> できあがり：`docs/ref/empire-07-faces.png` → `assets/faces/stahl.png`・`julius.png`・`berthold.png`（全員使う。名前の札に髪がかかっていたので、札の下から切った。`python3 tools/faces_e7.py`）
+
 添付：`docs/ref/empire-06-faces-b.png`（第6話の顔グラの資料。この形式で描くと絵柄がそろう）
 切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 兵站局の役人は顔なしで出すので描かない。カスパー・ヴェルナ・ザルグ・フェリクスは今の顔グラを使う。
