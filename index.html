@@ -646,7 +646,7 @@ const TPL={
   weapons:[W('城壁砲','射',1500,2,5,{fx:'shell'})]},
  // ---- 帝国編 第6話 ----
  // 男爵を乗せた護送車（守る機体。整備車両の絵に色を重ねる）
- convoy:{name:'護送車',kind:'truck',hp:3600,en:100,armor:1100,mob:45,move:4,spr:'truck',tint:'#9aa0ac',
+ convoy:{name:'護送車',kind:'truck',hp:4200,en:100,armor:1100,mob:45,move:4,spr:'truck',tint:'#9aa0ac',
   col:{main:'#3a4048',sub:'#7a8088',acc:'#8f959c',eye:'#ffd24a'},
   pilot:{name:'護送兵',melee:90,shoot:110,hit:115,eva:85,skill:100,sp:0,spirits:[]},
   lines:['護送車、前進！','近づけるな！'],
@@ -1542,7 +1542,7 @@ const STAGES={
  e6:{id:'e6',name:'鉄の護送',label:'帝国編 第6話',ep:'第6話',lv:6,syn:'反乱の首謀者を帝都へ送る護送の旅。帝都を目前にした峠で、紋章を削った機兵たちが男爵の口を封じに来る。',
   music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E6,road:ROAD_E6,bg:'assets/stage_e6_map.png',leader:'caladrius',protect:['convoy'],
   // 敵は護送車をいつもより強く狙う（男爵の口封じ）
-  protectBias:2,
+  protectBias:1.5,
   // 峠道（平地）での戦いも岩の谷の背景にする
   battleBg:{P:'mountain'},
   terName:{M:'崖'},
@@ -1555,8 +1555,8 @@ const STAGES={
    // 刺客の頭は峠の北東の崖の上で指揮をとる（味方が2マス以内に来るか、4ターン目まで動かない）。崖の上に刺客
    ['shadecap','foe',8,0,{guard:true,guardRange:2,guardTurn:4}],
    ['shade','foe',1,2],['shade','foe',8,2],['shade','foe',1,4],['shade','foe',8,4],
-   // 2ターン目の敵フェイズ（近衛が着いた直後）に、南の崖の裏から挟み撃ち
-   ['shade','foe',0,9,{off:true,arrive:2}],['shade','foe',9,9,{off:true,arrive:2}],['shade','foe',1,11,{off:true,arrive:2}],['shade','foe',8,11,{off:true,arrive:2}]],
+   // 3ターン目の敵フェイズに、南の崖の裏から挟み撃ち
+   ['shade','foe',0,9,{off:true,arrive:3}],['shade','foe',9,9,{off:true,arrive:3}],['shade','foe',1,11,{off:true,arrive:3}],['shade','foe',8,11,{off:true,arrive:3}]],
   pre:[
    {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'burghardt'},
    {who:'',text:'ブルクハルト男爵の反乱は、城館の西門で終わった。',narr:1},
@@ -1640,7 +1640,7 @@ const STAGES={
    {who:'レオ',text:'近衛だと？　あのいけすかねえ監察役の部下かよ。',alt:['マティアス']},
    {who:'近衛の小隊長',text:'少佐は、護送が峠で狙われると読んでおられた。これより、ファルケン大隊を援護する！'},
    {who:'エルンスト',text:'……読んでいた、か。助かる。護送車の北を固めてくれ。'}]},
-   {id:'ambush',turn:2,phase:'foe',spawn:true,lines:[
+   {id:'ambush',turn:3,phase:'foe',spawn:true,lines:[
    {who:'刺客の頭',text:'近衛まで出てきたか。……構わん、裏の者も出せ。護送車さえ潰せば、それで仕事は終わりだ。'},
    {who:'クラーラ',text:'南の崖の裏からも来ます！　挟まれます！',alt:['ニーナ']},
    {who:'エルンスト',text:'慌てるな。護送車を北へ寄せろ。近衛と挟み返す。'}]}],
@@ -1752,7 +1752,7 @@ const STAGES={
    {who:'',text:'だが、エルンストの手には、宰相府でしか使われない蝋のかけらがある。',narr:1},
    {who:'',text:'剣ではなく、帳簿と封蝋の戦い。帝都の戦いが、静かに始まった。',narr:1},
    {who:'',text:'次回、第7話「兵站局の判」',narr:1}],
-  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。2ターン目に北から近衛が駆けつけるが、すぐあとに南の崖の裏から刺客が来る。刺客の頭は北東の崖の上。'}
+  loseHint:'刺客は護送車を狙ってくる。護送車を味方で囲んで守ろう。2ターン目に北から近衛が駆けつけ、3ターン目に南の崖の裏から刺客が来る。護送車を北へ進めておこう。刺客の頭は北東の崖の上。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6'];
