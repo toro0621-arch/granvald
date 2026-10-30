@@ -1,6 +1,6 @@
 # 帝国編 第6話「鉄の護送」 キャラ（顔グラ）の指示文
 
-> できあがり：`docs/ref/empire-06-faces-a.png`（皇帝・マリアンネ・リディア・ヴェルナ）・`docs/ref/empire-06-faces-b.png`（フェリクス・近衛の小隊長・刺客の頭・ザルグ）→ `assets/faces/emperor.png`・`marianne.png`・`lidia.png`・`werner.png`・`felix.png`・`guard.png`・`assassin.png`・`zarg.png`（全員使う。ザルグは番外編用の絵から描き直し。名前の札をパネルの背景色で塗ってから切った。`python3 tools/faces_e6.py`）
+> できあがり：`docs/ref/empire-06-faces-a.png`（皇帝・マリアンネ・リディア・ヴェルナ）・`docs/ref/empire-06-faces-b.png`（フェリクス・近衛の小隊長・刺客の頭・ザルグ）→ `assets/faces/emperor.png`・`marianne.png`・`lidia.png`・`werner.png`・`felix.png`・`guard.png`・`assassin.png`・`zarg.png`（全員使う。ザルグは番外編用の絵から描き直し。名前の札に頭がかかるので、札の下から切った＝頭の上は絵のふちで切れる。札を塗りつぶすと髪が平らに欠けて見えるため。`python3 tools/faces_e6.py`）
 
 添付：`docs/ref/empire-05-faces.png`（第5話の顔グラの資料。この形式で描くと絵柄がそろう）
 切り抜きはこちらでするので、資料の文字やパネルはあってよい。
