@@ -1,5 +1,7 @@
 # 帝国編 第8話「夜明けの印」 ロボ（機体）の指示文
 
+> できあがり：前衛 `docs/ref/esta-front-sprites.png` → `assets/sprites/esta*.png`（使う。`python3 tools/unit_sheet.py esta`。パネルの位置が少し違うので `BOXES` で上書き）
+
 添付：`docs/ref/zekt-v2-sprites.png`（ゼクトの資料。この形式で描くと絵柄と大きさがそろう）
 資料の形式（パネルの背景は明るい水色の無地）で頼む。切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 

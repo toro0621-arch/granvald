@@ -22,6 +22,14 @@ SHEETS = {
     'ehre': 'docs/ref/zekt-ehre-sprites.png',          # ゼクト・エーレ（ヨハン。第4話のボス）
     'eisenwacht': 'docs/ref/eisenwacht-sprites.png',   # アイゼンヴァハト（ディートリヒ。第3話のボス）
     'acker': 'docs/ref/acker-sprites.png',             # アッカー（農民兵の作業機）
+    'esta': 'docs/ref/esta-front-sprites.png',         # エスタ（暁の同盟仕様・前衛。第8話）
+}
+# 資料ごとにパネルの位置が少し違うときの上書き（名前 → {'BIG':…, 'DIRS':…, 'ANIM':…}）
+BOXES = {
+    # エスタの資料は大きい絵のパネルが下のパネルの見出しに近いので、下を短めに取る
+    'esta': {'BIG': (345, 140, 758, 532),
+             'DIRS': {'down': (775, 190, 898, 430), 'up': (898, 190, 1025, 430), 'left': (1025, 190, 1112, 430), 'right': (1112, 190, 1198, 430)},
+             'ANIM': {'idle': (78, 630, 393, 888), 'walk': (408, 630, 697, 888), 'attack': (712, 630, 1186, 888)}},
 }
 BIG = (318, 140, 752, 556)
 # 4方向のパネルの中の4体（正面・背面・左・右）。資料ごとに少しずれるので広めに取る（ex.cut は一番大きい塊だけ残す）
@@ -35,6 +43,8 @@ def dot(img, box):
 
 def run(name, src):
     img = np.asarray(Image.open(src).convert('RGB'))
+    o = BOXES.get(name, {})
+    BIG, DIRS, ANIM = o.get('BIG', globals()['BIG']), o.get('DIRS', globals()['DIRS']), o.get('ANIM', globals()['ANIM'])
     big = drop_shadow(hq.cut_outline(img, BIG))
     big.save(f'{OUT}{name}.png', optimize=True)
     print(f'{name}.png', big.size)
