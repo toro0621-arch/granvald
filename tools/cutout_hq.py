@@ -254,7 +254,7 @@ def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2, halo_boxes=(), ha
 # 切り抜き後に残る背景を消す場所（切り抜き後の絵での座標）。絵の範囲や抜き方を変えたら、マゼンタの上に置いて確かめ直す
 POCKETS = {
     # カラドリウスの戦闘用の絵：左腕と胴の間、右腕と胴の間（2か所）、ふんどしの下、左腰のサイドアーマーと腕の間
-    'caladrius.png': [(160, 226), (329, 196), (302, 206), (220, 314), (337, 331)],
+    # （正面の設定画を使っていたときの caladrius.png の場所：(160, 226), (329, 196), (302, 206), (220, 314), (337, 331)）
     # カラドリウスの攻撃（剣）の絵：右腕の脇（2か所）、左腕（盾の腕）と胴の間、左足の内側（股の下と足元）
     'caladrius_attack.png': [(185, 59), (195, 76), (268, 96), (220, 101), (257, 140)],
 }
@@ -263,11 +263,12 @@ POCKETS = {
 _CAL_STAND = [(57, 90), (54, 64), (43, 78), (47, 109), (83, 107), (123, 119), (46, 138), (96, 128), (88, 170), (65, 176)]
 for _v in ('down', 'idle', 'up', 'left', 'right'):
     POCKETS[f'caladrius_{_v}.png'] = _CAL_STAND
+POCKETS['caladrius.png'] = _CAL_STAND   # 戦闘用・ステータス用の大きい絵も同じ立ち絵
 # 絵ごとの判定のゆるさ（小さい絵は背景の残りが少し暗めなので、明るさの下限を下げる）
 POCKET_OPTS = {'caladrius_attack.png': {'pale_min': 130, 'sat_max': 70}}
-for _v in ('down', 'idle', 'up', 'left', 'right'):
+for _v in ('', '_down', '_idle', '_up', '_left', '_right'):
     # 足のまわりのふちの白い抜き残しも削る（剣のある左端は除く）
-    POCKET_OPTS[f'caladrius_{_v}.png'] = {'pale_min': 120, 'sat_max': 80, 'halo_boxes': [(52, 95, 147, 179)]}
+    POCKET_OPTS[f'caladrius{_v}.png'] = {'pale_min': 120, 'sat_max': 80, 'halo_boxes': [(52, 95, 147, 179)]}
 
 def matte_jobs():
     """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
@@ -276,10 +277,8 @@ def matte_jobs():
         for kind, box in b.items():
             name = f'{k}.png' if kind == 'big' else f'{k}_{kind}.png'
             # 攻撃の絵の範囲には「攻撃（剣）」の札がかかるので塗りつぶす
-            if kind == 'big':
-                # 大きい正面の設定画は輪郭線がはっきりしているので cut_outline で抜く（「正面」の札は消す）
-                j.append((name, ex.SRC_CAL, box, {'outline': True, 'label_box': (20, 108, 130, 152)}))
-                continue
+            # 大きい絵も待機の立ち絵（CAL_IDLE）なので、ほかと同じ cut_matte で抜く。
+            # 以前の正面の設定画（CAL_FRONT）に戻すときは cut_outline（'outline': True, 'label_box': (20, 108, 130, 152)）で抜く
             j.append((name, ex.SRC_CAL, box, {'label_box': (600, 770, 705, 790)} if kind == 'attack' else {}))
     return j
 
