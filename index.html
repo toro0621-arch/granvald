@@ -748,7 +748,7 @@ const TPL={
   lines:['砲撃、始め！','前衛を援護する！'],
   weapons:[W('小銃','射',1100,1,3,{fx:'bullet'}),W('迫撃砲','射',1700,2,5,{fx:'shell'})]},
  // 同盟の隊長の機体（ボス）。noKill：撃墜されない（HPが1で止まる）。HPが半分を切ると退く（ST.retreat）
- esta_cap:{name:'エスタ（隊長機）',kind:'drone',hp:4200,en:130,armor:1000,mob:90,move:5,boss:true,noKill:true,
+ esta_cap:{name:'エスタ（隊長機）',kind:'drone',hp:5500,en:130,armor:1100,mob:90,move:5,boss:true,noKill:true,
   col:{main:'#3a3a40',sub:'#e8862a',acc:'#e8862a',eye:'#7dff7a'},
   pilot:{name:'同盟の隊長',melee:155,shoot:150,hit:155,eva:135,skill:150,sp:0,spirits:[]},
   lines:['各機、続け！','おきてを忘れるな。','帝国の軍服か。'],
@@ -2081,18 +2081,19 @@ const STAGES={
   battleBg:{P:'castle_night',F:'castle_night',C:'castle_night',B:'castle_night',W:'castle_night'},
   terName:{B:'穀物倉庫',C:'倉庫街',W:'運河'},
   // 撃墜されずに退く機体（ST.retreat：{key, below（最大HPに対する割合）, lines}）。退いたら勝ち（ボスのとき）
-  retreat:{key:'esta_cap',below:.5,lines:[
+  retreat:{key:'esta_cap',below:.35,lines:[
    {who:'同盟の隊長',text:'……ここまでか。全機、撤収！　動けなくなった機体の者は、機体を捨てて第二の退き道へ！　捕まった者は、何も話すな！'},
    {who:'同盟兵',text:'了解！'},
    {who:'',text:'同盟の機兵は、隊列を崩さないまま、運河の南の林へ退いていく。北の橋の方ではなく。',narr:1},
    {who:'同盟の隊長',text:'ファルケン。……あんたとは、また会いそうだ。'}]},
-  goal:'勝利：同盟の隊長機を退かせる（HPを半分まで削る）／敗北：カラドリウス撃墜',
+  goal:'勝利：同盟の隊長機を退かせる（HPを3分の1ほどまで削る）／敗北：カラドリウス撃墜',
   roster:[
    // 倉庫の前で待ち伏せ
    ['caladrius','ally',4,3],['lance','ally',5,3],['zekt_b','ally',3,4],['zekt_o','ally',6,4],['cannon','ally',4,2],['schutze','ally',5,2],['truck','ally',7,3],
    // 暁の同盟の部隊：前衛（盾）、後衛（砲）、隊長
    ['esta','foe',3,6],['esta','foe',4,6],['esta','foe',5,6],['esta','foe',6,6],
-   ['esta_cap','foe',5,8],['esta_mortar','foe',3,8],['esta_mortar','foe',7,8],
+   // 隊長は隊列のいちばん後ろ（南の林の手前）で指揮をとる（3ターン目まで、味方が2マス以内に来るまで動かない）
+   ['esta_cap','foe',5,11,{guard:true,guardRange:2,guardTurn:3}],['esta_mortar','foe',3,8],['esta_mortar','foe',6,8],['esta','foe',4,9],['esta','foe',6,10],
    // 2ターン目の敵フェイズに、荷車の護衛が左右から倉庫の裏へ回り込む
    ['esta','foe',0,9,{off:true,arrive:2}],['esta','foe',9,9,{off:true,arrive:2}]],
   pre:[
@@ -2308,7 +2309,7 @@ const STAGES={
    {who:'',text:'帝都の外には、夜明けの印を掲げた部隊が潜んでいる。',narr:1},
    {who:'',text:'その向こうに、南の共和国の影を見ながら、ファルケン大隊は帝都を発った。',narr:1},
    {who:'',text:'帝都編　完',narr:1}],
-  loseHint:'同盟の隊長機のHPを半分まで削れば、部隊ごと退いていく。前衛の盾は固いので、砲で後ろから削ろう。'}
+  loseHint:'同盟の隊長機のHPを3分の1ほどまで削れば、部隊ごと退いていく。前衛の盾は固いので、砲で後ろから削ろう。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6','e7','e8'];
