@@ -45,7 +45,11 @@ BOXES = {
 POCKETS = {
     # ゼクト・ランスの戦闘用の絵：右腕（槍の腕）と胴の間、左腕（盾の腕）と胴の間（2か所）、右腕と槍の隙間
     'lance': [(169, 182), (308, 192), (297, 148), (108, 172)],
+    # ゼクト・シュッツェの待機の絵：右手とライフルと腰の間の隙間
+    'schutze_idle': [(39, 136)],
 }
+# 絵ごとの判定のゆるさ（ドット絵は背景の残りが少し暗めなので、明るさの下限を下げる）
+POCKET_OPTS = {'schutze_idle': {'pale_min': 140, 'sat_max': 70}}
 # 別の絵にそろえる（名前 → {種類: 使う種類}）。ゼクト・ランスの待機は歩行の絵に統一（ユーザーの希望）
 SAME = {'lance': {'idle': 'walk'}}
 BIG = (318, 140, 752, 556)
@@ -74,6 +78,8 @@ def run(name, src):
     same = SAME.get(name, {})
     for k, box in ANIM.items():
         im = dot(img, ANIM[same[k]] if k in same else box)
+        if f'{name}_{k}' in POCKETS:
+            im = hq.clear_pockets(im, POCKETS[f'{name}_{k}'], **POCKET_OPTS.get(f'{name}_{k}', {}))
         im.save(f'{OUT}{name}_{k}.png', optimize=True)
         print(f'{name}_{k}.png', im.size)
 
