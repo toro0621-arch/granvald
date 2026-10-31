@@ -7,6 +7,7 @@ docs/ref/fantasy-tiles.jpg（ファンタジー風の地形タイル）から切
   python3 tools/build_map.py E1 assets/stage_e1_map.png    … 帝国編 第1話「国境の村」
   python3 tools/build_map.py E2 assets/stage_e2_map.png    … 帝国編 第2話「狼の巣」（砦（E）は丸太の柵の砦、坑道の入口（K）は docs/ref/tile-mine.jpg）
   python3 tools/build_map.py E5 assets/stage_e5_map.png    … 帝国編 第5話「城館の夜」（夜のマップ：全体を暗い青に沈め、城と城下の家々に明かりを足す）
+  python3 tools/build_map.py E8 assets/stage_e8_map.png    … 帝国編 第8話「夜明けの印」（新月の夜。第5話と同じく暗くして、倉庫と倉庫街に明かり）
   python3 tools/build_map.py E3 assets/stage_e3_map.png    … 帝国編 第3話「末席の男爵」（川（R）は水、渡しの浅瀬（S）は砂利の川底と目印の杭）
 """
 import re
@@ -192,7 +193,7 @@ for y in range(ROWS):
                 fd.rectangle([X + sx, py_, X + sx + 4, py_ + 2], fill=(140, 104, 64))
                 fd.line([X + sx - 2, py_ + 11, X + sx + 6, py_ + 11], fill=(230, 240, 250))
 # 夜のマップ（第5話）：全体を暗い青に沈め、城（E）と城下の家々（C）の窓に暖かい明かりを足す
-if STAGE == 'E5':
+if STAGE in ('E5', 'E8'):  # 第8話も新月の夜（倉庫（B）と倉庫街（C）の窓に明かり）
     a = np.asarray(img).astype(float) / 255
     lum = a.mean(2, keepdims=True)
     a = (a * .32 + lum * .22) * np.array([.55, .66, 1.25])
@@ -201,8 +202,8 @@ if STAGE == 'E5':
     lights = []
     for y in range(ROWS):
         for x in range(COLS):
-            if MAP[y][x] in 'CE':
-                for _ in range(5 if MAP[y][x] == 'C' else 7):
+            if MAP[y][x] in 'CEB':
+                for _ in range(5 if MAP[y][x] == 'C' else (4 if MAP[y][x] == 'B' else 7)):
                     lights.append((x * CELL + int(rng.integers(8, CELL - 8)), y * CELL + int(rng.integers(10, CELL - 8))))
     for px_, py_ in lights:
         gd.ellipse([px_ - 9, py_ - 9, px_ + 9, py_ + 9], fill=(120, 70, 20))

@@ -493,6 +493,34 @@ const ROAD_E7=[
  "...#......",
  "...#......",
  "...#......"];
+// 帝国編 第8話「夜明けの印」：北に運河（W）と北の橋へ続く道。運河沿いの穀物倉庫（B、2マス）と倉庫街（C）。南に林
+const MAP_E8=[
+ "WWWWPPWWWW",
+ "PPPPPPPPPP",
+ "FPCCBBCCPF",
+ "PPCPPPPCPP",
+ "PPPPPPPPPP",
+ "FPPPPPPPPF",
+ "PPFPPPPFPP",
+ "PPPPPPPPPP",
+ "FPPPFPPPPF",
+ "PFPPPPPFPP",
+ "FFPPPPPPFF",
+ "FFFPPPPFFF"];
+// 南の林から倉庫へ、倉庫から北の橋へ続く道（見た目だけ）
+const ROAD_E8=[
+ "....##....",
+ "....##....",
+ "..........",
+ "....##....",
+ "....#.....",
+ "....#.....",
+ "....#.....",
+ "....##....",
+ ".....#....",
+ ".....#....",
+ ".....#....",
+ ".....#...."];
 // 今のステージの地形（loadStage で切り替える）
 let MAP=MAP_S1,ROAD=ROAD_S1;
 const TER={
@@ -705,7 +733,26 @@ const TPL={
   col:{main:'#3a3a58',sub:'#c9a23a',acc:'#c9a23a',eye:'#ff3344'},
   pilot:{name:'ベルトルト',melee:105,shoot:115,hit:110,eva:80,skill:90,sp:0,spirits:[]},
   lines:['寄るな、寄るな！','わしを誰だと思っておる！','帳簿ごと灰にしてくれる！'],
-  weapons:[W('指揮杖の斧','格',1500,1,1,{}),W('ライフル','射',1500,1,3,{fx:'bullet'})]}
+  weapons:[W('指揮杖の斧','格',1500,1,1,{}),W('ライフル','射',1500,1,3,{fx:'bullet'})]},
+ // ---- 帝国編 第8話 ----（数値は docs/prompts/empire-08-robo.md。絵は tools/unit_sheet.py で切り抜き）
+ // 暁の同盟の機兵エスタ（共和国の量産機を同盟の色に塗り替えたもの）。前衛＝大盾とカービン銃
+ esta:{name:'エスタ',kind:'drone',hp:2600,en:100,armor:950,mob:75,move:4,
+  col:{main:'#3a3a40',sub:'#b8a070',acc:'#e8862a',eye:'#7dff7a'},
+  pilot:{name:'同盟兵',melee:125,shoot:130,hit:130,eva:110,skill:115,sp:0,spirits:[]},
+  lines:['隊列を崩すな！','狙うのは機兵だけだ！','夜明けのために！'],
+  weapons:[W('盾打ち','格',1200,1,1,{fx:'punch'}),W('カービン銃','射',1300,1,3,{fx:'bullet'})]},
+ // 後衛＝肩の迫撃砲と小銃
+ esta_mortar:{name:'エスタ（砲）',kind:'drone',hp:2200,en:110,armor:700,mob:70,move:4,
+  col:{main:'#3a3a40',sub:'#b8a070',acc:'#e8862a',eye:'#7dff7a'},
+  pilot:{name:'同盟兵',melee:100,shoot:135,hit:130,eva:100,skill:115,sp:0,spirits:[]},
+  lines:['砲撃、始め！','前衛を援護する！'],
+  weapons:[W('小銃','射',1100,1,3,{fx:'bullet'}),W('迫撃砲','射',1700,2,5,{fx:'shell'})]},
+ // 同盟の隊長の機体（ボス）。noKill：撃墜されない（HPが1で止まる）。HPが半分を切ると退く（ST.retreat）
+ esta_cap:{name:'エスタ（隊長機）',kind:'drone',hp:4200,en:130,armor:1000,mob:90,move:5,boss:true,noKill:true,
+  col:{main:'#3a3a40',sub:'#e8862a',acc:'#e8862a',eye:'#7dff7a'},
+  pilot:{name:'同盟の隊長',melee:155,shoot:150,hit:155,eva:135,skill:150,sp:0,spirits:[]},
+  lines:['各機、続け！','おきてを忘れるな。','帝国の軍服か。'],
+  weapons:[W('軍刀','格',1500,1,1,{}),W('カービン銃','射',1400,1,3,{fx:'bullet'}),W('一斉射撃の号令','射',2400,1,4,{en:30,will:110,fx:'bullet'})]}
 };
 /* ================= STATE ================= */
 let units=[],turn=1,phase='player',mode='title',sel=null,reach=null,origin=null,tgtKind='attack',targets=null,info=null,floats=[],mapFx=[],busy=false,uid=0,over=false;
@@ -719,7 +766,7 @@ function saveSettings(){try{localStorage.setItem('granvald-settings',JSON.string
 const lvMul=lv=>1+.15*((lv||1)-1);
 function mk(key,team,x,y,extra={}){
   const t=TPL[key],m=lvMul(ST.lv),hp=Math.round(t.hp*m);
-  const u={id:++uid,key,team,x,y,lv:ST.lv||1,name:t.name,kind:t.kind,col:t.col,maxHp:hp,hp,maxEn:t.en,en:t.en,armor:Math.round(t.armor*m),mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,spare:!!t.spare,
+  const u={id:++uid,key,team,x,y,lv:ST.lv||1,name:t.name,kind:t.kind,col:t.col,maxHp:hp,hp,maxEn:t.en,en:t.en,armor:Math.round(t.armor*m),mob:t.mob,move:t.move,air:!!t.air,repair:!!t.repair,selfRepair:!!t.selfRepair,boss:!!t.boss,spare:!!t.spare,noKill:!!t.noKill,
     pilot:{...t.pilot},lines:t.lines,weapons:t.weapons.map(w=>({...w,pow:Math.round(w.pow*m)})),will:100,acted:false,moved:false,dead:false,buf:{},sp:t.pilot.sp,maxSp:t.pilot.sp,dir:team==='ally'?'up':'down',...extra};
   units.push(u);return u;
 }
@@ -2026,10 +2073,245 @@ const STAGES={
    {who:'',text:'伸ばしすぎた手は、腕ごと失う。',narr:1},
    {who:'',text:'その言葉の意味を、エルンストはまもなく知ることになる。',narr:1},
    {who:'',text:'次回、第8話「夜明けの印」',narr:1}],
-  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは倉庫の入口から動かず、倉庫の中で傷も直す。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'}
+  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは倉庫の入口から動かず、倉庫の中で傷も直す。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'},
+ // 帝国編 第8話。台本は docs/scenario/empire-08.md
+ e8:{id:'e8',name:'夜明けの印',label:'帝国編 第8話',ep:'第8話',lv:8,syn:'帝都の麦の倉庫を次々と焼く「暁の同盟」。取り締まりに回されたファルケン大隊は、新月の夜、運河沿いの倉庫で共和国の機兵をそろえた部隊と向き合う。',
+  music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E8,road:ROAD_E8,bg:'assets/stage_e8_map.png',leader:'caladrius',
+  // 新月の夜の戦い。どこで戦っても夜の背景
+  battleBg:{P:'castle_night',F:'castle_night',C:'castle_night',B:'castle_night',W:'castle_night'},
+  terName:{B:'穀物倉庫',C:'倉庫街',W:'運河'},
+  // 撃墜されずに退く機体（ST.retreat：{key, below（最大HPに対する割合）, lines}）。退いたら勝ち（ボスのとき）
+  retreat:{key:'esta_cap',below:.5,lines:[
+   {who:'同盟の隊長',text:'……ここまでか。全機、撤収！　動けなくなった機体の者は、機体を捨てて第二の退き道へ！　捕まった者は、何も話すな！'},
+   {who:'同盟兵',text:'了解！'},
+   {who:'',text:'同盟の機兵は、隊列を崩さないまま、運河の南の林へ退いていく。北の橋の方ではなく。',narr:1},
+   {who:'同盟の隊長',text:'ファルケン。……あんたとは、また会いそうだ。'}]},
+  goal:'勝利：同盟の隊長機を退かせる（HPを半分まで削る）／敗北：カラドリウス撃墜',
+  roster:[
+   // 倉庫の前で待ち伏せ
+   ['caladrius','ally',4,3],['lance','ally',5,3],['zekt_b','ally',3,4],['zekt_o','ally',6,4],['cannon','ally',4,2],['schutze','ally',5,2],['truck','ally',7,3],
+   // 暁の同盟の部隊：前衛（盾）、後衛（砲）、隊長
+   ['esta','foe',3,6],['esta','foe',4,6],['esta','foe',5,6],['esta','foe',6,6],
+   ['esta_cap','foe',5,8],['esta_mortar','foe',3,8],['esta_mortar','foe',7,8],
+   // 2ターン目の敵フェイズに、荷車の護衛が左右から倉庫の裏へ回り込む
+   ['esta','foe',0,9,{off:true,arrive:2}],['esta','foe',9,9,{off:true,arrive:2}]],
+  pre:[
+   {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'teito'},
+   {who:'',text:'廃棄されたはずの機兵を盗賊や男爵に流していたのは、軍務省の兵站局長だった。',narr:1},
+   {who:'',text:'兵站局長は「すべて私一人の欲」と罪をかぶり、北の牢獄へ送られた。',narr:1},
+   {who:'',text:'侯爵家の当主、宰相ヴェルナは、自らの手で分家の者を切り捨て、何事もなかったように宮廷の奥へ戻っていった。',narr:1},
+   {who:'',text:'そのころ、帝都の夜を騒がせている者たちがいた。',narr:1},
+   {who:'',text:'身分の夜を明ける、と名乗る者たち。「暁の同盟」。',narr:1},
+   {who:'',text:'― 帝都の大通り ―',narr:1,bg:'slum'},
+   {who:'',text:'朝の大通りに、焦げた匂いが漂っていた。',narr:1},
+   {who:'',text:'大貴族の家の麦の倉庫が、夜のうちに爆破されたのだ。焼け跡の壁には、夜明けの太陽の印が描かれている。',narr:1},
+   {who:'ブルーノ',text:'うわ……倉庫が、まるごと吹き飛んでますよ。'},
+   {who:'クラーラ',text:'暁の同盟ですね。今月に入って、もう三つ目です。'},
+   {who:'オットー',text:'あ、あの、共和国の金で動いてるっていう……。'},
+   {who:'マティアス',text:'ああ。共和国が金と機兵を出してるのは、帝都じゃ子どもでも知ってる話だ。'},
+   {who:'マティアス',text:'軍も宮廷も分かってる。分かってて、尻尾がつかめねえ。'},
+   {who:'レオ',text:'死人は出てねえのか。'},
+   {who:'クラーラ',text:'出ていません。番人は縛られて、倉庫の外の木につながれていたそうです。爆薬に火を入れたのは、そのあと。'},
+   {who:'ニーナ',text:'……手際がいいですね。盗賊のやり方ではありません。'},
+   {who:'クラーラ',text:'焼けたのは倉庫の半分だけです。残りの麦は、夜のうちに荷車で運び出されました。'},
+   {who:'ブルーノ',text:'麦泥棒ですか？'},
+   {who:'マティアス',text:'泥棒なら、全部持っていくさ。半分焼いて、半分持っていく。……焼いたぶんは、帝都への嫌がらせだ。'},
+   {who:'クラーラ',text:'麦の値は、三つの倉庫が焼かれてから、もう二割上がっています。'},
+   {who:'マティアス',text:'値が上がりゃ、下町の連中の腹が減る。腹が減りゃ、貴族会議に文句が出る。……そういう計算でしょうな。'},
+   {who:'エルンスト',text:'持っていったぶんは、どこかに潜んでいる部隊の兵糧だろう。敵の倉庫から食い物をいただく。戦の基本だ。'},
+   {who:'レオ',text:'……戦、かよ。'},
+   {who:'エルンスト',text:'ああ。あれは盗賊ではない。軍だ。'},
+   {who:'',text:'その日の午後。レオは一人、帝都の下町の、狭い路地を歩いていた。',narr:1},
+   {who:'',text:'懲罰部隊で死んだ戦友の家族が、このあたりに住んでいる。',narr:1},
+   {who:'戦友の母',text:'まあ……ザイデルさん。わざわざ、こんなところまで。'},
+   {who:'レオ',text:'……遅くなっちまって、すいません。あいつの最期のこと、ちゃんと話しに来なきゃと思ってて。'},
+   {who:'',text:'狭い部屋の壁に、夜明けの太陽の印を描いた小さな布が掛けてあった。',narr:1},
+   {who:'レオ',text:'……おばさん、これ。'},
+   {who:'戦友の母',text:'……下の子がね、去年、出ていったの。暁の同盟に入るって。'},
+   {who:'レオ',text:'あいつの、弟が？'},
+   {who:'戦友の母',text:'兄さんは、貴族の上官の命令で、無駄に死なされた。お悔やみの手紙一枚で、おしまい。……あの子は、それが許せなかったのよ。'},
+   {who:'戦友の母',text:'同盟に入ったら、読み書きも、機兵の動かし方も、ちゃんと教えてもらえるんですって。軍の学校みたいに。'},
+   {who:'戦友の母',text:'この布は、時々、あの子から届く手紙に入ってくるの。元気でいる、って印。……どこにいるのかは、書いてないけれど。'},
+   {who:'レオ',text:'…………。'},
+   {who:'',text:'― 宿舎 ―',narr:1,bg:'hq'},
+   {who:'',text:'夕方。宿舎に、軍務省からの命令書が届いた。',narr:1},
+   {who:'クラーラ',text:'……少佐。貴族会議の決定です。'},
+   {who:'クラーラ',text:'『ファルケン大隊は、帝都にとどまるあいだ、近衛とともに暁の同盟の取り締まりにあたること。指揮は近衛のレーゲン少佐が執る』。'},
+   {who:'レオ',text:'はあ？　俺たちは休暇中だろうが。'},
+   {who:'クラーラ',text:'宰相閣下のご提案だそうです。『反乱を鎮めた英雄の大隊に、帝都の治安にも力を貸してもらおう』と。'},
+   {who:'マティアス',text:'……宰相閣下が、ねえ。'},
+   {who:'エルンスト',text:'伸ばしすぎた手は、腕ごと失う。……そういうことだ。'},
+   {who:'オットー',text:'ど、どういうことですか？'},
+   {who:'エルンスト',text:'暁の同盟は、近衛が一月かけても尻尾をつかめない相手だ。我々がしくじれば、宮廷は『英雄も口ほどではない』と笑う。'},
+   {who:'エルンスト',text:'それに、同盟の兵の多くは、下町や村の生まれの平民だ。平民の多い我々の大隊に、平民を討たせる。……宰相閣下らしい、意地の悪いやり方だ。'},
+   {who:'クラーラ',text:'どちらに転んでも、少佐の名に傷がつく、ということですか。'},
+   {who:'エルンスト',text:'勝っても負けても、誰かの手のひらの上だ。……それが帝都だ。'},
+   {who:'レオ',text:'……少佐。'},
+   {who:'',text:'レオは、しばらく黙ってから口を開いた。',narr:1},
+   {who:'レオ',text:'今日、戦友のおふくろさんに会ってきた。あいつの弟が、暁の同盟に入ってるそうだ。'},
+   {who:'エルンスト',text:'……そうか。'},
+   {who:'レオ',text:'命令なら、やる。だが、相手の操縦席に、あいつの弟が乗ってるかもしれねえと思うと……。'},
+   {who:'エルンスト',text:'分かっている、ザイデル。'},
+   {who:'エルンスト',text:'全機に命じる。暁の同盟の機兵と戦うときは、操縦席を狙うな。手足を落として、動けなくしろ。'},
+   {who:'エルンスト',text:'同盟の兵は、捕らえれば話を聞ける。死なせれば、何も残らない。'},
+   {who:'ニーナ',text:'……難しい注文です。でも、できます。'},
+   {who:'マティアス',text:'やれやれ。整備屋の仕事が増えそうだ。'},
+   {who:'',text:'― 近衛の詰所 ―',narr:1,bg:'konoe'},
+   {who:'',text:'その夜。近衛の詰所で、取り締まりの打ち合わせが開かれた。',narr:1},
+   {who:'',text:'黒と銀の軍服の将校が、帝都の地図の上に駒を並べている。',narr:1},
+   {who:'ヴォルフ',text:'来たか、ファルケン。'},
+   {who:'エルンスト',text:'レーゲン少佐。貴族会議の命により、指揮下に入る。'},
+   {who:'ヴォルフ',text:'……俺が頼んだわけではない。宰相閣下の思いつきだ。'},
+   {who:'ヴォルフ',text:'だが、来た以上は働いてもらう。'},
+   {who:'',text:'ヴォルフは地図の一点を指さした。',narr:1},
+   {who:'ヴォルフ',text:'この一月、爆破された倉庫は三つ。すべて麦の倉庫で、すべて運河の近くにある。麦は荷車で運河の荷揚げ場へ運ばれ、そこから船で帝都の外へ出ている。'},
+   {who:'ヴォルフ',text:'捕らえた見張りの班の者は、三人。だが、三人とも、自分の班の仲間の顔しか知らなかった。指令は、決まった場所に置かれた手紙で届くだけだそうだ。'},
+   {who:'エルンスト',text:'班どうしも、互いを知らない、か。……一つを捕らえても、上にはたどり着けない仕組みだな。'},
+   {who:'ヴォルフ',text:'そうだ。だから、班ではなく、機兵の部隊を叩く。'},
+   {who:'ヴォルフ',text:'三つの倉庫の爆破の日と、運河を出た船の帳簿を突き合わせた。……次に狙われるのは、ここだ。東の城壁の外、運河沿いの穀物倉庫。'},
+   {who:'エルザ',text:'ヘルマン商会の倉庫です。帝都の東の地区の麦の、半分がここに入っています。'},
+   {who:'ヴォルフ',text:'狙われるのは、明後日の新月の夜。闇がいちばん深い夜だ。これまでの三つも、すべて月のない夜だった。'},
+   {who:'エルンスト',text:'見事な読みだな。たった三つの倉庫から、そこまで絞り込むとは。'},
+   {who:'ヴォルフ',text:'世辞はいらん。'},
+   {who:'ヴォルフ',text:'近衛は北の橋と荷揚げ場を固めて、同盟の逃げ道を断つ。ファルケン大隊は倉庫の前で、同盟の部隊を食い止めろ。'},
+   {who:'エルンスト',text:'承知した。'},
+   {who:'ヴォルフ',text:'……一つ言っておく。部隊の隊長は、近衛が捕らえる。辺境の大隊に、手柄を渡す気はない。'},
+   {who:'エルザ',text:'少佐、言い過ぎです。'},
+   {who:'ヴォルフ',text:'事実を言っただけだ、エルザ。'},
+   {who:'エルザ',text:'（……ファルケン少佐、失礼いたしました。少佐は、口は悪いですが、悪い方ではないのです）'},
+   {who:'エルンスト',text:'分かっている。峠では、少佐の部下に助けられた。'},
+   {who:'',text:'― 宮廷の書記官室 ―',narr:1,bg:'scribe'},
+   {who:'',text:'翌日。エルンストは、フェリクスを訪ねた。',narr:1},
+   {who:'フェリクス',text:'暁の同盟ですか。……宮廷では、名前を出すだけで眉をひそめられますね。'},
+   {who:'エルンスト',text:'宮廷の帳簿から、あの組織はどう見える。'},
+   {who:'フェリクス',text:'……一言で言えば、よくできた軍です。'},
+   {who:'フェリクス',text:'同盟が奪っていくのは、麦と、機兵の部品と、薬。どれも、兵を養って戦わせるのに要るものばかりです。金貨や宝石には、手を付けません。'},
+   {who:'フェリクス',text:'爆破も、選んでやっています。焼くのは、帝都の値を動かせるだけの大きな倉庫だけ。帝都に麦が足りなくなれば、民の怒りは貴族会議に向く。'},
+   {who:'エルンスト',text:'奪うのは兵糧、焼くのは嫌がらせ、か。'},
+   {who:'フェリクス',text:'はい。それに、共和国の金の流れも、はっきりしています。沿岸都市の商会を通して、帝都の両替商に入ってくる。誰も隠そうとしていません。'},
+   {who:'フェリクス',text:'同盟がビラに書いているくらいです。『我らは共和国の友である。帝国の貴族の友ではない』と。'},
+   {who:'エルンスト',text:'……共和国の後ろ盾を、隠すどころか、旗にしているわけか。'},
+   {who:'エルンスト',text:'同盟を率いているのは、誰だ。'},
+   {who:'フェリクス',text:'『黎明』と呼ばれている人です。本当の名前も、顔も、誰も知りません。'},
+   {who:'フェリクス',text:'ただ、下町ではこんな噂があります。黎明は、もとは帝国の平民で、子どものころに、両親を共和派の濡れ衣で処刑された。……共和国へ逃げて、大人になって帰ってきた、と。'},
+   {who:'フェリクス',text:'少佐。同盟の人たちを、どうなさるおつもりですか。'},
+   {who:'エルンスト',text:'命じられたことをする。……ただし、無駄に死なせはしない。'}],
+  start:[
+   {who:'',text:'― 運河沿いの穀物倉庫 ―',narr:1,bg:'canal'},
+   {who:'',text:'新月の夜。運河沿いの穀物倉庫の前で、ファルケン大隊は闇の中に身を潜めていた。',narr:1},
+   {who:'ニーナ',text:'……来ました。運河の南、林の陰から。機兵が七。荷車も見えます。'},
+   {who:'',text:'闇の中から、揃いの装甲の機兵が、隊列を組んで姿を現した。',narr:1},
+   {who:'',text:'肩の紋章は、夜明けの太陽の印に塗り替えられている。',narr:1},
+   {who:'マティアス',text:'……寄せ集めじゃねえ。型も塗装も揃ってる。共和国の機兵だ。紋章を塗り替えただけですぜ。'},
+   {who:'クラーラ',text:'隊列の組み方も、正規軍と変わりません。前に盾、後ろに砲。荷車を真ん中に守っています。'},
+   {who:'オットー',text:'こ、これが……テロリスト……？'},
+   {who:'エルンスト',text:'言ったはずだ。あれは軍だ。'},
+   {who:'',text:'隊列の先頭の機兵が、手を挙げて止まった。後ろの機兵が、一斉に足を止める。',narr:1},
+   {who:'同盟の隊長',text:'……待ち伏せか。近衛ではないな。どこの部隊だ。'},
+   {who:'エルンスト',text:'ファルケン大隊だ。この倉庫は、貴族会議の命で守っている。'},
+   {who:'同盟の隊長',text:'ファルケン……。辺境で農民兵を一機も撃たずに、男爵の反乱を鎮めたという大隊か。'},
+   {who:'同盟の隊長',text:'北の橋と荷揚げ場は、近衛が固めているな。……読まれていたか。'},
+   {who:'エルンスト',text:'引け。退き道は、もう塞がれている。'},
+   {who:'同盟の隊長',text:'退き道は、一つではない。……それに、命令は命令だ。この倉庫の麦は、我々の部隊の冬の兵糧になる。持ち帰れないなら、焼くまでだ。'},
+   {who:'同盟の隊長',text:'各機、隊列を崩すな！　狙うのは倉庫と敵の機兵だけだ。おきてを忘れるな、人は殺すな！'},
+   {who:'同盟兵',text:'了解！'},
+   {who:'エルンスト',text:'全機に告ぐ。操縦席は狙うな。手足を落として、動けなくしろ。荷車は一台も通すな。……かかれ！'},
+   {who:'作戦目標',music:'player',onmap:1,text:'勝利条件：同盟の隊長の機体を退かせる、または同盟の機兵をすべて動けなくする。敗北条件：カラドリウスの撃墜。'}],
+  talks:[
+   {id:'boss',when:(a,d)=>(a.boss||d.boss)&&[a,d].some(u=>u.key==='caladrius'),lines:()=>[
+   {who:'同盟の隊長',text:'辺境の農民兵を撃たなかった男が、なぜ貴族の麦を守る。'},
+   {who:'エルンスト',text:'命じられたからだ。'},
+   {who:'同盟の隊長',text:'我々も同じだ。命じられて、ここに来た。……違うのは、誰に命じられているかだけだ。'},
+   {who:'エルンスト',text:'共和国に、か。'},
+   {who:'同盟の隊長',text:'共和国の金だと笑うがいい。帝国を変えるのに、手段を選ぶ余裕はない。'}]},
+   {id:'leo',when:(a,d)=>[a,d].some(u=>u.key==='lance')&&[a,d].some(u=>u.key==='esta'||u.key==='esta_mortar'),lines:()=>[
+   {who:'同盟兵',text:'懲罰部隊の色の機兵……？　あんた、平民だろう！　なんで貴族の倉庫を守るんだ！'},
+   {who:'レオ',text:'……うるせえ。命令だよ。'},
+   {who:'同盟兵',text:'命令で、無駄死にさせられたのが懲罰部隊じゃないのか！'},
+   {who:'レオ',text:'ああ、そうだよ。……だから、てめえらを無駄死にはさせねえ。操縦席は狙わねえ。とっとと降りろ！'}]},
+   {id:'otto',when:(a,d)=>[a,d].some(u=>u.key==='zekt_o')&&[a,d].some(u=>u.key==='esta'||u.key==='esta_mortar'),lines:()=>[
+   {who:'ハンス',text:'く、来るな！　こっちは命令で来てるんだ！'},
+   {who:'オットー',text:'ぼ、僕たちだって、命令です！　どうして、同じ平民どうしで……！'},
+   {who:'ハンス',text:'同じだからだよ！　お前は貴族の軍の兵で、俺は同盟の兵だ。命令に従ってる。……それだけだ。'},
+   {who:'オットー',text:'そ、それだけなら……！　それだけなら、死なないでください！　手足だけ、撃ちます！'}]},
+   {id:'nina',when:(a,d)=>a.key==='schutze'&&d.team==='foe',lines:()=>[
+   {who:'ニーナ',text:'脚の付け根。操縦席から、いちばん遠いところ。……当てます。'}]}],
+  events:[
+   {id:'carts',turn:2,phase:'foe',spawn:true,lines:[
+   {who:'同盟の隊長',text:'第二班、荷車を倉庫の裏へ！　積めるだけ積め。積めないぶんには火を付けろ！'},
+   {who:'クラーラ',text:'少佐、荷車が倉庫の裏へ回っています！　前の機兵は、時間稼ぎです！',alt:['ニーナ']},
+   {who:'エルンスト',text:'やはり、正面は囮か。ブルーノ、オットー、倉庫の裏へ回れ！'}]},
+   {id:'konoe',turn:3,phase:'ally',lines:[
+   {who:'エルザ',text:'（通信）ファルケン少佐！　荷揚げ場の近衛です！　同盟の小舟が三艘、荷揚げ場の下流に隠してありました。押さえました！'},
+   {who:'ヴォルフ',text:'（通信）隊長は殺すな。生きたまま、北の橋へ追い込め。近衛が捕らえる。'},
+   {who:'エルンスト',text:'……努力しよう。'},
+   {who:'同盟の隊長',text:'小舟を押さえられたか。……さすがは近衛だ。だが、それも織り込み済みだ。'}]}],
+  bossDown:[
+   {who:'',text:'夜明け前。倉庫の前には、手足を落とされて動けなくなった同盟の機兵が、何機か転がっている。操縦席は、どれも無傷だった。',narr:1,do:()=>{for(const u of units)if(u.team==='foe'&&!u.dead)u.off=true}},
+   {who:'',text:'倉庫の麦は、ほとんど無事だった。',narr:1},
+   {who:'マティアス',text:'中の連中は、みんな生きてますぜ。……少佐のご注文どおりだ。',alt:['クラーラ']},
+   {who:'オットー',text:'よ、よかった……。',alt:['ブルーノ']},
+   {who:'ブルーノ',text:'でも、少佐。動けなくなった機体の中、空っぽですよ。乗ってた連中、みんな機体を捨てて、林へ逃げてます。',alt:['オットー']},
+   {who:'クラーラ',text:'逃げ方まで、前もって決めてあったのでしょう。……捕まえられたのは、足をくじいた一人だけです。',alt:['ニーナ']},
+   {who:'',text:'林の手前で、一機だけ残った同盟の機兵が、エルンストのカラドリウスを振り返った。隊長の機体だった。',narr:1},
+   {who:'同盟の隊長',text:'……殺さなかったな。'},
+   {who:'エルンスト',text:'そちらも、殺さなかった。'},
+   {who:'同盟の隊長',text:'おきてだからな。……帝国の軍服の中にも、話の分かる者がいるとはな。'},
+   {who:'エルンスト',text:'だが、爆破で国は変わらない。'},
+   {who:'同盟の隊長',text:'上からの改革を待っていたら、下の者は死ぬ。冬を越せずにな。'},
+   {who:'同盟の隊長',text:'あんたたちは、遅すぎる。'},
+   {who:'',text:'隊長の機体は、林の闇の中へ消えていった。',narr:1},
+   {who:'レオ',text:'…………。',alt:['マティアス']},
+   {who:'エルンスト',text:'（遅すぎる、か）'},
+   {who:'エルンスト',text:'（……共和国の金と機兵で動く組織。その奥には、共和国とじかにつながる者がいるはずだ）'},
+   {who:'エルンスト',text:'（その者は、帝国を内側から崩す刃にもなる。……そして、使い方しだいでは、共和国と話をするための、細い糸にもなる）'}],
+  lose:[
+   {who:'マティアス',text:'少佐！　くそっ、応答してください、少佐！'}],
+  epilogue:f=>[
+   {who:'',text:'― 運河沿いの倉庫（夜明け） ―',narr:1,bg:'canal_dawn'},
+   {who:'',text:'夜が明けたころ、北の橋から、近衛の機兵が駆けつけてきた。',narr:1},
+   {who:'ヴォルフ',text:'……隊長は、どうした。'},
+   {who:'エルンスト',text:'南の林へ退かれた。'},
+   {who:'ヴォルフ',text:'南だと？　北の橋へ追い込めと言ったはずだ。'},
+   {who:'エルンスト',text:'追い込もうとした。だが、向こうは南の林にも退き道を用意していた。'},
+   {who:'ヴォルフ',text:'…………。'},
+   {who:'',text:'ヴォルフは、倉庫の前に転がる同盟の機兵を見回した。どの機体も、操縦席だけが無傷のまま、空になっている。',narr:1},
+   {who:'ヴォルフ',text:'……器用なことだ。七機を相手に、一人も殺さずに、か。'},
+   {who:'ヴォルフ',text:'だが、そのせいで、乗っていた者はみな逃げた。殺さずに捕らえるというのは、こういうことだ。'},
+   {who:'エルンスト',text:'一人は捕らえた。'},
+   {who:'ヴォルフ',text:'その一人は、何も知らん。班の者と同じだ。……あの部隊の退き方を見たろう。あれは、捕まることまで考えて仕込まれた兵だ。'},
+   {who:'エルザ',text:'少佐。倉庫の麦は、ほとんど無事です。ファルケン大隊の働きです。'},
+   {who:'ヴォルフ',text:'分かっている。……報告書には、ありのままを書く。ファルケン大隊は倉庫を守り、同盟の隊長を取り逃がした、とな。'},
+   {who:'ヴォルフ',text:'行くぞ、エルザ。'},
+   {who:'',text:'去りぎわに、ヴォルフは振り返らずに言った。',narr:1},
+   {who:'ヴォルフ',text:'ファルケン。次に同盟の部隊と会うときは、俺が捕らえる。……貴様より先にな。'},
+   {who:'',text:'― 下町 ―',narr:1,bg:'slum'},
+   {who:'',text:'数日後。下町の路地に、新しいビラが撒かれていた。',narr:1},
+   {who:'',text:'「帝国の貴族は、麦の倉庫に番犬を置いた。その名はファルケン」。',narr:1},
+   {who:'ブルーノ',text:'ひ、ひどいですよ、これ！　俺たち、一人も殺してないのに！'},
+   {who:'クラーラ',text:'同盟のビラです。……向こうも、こちらの名を使って戦っているんです。'},
+   {who:'マティアス',text:'宰相閣下と同盟と、両方から叩かれるとはね。人気者はつらいですな。'},
+   {who:'',text:'レオは、そのビラを一枚拾って、黙って懐にしまった。',narr:1},
+   {who:'オットー',text:'中尉、それ……。'},
+   {who:'レオ',text:'……戦友のおふくろさんに、届けてやる。あいつの弟が、まだ生きてるって印にはならねえけどな。'},
+   {who:'',text:'― 宿舎 ―',narr:1,bg:'hq'},
+   {who:'クラーラ',text:'少佐。軍務省からです。'},
+   {who:'クラーラ',text:'『ファルケン大隊の休暇を解く。暁の同盟の部隊は、帝都の外の村々に潜んでいる。大隊は帝都を出て、街道沿いの同盟の拠点を探れ』。'},
+   {who:'レオ',text:'休暇を解く、だと？　休暇らしいことなんざ、何一つしてねえぞ。'},
+   {who:'マティアス',text:'帝都から追い出したいんでしょうな。英雄どのが帝都にいると、宮廷の皆さまが落ち着かねえ。'},
+   {who:'ニーナ',text:'……でも、帝都の外の方が、私たちには戦いやすいです。'},
+   {who:'エルンスト',text:'そうだな。'},
+   {who:'エルンスト',text:'（暁の同盟。その奥に、共和国がいる）'},
+   {who:'エルンスト',text:'（帝都の外で、もう一度、あの隊長に会う。……今度は、話をするために）'},
+   {who:'',text:'帝都での戦いは終わった。',narr:1,bg:'map',mark:'teito'},
+   {who:'',text:'剣ではなく、帳簿と封蝋で戦った夏。手にしたのは、切られた尻尾と、名も知らぬ隊長の一言だけだった。',narr:1},
+   {who:'',text:'帝都の外には、夜明けの印を掲げた部隊が潜んでいる。',narr:1},
+   {who:'',text:'その向こうに、南の共和国の影を見ながら、ファルケン大隊は帝都を発った。',narr:1},
+   {who:'',text:'帝都編　完',narr:1}],
+  loseHint:'同盟の隊長機のHPを半分まで削れば、部隊ごと退いていく。前衛の盾は固いので、砲で後ろから削ろう。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
-const STAGE_ORDER=['e1','e2','e3','e4','e5','e6','e7'];
+const STAGE_ORDER=['e1','e2','e3','e4','e5','e6','e7','e8'];
 const stageTitle=st=>`${st.label}「${st.name}」`;
 let ST=STAGES.s1,flags={};
 // ステージの地形と背景を切り替える
@@ -2093,7 +2375,7 @@ function strike(a,d,w,mode){
     if(Math.random()*100<critRate(a,d)){dmg*=1.25;rec.crit=true}
     dmg=Math.max(10,Math.round(dmg));
     delete a.buf.dbl;
-    d.hp=Math.max(0,d.hp-dmg);rec.dmg=dmg;rec.hpTo=d.hp;
+    d.hp=Math.max(d.noKill?1:0,d.hp-dmg);rec.dmg=dmg;rec.hpTo=d.hp;
     a.will=Math.min(150,a.will+2);d.will=Math.min(150,d.will+1);
     if(d.hp<=0){rec.kill=true;a.will=Math.min(150,a.will+5)}
   }else{d.will=Math.min(150,d.will+1)}
@@ -2563,7 +2845,7 @@ function setFace(el,name){const f=faceSrc(name);
   el.src=f}
 // 会話の背景画（assets/bg/）。会話の行に bg:'hq' のように書くと、その行から背景が変わる（マップを隠す solid の会話だけ）。
 // BG にない名前は背景なし（無地）になるので、画像ができたらここに足す
-const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg',hangar:'assets/bg/hangar.jpg',linde:'assets/bg/linde.jpg',wolfsgrube:'assets/bg/wolfsgrube.jpg',manor:'assets/bg/manor.jpg',ford:'assets/bg/ford.jpg',depot:'assets/bg/depot.jpg',depot_night:'assets/bg/depot_night.jpg',castle_night:'assets/bg/castle_night.jpg',pass:'assets/bg/pass.jpg',pass_night:'assets/bg/pass_night.jpg',gate:'assets/bg/gate.jpg',hall:'assets/bg/hall.jpg',garden:'assets/bg/garden.jpg',records:'assets/bg/records.jpg',scribe:'assets/bg/scribe.jpg',marshal:'assets/bg/marshal.jpg',warehouse:'assets/bg/warehouse.jpg',cell:'assets/bg/cell.jpg'};
+const BG={map:'assets/bg/continent.jpg',hq:'assets/bg/hq.jpg',hangar:'assets/bg/hangar.jpg',linde:'assets/bg/linde.jpg',wolfsgrube:'assets/bg/wolfsgrube.jpg',manor:'assets/bg/manor.jpg',ford:'assets/bg/ford.jpg',depot:'assets/bg/depot.jpg',depot_night:'assets/bg/depot_night.jpg',castle_night:'assets/bg/castle_night.jpg',pass:'assets/bg/pass.jpg',pass_night:'assets/bg/pass_night.jpg',gate:'assets/bg/gate.jpg',hall:'assets/bg/hall.jpg',garden:'assets/bg/garden.jpg',records:'assets/bg/records.jpg',scribe:'assets/bg/scribe.jpg',marshal:'assets/bg/marshal.jpg',warehouse:'assets/bg/warehouse.jpg',cell:'assets/bg/cell.jpg',slum:'assets/bg/slum.jpg',konoe:'assets/bg/konoe.jpg',canal:'assets/bg/canal.jpg',canal_dawn:'assets/bg/canal_dawn.jpg'};
 // 端を切らずに全体を見せる背景（地図など）。画面の上に寄せ、余白は背景色
 const BG_WHOLE=['map'];
 // 地図の上に重ねる印。x / y は地図の画像（continent.jpg）の幅・高さに対する位置（%）。
@@ -2833,13 +3115,15 @@ async function combat(att,def,w,choice){
   // 撃墜されたときの会話（ST.downTalks。それぞれ1回だけ。ボスと敗北条件の機体は checkEnd の会話に任せる）
   if(!checkEndNow())for(const t of ST.downTalks||[])if(!flags[t.id]&&[att,def].some(u=>u.dead&&u.key===t.key)){flags[t.id]=true;await dialog(battleLines(t.lines))}
   // HPが減ったときの会話（ST.hpTalks。それぞれ1回だけ。撃墜されたときは出さない）
+  // 撃墜されずに退く機体（ST.retreat：{key, below, lines}。第8話の同盟の隊長）。退いたらマップから消し、ボスなら勝ち
+  const R=ST.retreat;if(R&&!flags.retreat){const u=[att,def].find(u=>u.key===R.key&&!u.dead&&!u.off);if(u&&u.hp<u.maxHp*R.below){flags.retreat=true;await dialog(battleLines(R.lines));u.off=true;u.retreated=true}}
   if(!checkEndNow())for(const t of ST.hpTalks||[]){const u=[att,def].find(u=>u.key===t.key&&!u.dead);if(!flags[t.id]&&u&&u.hp<u.maxHp*t.below){flags[t.id]=true;await dialog(battleLines(t.lines))}}
   await checkEnd();
 }
 // 敗北：leader か、守る機体（ST.protect）が撃墜されたとき。勝利：ボス撃破か敵全滅（ST.bossOnly ならボス撃破だけ）
 // 撃ってはいけない機体（spare＝農民兵）が撃墜されても敗北
 const lostUnit=()=>{const leader=units.find(u=>u.key===ST.leader);if(leader.dead)return leader;return units.find(u=>((ST.protect||[]).includes(u.key)||u.spare)&&u.dead)||null};
-const wonNow=()=>{const boss=units.find(u=>u.boss);return boss.dead||(!ST.bossOnly&&!alive('foe').length&&!units.some(u=>u.off))};
+const wonNow=()=>{const boss=units.find(u=>u.boss);return boss.dead||boss.retreated||(!ST.bossOnly&&!alive('foe').length&&!units.some(u=>u.off))};
 const checkEndNow=()=>!!lostUnit()||!alive('ally').length||wonNow();
 async function checkEnd(){
   if(over)return;
@@ -3211,7 +3495,7 @@ function snapshot(){
 function validSave(d){
   const int=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b,bool=v=>typeof v==='boolean';
   if(!d||typeof d!=='object'||d.ver!==SAVE_VER||!Object.hasOwn(STAGES,d.stage)||!int(d.turn,1,999)||d.phase!=='player'||!Number.isFinite(d.savedAt))return false;
-  const st=STAGES[d.stage],ROSTER=st.roster,FLAGS=[...st.talks||[],...st.events||[],...st.meetTalks||[],...st.downTalks||[],...st.hpTalks||[]].map(t=>t.id);
+  const st=STAGES[d.stage],ROSTER=st.roster,FLAGS=[...st.talks||[],...st.events||[],...st.meetTalks||[],...st.downTalks||[],...st.hpTalks||[]].map(t=>t.id).concat(st.retreat?['retreat']:[]);
   if(!d.flags||typeof d.flags!=='object'||Array.isArray(d.flags)||!Object.entries(d.flags).every(([k,v])=>FLAGS.includes(k)&&bool(v)))return false;
   if(!Array.isArray(d.units)||d.units.length!==ROSTER.length)return false;
   return d.units.every((s,i)=>{
