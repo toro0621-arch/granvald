@@ -270,6 +270,46 @@ for _v in ('', '_down', '_idle', '_up', '_left', '_right'):
     # 足のまわりのふちの白い抜き残しも削る（剣のある左端は除く）
     POCKET_OPTS[f'caladrius{_v}.png'] = {'pale_min': 120, 'sat_max': 80, 'halo_boxes': [(52, 95, 147, 179)]}
 
+def restore_band(im, src, box, p0, p1, half=4.0, diff=12):
+    """抜きすぎた細長い部分（剣の刃など）を、設定画の元の画素から描き戻す。
+    p0→p1 は切り抜き後の絵での線分、half はその左右の幅。その帯の中で、すぐ外側の背景の色と
+    diff 以上ちがう画素（刃の白いハイライトや灰色の部分、輪郭線）を不透明に戻す"""
+    a = np.asarray(im).copy()
+    x0, y0, x1, y1 = box
+    crop = src[y0:y1, x0:x1].astype(int)
+    H, W = a.shape[:2]
+    m = a[..., 3] == 255
+    # 切り抜き後の絵が、元の範囲のどこにあるか（不透明な画素がそのまま一致する位置）
+    off = None
+    for oy in range(crop.shape[0] - H + 1):
+        for ox in range(crop.shape[1] - W + 1):
+            if (crop[oy:oy + H, ox:ox + W][m] == a[..., :3][m]).all():
+                off = (ox, oy)
+                break
+        if off:
+            break
+    if off is None:
+        return im
+    ox, oy = off
+    ref = crop[oy:oy + H, ox:ox + W]
+    yy, xx = np.mgrid[0:H, 0:W]
+    p0, p1 = np.array(p0, float), np.array(p1, float)
+    d = p1 - p0
+    t = np.clip(((xx - p0[0]) * d[0] + (yy - p0[1]) * d[1]) / (d ** 2).sum(), 0, 1)
+    dist = np.hypot(xx - (p0[0] + t * d[0]), yy - (p0[1] + t * d[1]))
+    # 帯のすぐ外側（half+2〜half+6）で、透明になっている画素の色の中央値を背景の色とみなす
+    ring = (dist > half + 2) & (dist <= half + 6) & (a[..., 3] == 0)
+    bgc = np.median(ref[ring], axis=0) if ring.any() else np.median(ref[a[..., 3] == 0], axis=0)
+    keep = (dist <= half) & (np.sqrt(((ref - bgc) ** 2).sum(2)) > diff)
+    a[keep, :3] = ref[keep]
+    a[keep, 3] = 255
+    return Image.fromarray(a, 'RGBA')
+
+# 抜きすぎを描き戻す場所（切り抜き後の絵での線分と幅）。カラドリウスの立ち絵の剣の刃（刃の色が背景の水色に近いため）
+RESTORE = {}
+for _n in ('caladrius.png', 'caladrius_down.png', 'caladrius_idle.png', 'caladrius_up.png', 'caladrius_left.png', 'caladrius_right.png'):
+    RESTORE[_n] = [((37, 96), (0, 174), 4.5)]
+
 def matte_jobs():
     """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
     j = []
@@ -315,5 +355,7 @@ if __name__ == '__main__':
         im = cut_outline(cache[src], box, **{k: v for k, v in opt.items() if k != 'outline'}) if opt.get('outline') else cut_matte(cache[src], box, **opt)
         if name in POCKETS:
             im = clear_pockets(im, POCKETS[name], **POCKET_OPTS.get(name, {}))
+        for p0, p1, half in RESTORE.get(name, []):
+            im = restore_band(im, cache[src], box, p0, p1, half)
         im.save(f'{OUT}{name}', optimize=True)
         print(f'{OUT}{name}', im.size)
