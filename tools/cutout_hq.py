@@ -222,7 +222,7 @@ def cut_outline(img, box, label_box=None, tol=16, pocket_tol=8, pocket_min=60):
     out = Image.fromarray(rgba, 'RGBA')
     return out.crop(out.getbbox())
 
-def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2):
+def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2, halo_boxes=(), halo_iter=2):
     """切り抜いたあとに残った背景（腕と胴の間など、輪郭線に囲まれた白っぽい背景）を消す。
     seeds は切り抜き後の絵での座標 (x, y)。そこから、明るくて色の薄い画素のつながりを透明にし、
     まわりの ring 画素以内にある、背景が混ざった白っぽい画素も透明にする"""
@@ -239,6 +239,16 @@ def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2):
     paleish = (mn > pale_min - 40) & (mx - mn < sat_max + 10)
     clear = hit | (near & paleish)
     a[clear, 3] = 0
+    # halo_boxes の範囲 (x0, y0, x1, y1) の中だけ、透明な部分に接している白っぽい画素（輪郭のふちの抜き残し）を削る
+    if halo_boxes:
+        inbox = np.zeros(pale.shape, bool)
+        for x0, y0, x1, y1 in halo_boxes:
+            inbox[y0:y1, x0:x1] = True
+        for _ in range(halo_iter):
+            edge = (a[..., 3] > 0) & ndi.binary_dilation(a[..., 3] == 0) & paleish & inbox
+            if not edge.any():
+                break
+            a[edge, 3] = 0
     return Image.fromarray(a, 'RGBA')
 
 # 切り抜き後に残る背景を消す場所（切り抜き後の絵での座標）。絵の範囲や抜き方を変えたら、マゼンタの上に置いて確かめ直す
@@ -248,8 +258,16 @@ POCKETS = {
     # カラドリウスの攻撃（剣）の絵：右腕の脇（2か所）、左腕（盾の腕）と胴の間、左足の内側（股の下と足元）
     'caladrius_attack.png': [(185, 59), (195, 76), (268, 96), (220, 101), (257, 140)],
 }
+# カラドリウスの立ち絵（正面）：両腕と胴の間、左腕（盾）と足の間、股下、両足のまわり、両足の間、足元の地面。
+# マップの4方向・待機はどれも同じ立ち絵なので、同じ場所を消す
+_CAL_STAND = [(57, 90), (54, 64), (43, 78), (47, 109), (83, 107), (123, 119), (46, 138), (96, 128), (88, 170), (65, 176)]
+for _v in ('down', 'idle', 'up', 'left', 'right'):
+    POCKETS[f'caladrius_{_v}.png'] = _CAL_STAND
 # 絵ごとの判定のゆるさ（小さい絵は背景の残りが少し暗めなので、明るさの下限を下げる）
 POCKET_OPTS = {'caladrius_attack.png': {'pale_min': 130, 'sat_max': 70}}
+for _v in ('down', 'idle', 'up', 'left', 'right'):
+    # 足のまわりのふちの白い抜き残しも削る（剣のある左端は除く）
+    POCKET_OPTS[f'caladrius_{_v}.png'] = {'pale_min': 120, 'sat_max': 80, 'halo_boxes': [(52, 95, 147, 179)]}
 
 def matte_jobs():
     """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
