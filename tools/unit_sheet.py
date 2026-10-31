@@ -41,6 +41,13 @@ BOXES = {
              'DIRS': {'down': (660, 205, 770, 448), 'up': (770, 205, 886, 448), 'left': (886, 205, 956, 448), 'right': (956, 205, 1034, 448)},
              'ANIM': {'idle': (32, 685, 326, 1015), 'walk': (344, 685, 627, 1015), 'attack': (638, 685, 1028, 1015)}},
 }
+# 切り抜き後に残る背景を消す場所（切り抜き後の絵での座標。cutout_hq.clear_pockets）。範囲を変えたらマゼンタの上で確かめ直す
+POCKETS = {
+    # ゼクト・ランスの戦闘用の絵：右腕（槍の腕）と胴の間、左腕（盾の腕）と胴の間（2か所）、右腕と槍の隙間
+    'lance': [(169, 182), (308, 192), (297, 148), (108, 172)],
+}
+# 別の絵にそろえる（名前 → {種類: 使う種類}）。ゼクト・ランスの待機は歩行の絵に統一（ユーザーの希望）
+SAME = {'lance': {'idle': 'walk'}}
 BIG = (318, 140, 752, 556)
 # 4方向のパネルの中の4体（正面・背面・左・右）。資料ごとに少しずれるので広めに取る（ex.cut は一番大きい塊だけ残す）
 DIRS = {'down': (772, 190, 897, 428), 'up': (897, 190, 1020, 428), 'left': (1020, 190, 1116, 428), 'right': (1116, 190, 1204, 428)}
@@ -56,14 +63,17 @@ def run(name, src):
     o = BOXES.get(name, {})
     BIG, DIRS, ANIM = o.get('BIG', globals()['BIG']), o.get('DIRS', globals()['DIRS']), o.get('ANIM', globals()['ANIM'])
     big = drop_shadow(hq.cut_outline(img, BIG))
+    if name in POCKETS:
+        big = hq.clear_pockets(big, POCKETS[name])
     big.save(f'{OUT}{name}.png', optimize=True)
     print(f'{name}.png', big.size)
     for k, box in DIRS.items():
         im = dot(img, box)
         im.save(f'{OUT}{name}_{k}.png', optimize=True)
         print(f'{name}_{k}.png', im.size)
+    same = SAME.get(name, {})
     for k, box in ANIM.items():
-        im = dot(img, box)
+        im = dot(img, ANIM[same[k]] if k in same else box)
         im.save(f'{OUT}{name}_{k}.png', optimize=True)
         print(f'{name}_{k}.png', im.size)
 
