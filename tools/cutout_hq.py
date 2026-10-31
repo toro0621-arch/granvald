@@ -245,7 +245,11 @@ def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2):
 POCKETS = {
     # カラドリウスの戦闘用の絵：左腕と胴の間、右腕と胴の間（2か所）、ふんどしの下、左腰のサイドアーマーと腕の間
     'caladrius.png': [(160, 226), (329, 196), (302, 206), (220, 314), (337, 331)],
+    # カラドリウスの攻撃（剣）の絵：右腕の脇（2か所）、左腕（盾の腕）と胴の間、左足の内側（股の下と足元）
+    'caladrius_attack.png': [(185, 59), (195, 76), (268, 96), (220, 101), (257, 140)],
 }
+# 絵ごとの判定のゆるさ（小さい絵は背景の残りが少し暗めなので、明るさの下限を下げる）
+POCKET_OPTS = {'caladrius_attack.png': {'pale_min': 130, 'sat_max': 70}}
 
 def matte_jobs():
     """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
@@ -293,6 +297,6 @@ if __name__ == '__main__':
         opt = dict(opt)
         im = cut_outline(cache[src], box, **{k: v for k, v in opt.items() if k != 'outline'}) if opt.get('outline') else cut_matte(cache[src], box, **opt)
         if name in POCKETS:
-            im = clear_pockets(im, POCKETS[name])
+            im = clear_pockets(im, POCKETS[name], **POCKET_OPTS.get(name, {}))
         im.save(f'{OUT}{name}', optimize=True)
         print(f'{OUT}{name}', im.size)
