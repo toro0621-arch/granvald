@@ -1,6 +1,6 @@
 # 帝国編 第8話「夜明けの印」 ロボ（機体）の指示文
 
-> できあがり：前衛 `docs/ref/esta-front-sprites.png` → `assets/sprites/esta*.png`（使う。`python3 tools/unit_sheet.py esta`。パネルの位置が少し違うので `BOXES` で上書き）
+> できあがり：前衛 `docs/ref/esta-front-sprites.png` → `assets/sprites/esta*.png`（使う。`python3 tools/unit_sheet.py esta`。パネルの位置が少し違うので `BOXES` で上書き）、後衛 `docs/ref/esta-rear-sprites.png` → `assets/sprites/esta_mortar*.png`（使う。`python3 tools/unit_sheet.py esta_mortar`。画像の大きさから違うので `BOXES` で上書き。攻撃の絵（迫撃砲）は迫撃砲のときだけ使う＝`ATK_ONLY`）
 
 添付：`docs/ref/zekt-v2-sprites.png`（ゼクトの資料。この形式で描くと絵柄と大きさがそろう）
 資料の形式（パネルの背景は明るい水色の無地）で頼む。切り抜きはこちらでするので、資料の文字やパネルはあってよい。
