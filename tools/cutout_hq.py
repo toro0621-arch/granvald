@@ -222,6 +222,31 @@ def cut_outline(img, box, label_box=None, tol=16, pocket_tol=8, pocket_min=60):
     out = Image.fromarray(rgba, 'RGBA')
     return out.crop(out.getbbox())
 
+def clear_pockets(im, seeds, pale_min=150, sat_max=60, ring=2):
+    """切り抜いたあとに残った背景（腕と胴の間など、輪郭線に囲まれた白っぽい背景）を消す。
+    seeds は切り抜き後の絵での座標 (x, y)。そこから、明るくて色の薄い画素のつながりを透明にし、
+    まわりの ring 画素以内にある、背景が混ざった白っぽい画素も透明にする"""
+    a = np.asarray(im).copy()
+    rgb = a[..., :3].astype(int)
+    mn, mx = rgb.min(2), rgb.max(2)
+    pale = (a[..., 3] > 0) & (mn > pale_min) & (mx - mn < sat_max)
+    lab, _ = ndi.label(pale)
+    hit = np.zeros(pale.shape, bool)
+    for x, y in seeds:
+        if lab[y, x]:
+            hit |= lab == lab[y, x]
+    near = ndi.binary_dilation(hit, iterations=ring)
+    paleish = (mn > pale_min - 40) & (mx - mn < sat_max + 10)
+    clear = hit | (near & paleish)
+    a[clear, 3] = 0
+    return Image.fromarray(a, 'RGBA')
+
+# 切り抜き後に残る背景を消す場所（切り抜き後の絵での座標）。絵の範囲や抜き方を変えたら、マゼンタの上に置いて確かめ直す
+POCKETS = {
+    # カラドリウスの戦闘用の絵：左腕と胴の間、右腕と胴の間（2か所）、ふんどしの下、左腰のサイドアーマーと腕の間
+    'caladrius.png': [(160, 226), (329, 196), (302, 206), (220, 314), (337, 331)],
+}
+
 def matte_jobs():
     """カラドリウスの全部の絵（戦闘用・4方向・待機・歩行・攻撃）。戦闘用の大きい絵だけ cut_outline、ほかは cut_matte で抜く"""
     j = []
@@ -267,5 +292,7 @@ if __name__ == '__main__':
             cache[src] = np.asarray(Image.open(src).convert('RGB'))
         opt = dict(opt)
         im = cut_outline(cache[src], box, **{k: v for k, v in opt.items() if k != 'outline'}) if opt.get('outline') else cut_matte(cache[src], box, **opt)
+        if name in POCKETS:
+            im = clear_pockets(im, POCKETS[name])
         im.save(f'{OUT}{name}', optimize=True)
         print(f'{OUT}{name}', im.size)
