@@ -68,9 +68,14 @@ def sheet(n):
     if n not in sheets: sheets[n] = Image.open(R + n + '.png').convert('RGB')
     return sheets[n]
 
+# 前の切り抜きのままにする人（ユーザーの希望）。ここに書いた人はこのスクリプトで書き換えない（F の枠は参考に残す）
+KEEP = {'bruno', 'otto', 'lidia', 'marianne', 'emperor', 'felix', 'guard', 'stahl'}
+
 if __name__ == '__main__':
     out = []
     for n, p in F.items():
+        if n in KEEP:
+            out.append((n, Image.open(f'assets/faces/{n}.png').convert('RGB'))); continue
         im = sheet(p['s'])
         if 'paint' in p:  # 札だけをパネルの背景色で塗る（この人の頭にはかかっていない）
             im = im.copy(); L, T, Rr, B = p['paint']
