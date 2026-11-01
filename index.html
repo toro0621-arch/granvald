@@ -3202,7 +3202,11 @@ const isSpecial=w=>(w.will||0)>0;
 const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort',R:'water',S:'water',X:'fort',D:'fort',H:'fort',G:'fort',Q:'water'};
 const BATTLE_BG={};for(const f of[...Object.values(BATTLE_BG_FILE),'bandit','ford','castle_night','depot'])if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
 // 話ごとに地形の戦闘背景を差し替える（ST.battleBg。第2話は谷の道も岩の谷、砦は盗賊の砦の背景）
-const battleBgOf=t=>BATTLE_BG[(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t]];
+const bgKeyOf=t=>(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t];
+const battleBgOf=t=>BATTLE_BG[bgKeyOf(t)];
+// 地面が少ない背景画は大きめに広げる（下はそろえたまま）。地面の線が上がって、機体が建物の手前に浮いて見えないように。
+// 倉庫の敷地（depot）は建物の足もとが低く、機体が建物の前に浮いて見えたため（ユーザーの指摘）
+const BATTLE_BG_ZOOM={depot:1.4};
 function playBattle(att,def,strikes){
   return new Promise(resolve=>{
     const ov=$('battle');ov.hidden=false;
@@ -3221,7 +3225,7 @@ function playBattle(att,def,strikes){
     const bg=document.createElement('canvas');bg.width=w+PAD*2;bg.height=h+PAD*2;{const bx=bg.getContext('2d'),bimg=battleBgOf(MAP[def.y][def.x]);
       if(ready(bimg)){
         // 背景画：横幅いっぱいに広げ、下をそろえる（上の空が少し切れる）。HPの表示が読めるよう上を少し暗く
-        const iw=bimg.naturalWidth,ih=bimg.naturalHeight,k=Math.max(bg.width/iw,bg.height/ih),dw=iw*k,dh=ih*k;
+        const iw=bimg.naturalWidth,ih=bimg.naturalHeight,k=Math.max(bg.width/iw,bg.height/ih)*(BATTLE_BG_ZOOM[bgKeyOf(MAP[def.y][def.x])]||1),dw=iw*k,dh=ih*k;
         bx.drawImage(bimg,(bg.width-dw)/2,bg.height-dh,dw,dh);
         const g=bx.createLinearGradient(0,0,0,bg.height);g.addColorStop(0,'#000a');g.addColorStop(.3,'#0000');g.addColorStop(.85,'#0000');g.addColorStop(1,'#0006');bx.fillStyle=g;bx.fillRect(0,0,bg.width,bg.height)}
       else{const g=bx.createLinearGradient(0,PAD,0,h+PAD);g.addColorStop(0,sky[0]);g.addColorStop(.62,sky[1]);g.addColorStop(.62,sky[2]);g.addColorStop(1,'#000');bx.fillStyle=g;bx.fillRect(0,0,bg.width,bg.height)}}
