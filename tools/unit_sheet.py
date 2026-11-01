@@ -47,9 +47,13 @@ POCKETS = {
     'lance': [(169, 182), (308, 192), (297, 148), (108, 172)],
     # ゼクト・シュッツェの待機の絵：右手とライフルと腰の間の隙間
     'schutze_idle': [(39, 136)],
+    # アイゼンヴァハト：戦闘用の絵＝左腕（盾）と胴の間、攻撃＝両腕と胴の間、正面＝左腕と胴の間・右腕（槍）と足の間
+    'eisenwacht': [(285, 166)],
+    'eisenwacht_attack': [(177, 107), (169, 167), (173, 192)],
+    'eisenwacht_down': [(88, 74), (23, 108), (18, 130)],
 }
 # 絵ごとの判定のゆるさ（ドット絵は背景の残りが少し暗めなので、明るさの下限を下げる）
-POCKET_OPTS = {'schutze_idle': {'pale_min': 140, 'sat_max': 70}}
+POCKET_OPTS = {'schutze_idle': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_attack': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_down': {'pale_min': 130, 'sat_max': 75}}
 # 別の絵にそろえる（名前 → {種類: 使う種類}）。ゼクト・ランスの待機は歩行の絵に統一（ユーザーの希望）
 SAME = {'lance': {'idle': 'walk'}}
 BIG = (318, 140, 752, 556)
@@ -73,6 +77,8 @@ def run(name, src):
     print(f'{name}.png', big.size)
     for k, box in DIRS.items():
         im = dot(img, box)
+        if f'{name}_{k}' in POCKETS:
+            im = hq.clear_pockets(im, POCKETS[f'{name}_{k}'], **POCKET_OPTS.get(f'{name}_{k}', {}))
         im.save(f'{OUT}{name}_{k}.png', optimize=True)
         print(f'{name}_{k}.png', im.size)
     same = SAME.get(name, {})
