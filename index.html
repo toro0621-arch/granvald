@@ -605,17 +605,17 @@ const TPL={
  // 画像は assets/sprites/（docs/ref/empire-01-sprites.png から切り抜き）。spr：別の機体の画像を使うとき（中隊と盗賊のゼクト）
  caladrius:{name:'カラドリウス',kind:'knight',hp:4000,en:170,armor:1100,mob:100,move:5,
   col:{main:'#1d1f25',sub:'#c9a23a',acc:'#eef0f2',eye:'#ffcf5a'},
-  pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['研ぎ澄まし','照準固定']},
+  pilot:{name:'エルンスト',melee:160,shoot:160,hit:155,eva:125,skill:150,sp:50,spirits:['研ぎ澄まし','応急修理']},
   lines:['ファルケン中隊、続け！','確実に、一機ずつだ。','見定めさせてもらう。'],
   weapons:[W('ショートブレード','格',1400,1,1,{}),W('マシンガン','射',1300,1,3,{fx:'bullet'}),W('ライフル','射',1700,2,5,{ammo:6,fx:'bullet'}),W('二段斬り','格',2800,1,1,{en:30,will:110,fx:'cross'})]},
  zekt_b:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
-  pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['鬨の声','応急修理']},
+  pilot:{name:'ブルーノ',melee:125,shoot:115,hit:120,eva:110,skill:105,sp:30,spirits:['研ぎ澄まし','応急修理']},
   lines:['おらおら、どきな！','へへっ、もらった！'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  zekt_o:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
-  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['研ぎ澄まし','不動']},
+  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['応急修理','不動']},
   lines:['ね、狙います……！','落ち着いて、確実に。'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,selfRepair:true,
@@ -642,7 +642,7 @@ const TPL={
  // レオ（懲罰部隊）のゼクト。色あせた灰色（ゼクトの絵に色を重ねる）。第3話からゼクト・ランス
  leo:{name:'ゼクト',kind:'drone',hp:3000,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#b4b2aa',
   col:{main:'#8a8a84',sub:'#4a4a46',acc:'#d8b23a',eye:'#ff3344'},
-  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['渾身','強行軍']},
+  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','強行軍']},
   lines:['まっすぐ行って、ぶっ飛ばす！','どけぇっ！','借りは返すぜ！'],
   weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1300,1,3,{fx:'bullet'})]},
  // 懲罰部隊の兵のゼクト（2機。操作できる味方）
@@ -654,7 +654,7 @@ const TPL={
  // クラーラのゼクト・キャノン（絵は docs/ref/zekt-cannon-sprites.png から tools/zekt_cannon.py で切り抜き）
  cannon:{name:'ゼクト・キャノン',kind:'drone',hp:2400,en:100,armor:800,mob:70,move:4,
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#eef0f2',eye:'#ff3344'},
-  pilot:{name:'クラーラ',melee:90,shoot:150,hit:155,eva:110,skill:140,sp:50,spirits:['照準固定','先読み']},
+  pilot:{name:'クラーラ',melee:90,shoot:150,hit:155,eva:110,skill:140,sp:50,spirits:['照準固定','応急修理']},
   lines:['照準よし。撃ちます！','後ろは任せてください。','そこ、狙えます。'],
   weapons:[W('マシンガン','射',1200,1,2,{fx:'bullet'}),W('キャノン','射',1700,2,5,{ammo:6,fx:'shell'})]},
  // 第2話のボルツ（ボスではない。絵はゴルム改）
@@ -673,7 +673,7 @@ const TPL={
  // レオのゼクト・ランス（突撃槍と増加装甲）
  lance:{name:'ゼクト・ランス',kind:'drone',hp:2600,en:100,armor:950,mob:85,move:5,
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#d8b23a',eye:'#ff3344'},
-  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['渾身','強行軍']},
+  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','強行軍']},
   lines:['まっすぐ行って、ぶち抜く！','どけぇっ！','槍で聞くぜ！'],
   weapons:[W('突撃槍','格',1500,1,1,{hit:5}),W('ライフル','射',1300,1,3,{fx:'bullet'}),W('ランスチャージ','格',2600,1,1,{en:30,will:110,fx:'punch'})]},
  // 男爵家の騎士（横流しのゼクトに、男爵家のえんじ色を重ねる）
@@ -698,7 +698,7 @@ const TPL={
  // ニーナの狙撃機。狙撃銃は3マス以上離れた敵にしか撃てない（近づかれると拳銃だけ）
  schutze:{name:'ゼクト・シュッツェ',kind:'drone',hp:2600,en:100,armor:800,mob:85,move:4,
   col:{main:'#7d8ea8',sub:'#5a5a3a',acc:'#eef0f2',eye:'#ff3344'},
-  pilot:{name:'ニーナ',melee:90,shoot:165,hit:170,eva:120,skill:150,sp:50,spirits:['照準固定','研ぎ澄まし']},
+  pilot:{name:'ニーナ',melee:90,shoot:165,hit:170,eva:120,skill:150,sp:50,spirits:['照準固定','応急修理']},
   lines:['一つ目。','距離よし。撃ちます。','数えています。'],
   weapons:[W('拳銃','射',900,1,2,{fx:'bullet'}),W('狙撃銃','射',1800,3,6,{hit:10,fx:'bullet'}),W('一点狙撃','射',2700,3,6,{en:30,will:110,hit:20,fx:'beam'})]},
  // ヨハンのゼクト・エーレ（ボス。見栄を張って飾り立てた横流しのゼクト）
@@ -3651,7 +3651,7 @@ $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();ret
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 // 古い版がキャッシュから出ていたら、新しい版を開き直す（tools/bump_version.py。GitHub Pages は index.html を最大10分キャッシュさせる）
-const APP_VER='20261101223450';
+const APP_VER='20261101224610';
 fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():null).then(t=>{t=t&&t.trim();
   if(t&&t!==APP_VER&&new URLSearchParams(location.search).get('v')!==t){const u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.toString())}}).catch(()=>{});
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
