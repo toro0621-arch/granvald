@@ -3216,7 +3216,7 @@ const bgKeyOf=t=>(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t];
 const battleBgOf=t=>BATTLE_BG[bgKeyOf(t)];
 // 地面が少ない背景画は大きめに広げる（下はそろえたまま）。地面の線が上がって、機体が建物の手前に浮いて見えないように。
 // 倉庫の敷地（depot）は建物の足もとが低く、機体が建物の前に浮いて見えたため（ユーザーの指摘）
-const BATTLE_BG_ZOOM={depot:1.75};
+const BATTLE_BG_ZOOM={depot:1.4};
 function playBattle(att,def,strikes){
   return new Promise(resolve=>{
     const ov=$('battle');ov.hidden=false;
@@ -3651,7 +3651,7 @@ $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();ret
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 // 古い版がキャッシュから出ていたら、新しい版を開き直す（tools/bump_version.py。GitHub Pages は index.html を最大10分キャッシュさせる）
-const APP_VER='20261101223123';
+const APP_VER='20261101223450';
 fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():null).then(t=>{t=t&&t.trim();
   if(t&&t!==APP_VER&&new URLSearchParams(location.search).get('v')!==t){const u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.toString())}}).catch(()=>{});
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
