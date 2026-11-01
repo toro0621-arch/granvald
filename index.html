@@ -256,7 +256,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 <div id="dLog" class="ov" hidden><div class="logbox"><div class="sh-title"><span>会話ログ</span></div><div id="dLogList"></div><div class="sh-actions"><button class="btn" id="dLogClose" type="button">閉じる</button></div></div></div>
 
 <div id="title" class="ov">
-  <div class="t-logo"><img src="assets/title-logo.jpg" alt="機甲戦線グランヴァルド"></div>
+  <div class="t-logo"><img src="assets/title-logo.webp" onerror="this.onerror=null;this.src='assets/title-logo.jpg'" alt="機甲戦線グランヴァルド"></div>
   <div class="t-press" id="tPress">TAP TO START</div>
   <div class="t-menu" id="tMenu" hidden>
     <button class="btn pri" id="btnContinue" hidden>つづきから</button>
@@ -2583,13 +2583,21 @@ let TS=40,DPR=1,terrainLayer=null;
 // 画像は同じファイルを1回だけ読み込んで使い回す（ゼクトのように同じ絵を何機も使うと、スマホで同時に何度も読みにいって
 // 一部が失敗し、代わりの図形で描かれていた）。読み込みに失敗したら、少し待って2回まで読み直す
 const IMG_CACHE={};
+// 絵は WebP（tools/webp.py で作った軽い版）を読み、読めなければ元の png・jpg を読む。
+// 起動中（IMG_LAZY）に作った Image はまだ読み込まない。話を始めるときに、その話で使う絵だけ need() で読み始める（loadStageAssets）
+let IMG_LAZY=true;
+const webpOf=s=>/^assets\/.*\.(png|jpg)$/.test(s)?s.replace(/\.(png|jpg)$/,'.webp'):s;
 function img(src,onload){
   let i=IMG_CACHE[src];
-  if(!i){i=IMG_CACHE[src]=new Image();i._tries=0;
-    i.onerror=()=>{if(i._tries++<2)setTimeout(()=>{i.src=src+(src.includes('?')?'&':'?')+'r='+i._tries},400*i._tries)};
-    i._cbs=[];i.onload=()=>{for(const f of i._cbs)f.call(i);i._cbs=[]};i.src=src}
+  if(!i){i=IMG_CACHE[src]=new Image();i._tries=0;i._want=webpOf(src);
+    i.onerror=()=>{if(i._want!==src){i._want=src;i.src=src;return} // WebP が読めない → 元の絵
+      if(i._tries++<2)setTimeout(()=>{i.src=src+(src.includes('?')?'&':'?')+'r='+i._tries},400*i._tries)};
+    i._cbs=[];i.onload=()=>{for(const f of i._cbs)f.call(i);i._cbs=[]};
+    if(!IMG_LAZY){i._started=true;i.src=i._want}}
   if(onload){if(i.complete&&i.naturalWidth)onload.call(i);else i._cbs.push(onload)}
   return i}
+// まだ読み始めていない絵を読み始める（src は img() に渡した元の名前）
+function need(src){const i=IMG_CACHE[src]||img(src);if(!i._started){i._started=true;i.src=i._want}return i}
 // マップ背景はステージごと（loadStage で切り替え、読み込み済みのものは使い回す）
 let STAGE_IMG=null;const STAGE_IMGS={};
 function stageImg(src){return STAGE_IMGS[src]||(STAGE_IMGS[src]=img(src,function(){if(this===STAGE_IMG)buildTerrain()}))}
@@ -2611,7 +2619,7 @@ for(const[k,t]of Object.entries(TPL)){SPR[k]={};if(t.spr===false)continue;
   SPR[k].big=load(`assets/sprites/${f}.png`);
   for(const v of['up','down','left','right',...(SPR_EXTRA.includes(f)?['idle','walk','attack']:[])])SPR[k][v]=load(`assets/sprites/${f}_${v}.png`)}
 // 地形：設定画の立体タイル（戦闘シーンの足場、コンソールの地形表示）
-const TER_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'sea',C:'city',B:'base',E:'base'};
+const TER_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'sea',C:'city',B:'base',E:'base',H:'base',G:'base',Q:'sea'};
 const TER_IMG={};for(const[t,f]of Object.entries(TER_FILE))TER_IMG[t]=img(`assets/sprites/tile_${f}.png`);
 const ready=i=>!!i&&(i instanceof HTMLCanvasElement?i._ok:i.complete&&i.naturalWidth>0);
 // 単位座標（-1〜1）の箱に、縦横比を保ったまま下揃えで描く
@@ -2845,12 +2853,13 @@ function banner(text,sub,color){return new Promise(r=>{const b=$('banner');b.inn
 const FACE={'同盟の隊長':'mb_captain','エルザ':'elsa','ハンス':'hans','戦友の母':'comrade_mother','シュタール':'stahl','ユリウス':'julius','ベルトルト':'berthold','皇帝':'emperor','マリアンネ':'marianne','リディア':'lidia','ザルグ':'zarg','ヴェルナ':'werner','フェリクス':'felix','近衛の小隊長':'guard','刺客の頭':'assassin','ヴォルフ':'wolf','ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'baron','ディートリヒ':'dietrich','ヨハン':'johann','農民兵':'peasant','レオ':'leo','ゲルト':'gert','懲罰兵':'penal','エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara','伝令':'messenger','村人':'villager','村長':'elder',
  '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
 const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
+const faceUrl=n=>{const f=faceSrc(n),i=f&&IMG_CACHE[f];return i&&i.complete&&i.naturalWidth?i.src:f&&webpOf(f)};
 // 顔グラは最初に全員分を先読みしておく（初めて出す顔の読み込み待ちで、前の人の顔が残って見えるのを防ぐ）
 // 読み込みに失敗したら読み直す（img()。スマホで一部の読み込みが失敗し、カットインの顔が出ないことがあったため）
 const FACE_IMG={};for(const n of Object.keys(FACE))FACE_IMG[n]=img(faceSrc(n));
-function setFace(el,name){const f=faceSrc(name);
+function setFace(el,name){const f0=faceSrc(name),f=f0&&faceUrl(name);if(f0)need(f0);
   if(!f){el.hidden=true;return}
-  el.onerror=()=>{el.hidden=true};el.hidden=false;
+  el.onerror=()=>{if(el.getAttribute('src')!==f0){el.src=f0;return}el.hidden=true};el.hidden=false;
   if(el.getAttribute('src')===f){el.style.visibility='';return}
   const pre=FACE_IMG[name];
   // 読み込みが終わっていない顔は、終わるまで枠ごと見えなくしておく（前の人の顔は出さない）
@@ -2876,9 +2885,9 @@ const BG_SIZE={map:[848,1264]};
 // 読み込みに失敗したら img() が読み直す。読み直したときは URL が変わるので、表示には読めた URL（bgUrl）を使う
 const BG_IMG={};for(const[k,f]of Object.entries(BG))BG_IMG[k]=img(f);
 const bgReady=k=>{const i=BG_IMG[k];return !!(i&&i.complete&&i.naturalWidth)};
-const bgUrl=k=>bgReady(k)?BG_IMG[k].src:BG[k];
+const bgUrl=k=>bgReady(k)?BG_IMG[k].src:webpOf(BG[k]);
 // 背景画が読み終わるまで待つ（最長 ms ミリ秒）。会話の最初の背景が真っ黒のまま出ないように
-const waitBg=(k,ms=6000)=>new Promise(r=>{if(!k||!BG_IMG[k]||bgReady(k))return r();const t=setTimeout(r,ms);img(BG[k],()=>{clearTimeout(t);r()})});
+const waitBg=(k,ms=8000)=>new Promise(r=>{if(!k||!BG_IMG[k]||bgReady(k))return r();need(BG[k]);const t=setTimeout(r,ms);img(BG[k],()=>{clearTimeout(t);r()})});
 // 会話ログ：流れた会話を覚えておき、会話中の「ログ」ボタンや設定から読み返せる（話を始めるたびに空にする）
 let DLG_LOG=[];
 function showLog(){
@@ -2895,7 +2904,7 @@ async function dialog(lines,o={}){
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
     // 行に solid:1 があれば、マップの上の会話でもその行だけマップを隠して背景を出す
     let solid=!!o.solid;
-    const setBg=()=>{d.classList.toggle('solid',solid);d.classList.toggle('onmap',!solid);const url=solid&&bg&&BG[bg]&&bgUrl(bg);if(url&&!bgReady(bg)){const want=bg;img(BG[bg],()=>{if(!d.hidden&&bg===want)setBg()})}d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
+    const setBg=()=>{d.classList.toggle('solid',solid);d.classList.toggle('onmap',!solid);const url=solid&&bg&&BG[bg]&&bgUrl(bg);if(url&&!bgReady(bg)){const want=bg;need(BG[bg]);img(BG[bg],()=>{if(!d.hidden&&bg===want)setBg()})}d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
     // 地図（BG_WHOLE）の置き方：縦向きは文字枠（画面の上）の下の空いたところに収める。横向きで右に文字枠を置く幅があれば、地図を左、文字枠を右に並べる
     let box=null;
     const layout=()=>{const url=solid&&bg&&BG[bg],sz=BG_SIZE[bg];box=null;
@@ -3077,7 +3086,7 @@ function statusSheet(u,fromRoster){
   <div class="st-grid">${g('装甲',u.armor)}${g('運動性',u.mob)}${g('移動',u.move)}${g('タイプ',u.air?'空':'陸')}${g('地形',u.air?'空中':t.n)}${g('位置',`${u.x},${u.y}`)}</div>
   ${abil.length?`<div class="hint" style="margin-top:6px">特殊能力：${abil.join('／')}</div>`:''}
   <div class="st-sec">パイロット</div>
-  ${faceSrc(P.name)?`<div class="st-pilot"><img class="face" src="${faceSrc(P.name)}" alt="" onerror="this.remove()"><div><div class="uname" style="font-size:15px">${P.name}</div></div></div>`:''}
+  ${faceSrc(P.name)?`<div class="st-pilot"><img class="face" src="${faceUrl(P.name)}" alt="" onerror="if(!this.dataset.f){this.dataset.f=1;this.src='${faceSrc(P.name)}'}else this.remove()"><div><div class="uname" style="font-size:15px">${P.name}</div></div></div>`:''}
   <div class="st-grid" style="margin-top:6px">${g('格闘',P.melee)}${g('射撃',P.shoot)}${g('技量',P.skill)}${g('命中',P.hit)}${g('回避',P.eva)}${g('気力',u.will)}</div>
   ${ally?`<div class="st-sec">戦術　SP ${u.sp}/${u.maxSp}</div><div class="chips">${P.spirits.map(n=>`<span class="chip" style="${u.sp<SPIRITS[n].cost?'opacity:.45':''}">${n} ${SPIRITS[n].cost}</span>`).join('')}</div>`:''}
   ${buffs.length?`<div class="hint" style="margin-top:6px">効果中：${buffs.join('、')}</div>`:''}
@@ -3563,7 +3572,34 @@ function titleArt(){}
 function showTitleMenu(){if(!$('tMenu').hidden)return;snd('ok');unlockBgm();$('tPress').hidden=true;$('tMenu').hidden=false}
 $('title').addEventListener('click',e=>{if($('tMenu').hidden)showTitleMenu()});
 // ステージを始める：戦闘前の会話（マップを隠す）→ マップに入って開始時の会話 → 味方フェイズ
+// ---- その話で使う絵だけを読む ----
+// 会話（関数の中も文字列から拾う）に出る背景画と人の名前、配置の機体、マップの地形の戦闘背景を集める
+function stageAssets(id){
+  const S=STAGES[id],bgs=new Set(),who=new Set(),keys=new Set();
+  const fromText=t=>{for(const m of t.matchAll(/bg:'(\w+)'/g))bgs.add(m[1]);for(const m of t.matchAll(/who:'([^']+)'/g))who.add(m[1]);
+    for(const m of t.matchAll(/alt:\[([^\]]*)\]/g))for(const n of m[1].matchAll(/'([^']+)'/g))who.add(n[1])};
+  const walk=v=>{if(!v)return;if(typeof v==='function'){fromText(v.toString());return}
+    if(Array.isArray(v)){v.forEach(walk);return}
+    if(typeof v==='object'){if(typeof v.bg==='string')bgs.add(v.bg);if(typeof v.who==='string')who.add(v.who);if(Array.isArray(v.alt))v.alt.forEach(n=>who.add(n));for(const k in v)if(k!=='map'&&k!=='road')walk(v[k])}};
+  walk(S);
+  for(const r of S.roster||[])keys.add(r[0]);
+  const spr=[];for(const k of keys){const t=TPL[k];if(!t||t.spr===false)continue;const f=t.spr||k;
+    spr.push(`assets/sprites/${f}.png`);for(const v of['up','down','left','right',...(SPR_EXTRA.includes(f)?['idle','walk','attack']:[])])spr.push(`assets/sprites/${f}_${v}.png`);
+    if(t.pilot)who.add(t.pilot.name)}
+  if(keys.has('caladrius'))for(const f of Object.values(ATK_W.caladrius||{}))spr.push(`assets/sprites/${f}.png`);
+  const bbg=new Set();for(const row of S.map)for(const c of row){const f=(S.battleBg&&S.battleBg[c])||BATTLE_BG_FILE[c];if(f)bbg.add(`assets/bg/battle_${f}.jpg`)}
+  const first=((S.pre||S.start||[]).find(l=>'bg' in l)||{}).bg;
+  return{first,map:S.bg,spr,faces:[...who].map(faceSrc).filter(Boolean),bgs:[...bgs].filter(k=>BG[k]).map(k=>BG[k]),bbg:[...bbg]};
+}
+// 最初に出す背景画（大陸の地図）を先に読み、読み終わってから（最長8秒）残りを読み始める。
+// 残りは、マップ・機体・顔 → 会話の背景画 → 戦闘の背景、の順に頼む（先に頼んだものから届く）
+async function loadStageAssets(id){
+  const a=stageAssets(id);
+  if(a.first)await waitBg(a.first);
+  for(const s of[a.map,...a.spr,...a.faces,...a.bgs,...a.bbg])if(s)need(s);
+}
 async function startGame(id){
+  await loadStageAssets(id);
   loadStage(id);setup();DLG_LOG=[];resize();mode='busy';busy=true;renderConsole();
   // 曲はステージのボタンを押したところから、頭から流す（タイトル画面は無音）
   for(const a of Object.values(BGM))a.currentTime=0;
@@ -3592,8 +3628,10 @@ $('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return
 // 結果画面からタイトルへ戻る
 function toTitle(){bgm(null);closeSheet();loadStage('s1');setup();resize();mode='title';busy=false;renderConsole();refreshContinue();$('title').hidden=false;$('tPress').hidden=true;$('tMenu').hidden=false;titleArt()}
 $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();return}
-  snd('ok');unlockBgm();restore(d);$('title').hidden=true;resize();buildTerrain();renderConsole();bgm('player');toast(`${STAGES[d.stage].ep}「${STAGES[d.stage].name}」TURN ${d.turn} から再開`)};
+  snd('ok');unlockBgm();loadStageAssets(d.stage);restore(d);$('title').hidden=true;resize();buildTerrain();renderConsole();bgm('player');toast(`${STAGES[d.stage].ep}「${STAGES[d.stage].name}」TURN ${d.turn} から再開`)};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
+// ここから後に作る絵（新しく読む絵）は、作ったときにすぐ読み始める。地形のタイルと共通の絵は今のうちに読む
+IMG_LAZY=false;for(const t of Object.values(TER_FILE))need(`assets/sprites/tile_${t}.png`);
 </script>
