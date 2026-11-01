@@ -237,49 +237,6 @@ def stone_block(x0, y0, x1, y1, seed, brick=10):
     sd.line([x0, y0, x0, y1], fill=STONE_L); sd.line([x1, y0, x1, y1], fill=STONE_D)
 
 WALLISH = 'XHG'
-thick = .82 if STAGE == 'E8' else .5
-for x, y in cells('X'):
-    X, Y = x * CELL, y * CELL; w = CELL * thick; m = (CELL - w) / 2
-    if STAGE == 'E8' and x == 0:  # 帝都の城壁：盤の左はしいっぱいの厚い壁と、胸壁の凸凹
-        stone_block(X, Y - (0 if at(x, y - 1) in WALLISH else 0), X + CELL - 10, Y + CELL - 1, 100 + y, brick=14)
-        for k in range(4):
-            sd.rectangle([X + CELL - 16, Y + 4 + k * 16, X + CELL - 6, Y + 12 + k * 16], fill=STONE_L, outline=STONE_D)
-        continue
-    parts = [(X + m, Y + m, X + m + w, Y + m + w)]
-    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        if at(x + dx, y + dy) in WALLISH:
-            parts.append((X + (CELL / 2 if dx > 0 else 0 if dx < 0 else m), Y + (CELL / 2 if dy > 0 else 0 if dy < 0 else m),
-                          X + (CELL if dx > 0 else CELL / 2 if dx < 0 else m + w), Y + (CELL if dy > 0 else CELL / 2 if dy < 0 else m + w)))
-    for i, (a0, b0, a1, b1) in enumerate(parts): stone_block(a0, b0, a1, b1, 10 * x + y + i)
-# 崩れた塀の穴：両側だけ塀が残り、まん中は崩れて石くずが散らばる
-for x, y in cells('H'):
-    X, Y = x * CELL, y * CELL; w = CELL * thick; m = (CELL - w) / 2
-    vert = at(x, y - 1) in WALLISH or at(x, y + 1) in WALLISH
-    r = np.random.default_rng(50 + x + y)
-    for k in (0, 1):
-        if vert: stone_block(X + m, Y + (0 if k == 0 else CELL * .78), X + m + w, Y + (CELL * .22 if k == 0 else CELL), 60 + k)
-        else: stone_block(X + (0 if k == 0 else CELL * .78), Y + m, X + (CELL * .22 if k == 0 else CELL), Y + m + w, 60 + k)
-    for _ in range(18):
-        px_, py_ = X + int(r.integers(8, CELL - 12)), Y + int(r.integers(12, CELL - 14))
-        s_ = int(r.integers(3, 8)); sd.rectangle([px_, py_, px_ + s_, py_ + s_ - 1], fill=(150, 144, 132) if r.random() < .5 else (102, 98, 92), outline=(60, 58, 56))
-# 門：両脇に太い門柱、開いた木の扉
-for x, y in cells('G'):
-    X, Y = x * CELL, y * CELL
-    vert = at(x, y - 1) in WALLISH or at(x, y + 1) in WALLISH  # 壁が縦に続く（第8話の城門）
-    if vert:
-        for k, yy in ((0, Y - 4), (1, Y + CELL - 14)):
-            stone_block(X - 2, yy, X + CELL - 4, yy + 18, 80 + k, brick=12)
-        sd.rectangle([X + 6, Y + 14, X + CELL - 14, Y + CELL - 15], fill=(70, 56, 40))
-        for k, yy in ((0, Y + 14), (1, Y + CELL - 26)):
-            sd.polygon([(X + CELL - 14, yy), (X + CELL + 6, yy + (4 if k == 0 else 8)), (X + CELL + 6, yy + (8 if k == 0 else 12)), (X + CELL - 14, yy + 12)], fill=(122, 86, 50), outline=(60, 40, 22))
-        continue
-    lx, rx = at(x - 1, y) in 'X', at(x + 1, y) in 'X'
-    if lx: stone_block(X, Y + CELL * .18, X + 14, Y + CELL * .82, 90, brick=8)
-    if rx: stone_block(X + CELL - 14, Y + CELL * .18, X + CELL, Y + CELL * .82, 91, brick=8)
-    # 扉（内側へ開いている）
-    if lx: sd.polygon([(X + 14, Y + CELL * .3), (X + 30, Y + 4), (X + 34, Y + 7), (X + 18, Y + CELL * .34)], fill=(122, 86, 50), outline=(60, 40, 22))
-    if rx: sd.polygon([(X + CELL - 14, Y + CELL * .3), (X + CELL - 30, Y + 4), (X + CELL - 34, Y + 7), (X + CELL - 18, Y + CELL * .34)], fill=(122, 86, 50), outline=(60, 40, 22))
-# 倉庫の建物（D、つながったものは1棟）と大倉庫（B）：上から見た切妻の屋根
 def components(ch):
     seen = set(); out = []
     for c in cells(ch):
@@ -292,44 +249,6 @@ def components(ch):
                 if at(*n) == ch and n not in seen: seen.add(n); st_.append(n)
         out.append(comp)
     return out
-def roof(comp, base, seed, door=False, broken=True):
-    xs = [c[0] for c in comp]; ys = [c[1] for c in comp]
-    x0, y0, x1, y1 = min(xs) * CELL + 4, min(ys) * CELL + 4, (max(xs) + 1) * CELL - 4, (max(ys) + 1) * CELL - 6
-    r = np.random.default_rng(seed)
-    sd.rectangle([x0 + 4, y0 + 6, x1 + 5, y1 + 7], fill=(36, 34, 36))  # 影
-    horiz = (x1 - x0) >= (y1 - y0)
-    dk = tuple(int(c * .72) for c in base); lt = tuple(min(255, int(c * 1.18)) for c in base)
-    if horiz:
-        mid = (y0 + y1) // 2
-        sd.rectangle([x0, y0, x1, mid], fill=lt); sd.rectangle([x0, mid, x1, y1], fill=base)
-        for yy in range(y0 + 4, y1, 6): sd.line([x0, yy, x1, yy], fill=dk)
-        for xx in range(x0, x1, 9):
-            for yy in range(y0, y1, 12): sd.line([xx + (yy // 6 % 2) * 4, yy, xx + (yy // 6 % 2) * 4, yy + 5], fill=dk)
-        sd.line([x0, mid, x1, mid], fill=(46, 40, 36), width=3)
-    else:
-        mid = (x0 + x1) // 2
-        sd.rectangle([x0, y0, mid, y1], fill=lt); sd.rectangle([mid, y0, x1, y1], fill=base)
-        for xx in range(x0 + 4, x1, 6): sd.line([xx, y0, xx, y1], fill=dk)
-        for yy in range(y0, y1, 9):
-            for xx in range(x0, x1, 12): sd.line([xx, yy + (xx // 6 % 2) * 4, xx + 5, yy + (xx // 6 % 2) * 4], fill=dk)
-        sd.line([mid, y0, mid, y1], fill=(46, 40, 36), width=3)
-    sd.rectangle([x0, y0, x1, y1], outline=(40, 34, 30), width=2)
-    if broken:  # 三十年放っておかれた屋根：ところどころ瓦が落ちて穴が開いている
-        for _ in range(len(comp)):
-            px_, py_ = int(r.integers(x0 + 8, x1 - 16)), int(r.integers(y0 + 8, y1 - 14))
-            sd.polygon([(px_, py_), (px_ + 10, py_ - 2), (px_ + 13, py_ + 7), (px_ + 3, py_ + 9)], fill=(24, 20, 20))
-    if door:  # 大倉庫の正面（南）の大扉。開いていて、中に爆薬の樽が見える
-        cx_ = (x0 + x1) // 2
-        sd.rectangle([cx_ - 22, y1 - 4, cx_ + 22, y1 + 4], fill=(28, 22, 18))
-        sd.polygon([(cx_ - 22, y1 + 4), (cx_ - 34, y1 + 14), (cx_ - 30, y1 + 16), (cx_ - 20, y1 + 6)], fill=(120, 84, 48), outline=(60, 40, 22))
-        sd.polygon([(cx_ + 22, y1 + 4), (cx_ + 34, y1 + 14), (cx_ + 30, y1 + 16), (cx_ + 20, y1 + 6)], fill=(120, 84, 48), outline=(60, 40, 22))
-for i, comp in enumerate(components('D')):
-    roof(comp, (92, 98, 106) if i % 2 else (108, 84, 66), 300 + i)
-if STAGE == 'E7':
-    for comp in components('B'): roof(comp, (118, 70, 52), 400, door=True)
-if STAGE == 'E8':
-    for comp in components('B'): roof(comp, (150, 74, 50), 500, door=False, broken=False)
-# 木箱と樽（第7話の資材の山）
 def crate(x, y, s_):
     sd.rectangle([x + 2, y + 3, x + s_ + 2, y + s_ + 3], fill=(40, 34, 30))
     sd.rectangle([x, y, x + s_, y + s_], fill=(156, 114, 64), outline=(70, 46, 24))
@@ -339,29 +258,115 @@ def barrel(x, y, rr, col=(124, 82, 46)):
     sd.ellipse([x - rr + 2, y - rr + 3, x + rr + 2, y + rr + 3], fill=(40, 34, 30))
     sd.ellipse([x - rr, y - rr, x + rr, y + rr], fill=col, outline=(56, 36, 20), width=2)
     sd.ellipse([x - rr + 4, y - rr + 4, x + rr - 4, y + rr - 4], outline=(70, 70, 70), width=2)
+
+# 塀・門・倉庫・橋の絵：ユーザーが描いたタイルの資料（docs/ref/e78-tiles-a.jpg。背景はマゼンタ）から切り抜く。
+# 斜め上から見た絵なので、マスの下のふちにそろえて貼り、上へはみ出してよい（山と同じ）。下の行のものほど後から貼る
+sys.path.insert(0, 'tools')
+from fantasy_tiles import magenta_alpha
+SHEET = np.asarray(Image.open('docs/ref/e78-tiles-a.jpg').convert('RGB'))
+def piece(box):
+    x0, y0, x1, y1 = box
+    return Image.fromarray(magenta_alpha(SHEET[y0:y1, x0:x1]), 'RGBA')
+P_WALL = piece((0, 42, 205, 250))        # 都の城壁（胸壁つき、横）
+P_GATE_CITY = piece((420, 42, 840, 250))  # 城門（塔が2つ）
+P_BRIDGE = piece((1010, 55, 1262, 196))   # 石の橋（橋げたの上の部分。アーチは使わない）
+P_GATE = piece((0, 298, 418, 525))       # 正門（石の門柱と木の扉）
+P_TALL = piece((425, 298, 628, 845))     # 細長い倉庫（妻側から見た縦長の絵）
+P_TALL2 = piece((636, 298, 840, 845))
+P_GRANARY = piece((848, 298, 1262, 600))  # 赤い瓦の大きな倉庫（扉と麦袋）
+P_BARN = piece((0, 568, 418, 845))       # 横長の古い倉庫（屋根に穴）
+P_DOCK = piece((848, 588, 1262, 795))    # 荷揚げ場の石段と小舟
+# 縦に通る塀は、横の塀の絵を90度回して使う（胸壁が横を向く）
+P_WALL_V = P_WALL.rotate(-90, expand=True)
+base = img.convert('RGBA')
+draws = []  # (下のふちのy, 順番, 関数)
+def put(im, x, y, w, h=None, bottom=None):
+    h = h or round(im.height * w / im.width)
+    im2 = im.resize((max(1, round(w)), max(1, round(h))), Image.LANCZOS)
+    yy = (bottom - h) if bottom is not None else y
+    base.alpha_composite(im2, (round(x), round(yy)))
+def later(by, fn): draws.append((by, len(draws), fn))
+
+wall_h = .62 if STAGE == 'E7' else .9   # 第7話は低い塀、第8話は都の高い城壁
+for x, y in cells('X'):
+    X, Y = x * CELL, y * CELL
+    h_n = at(x - 1, y) in WALLISH or at(x + 1, y) in WALLISH
+    v_n = at(x, y - 1) in WALLISH or at(x, y + 1) in WALLISH
+    if v_n or not h_n:  # 縦の塀（角も）
+        ww = CELL * (.9 if STAGE == 'E8' else .42)
+        later(Y + CELL, lambda X=X, Y=Y, ww=ww: put(P_WALL_V, X + (CELL - ww) / 2 - (CELL * .05 if STAGE == 'E8' else 0), Y - 2, ww, CELL + 4))
+    if h_n:  # 横の塀：となりの横の塀までつなぐ
+        x0 = X if at(x - 1, y) in WALLISH else X + CELL * .29
+        x1 = X + CELL if at(x + 1, y) in WALLISH else X + CELL * .71
+        later(Y + CELL * .8, lambda x0=x0, x1=x1, Y=Y: put(P_WALL, x0, 0, x1 - x0, CELL * wall_h, bottom=Y + CELL * .8))
+# 崩れた塀の穴：上下（または左右）に塀の切れはしが残り、まん中に石くずが散らばる
+for x, y in cells('H'):
+    X, Y = x * CELL, y * CELL; r = np.random.default_rng(50 + x + y)
+    vert = at(x, y - 1) in WALLISH or at(x, y + 1) in WALLISH
+    def rubble(X=X, Y=Y, r=r):
+        d_ = ImageDraw.Draw(base)
+        for _ in range(22):
+            px_, py_ = X + int(r.integers(10, CELL - 14)), Y + int(r.integers(14, CELL - 16))
+            s_ = int(r.integers(3, 9)); d_.rectangle([px_, py_, px_ + s_, py_ + s_ - 1], fill=(150, 144, 132) if r.random() < .5 else (102, 98, 92), outline=(60, 58, 56))
+    if vert:
+        ww = CELL * .42
+        later(Y + CELL * .3, lambda X=X, Y=Y, ww=ww: put(P_WALL_V.crop((0, 0, P_WALL_V.width, P_WALL_V.height // 4)), X + (CELL - ww) / 2, Y - 2, ww, CELL * .22))
+        later(Y + CELL, lambda X=X, Y=Y, ww=ww: put(P_WALL_V.crop((0, P_WALL_V.height * 3 // 4, P_WALL_V.width, P_WALL_V.height)), X + (CELL - ww) / 2, Y + CELL * .8, ww, CELL * .22))
+    later(Y + CELL * .5, rubble)
+# 門
+for comp in components('G'):
+    xs = [c[0] for c in comp]; ys = [c[1] for c in comp]
+    if STAGE == 'E8':  # 西の城壁の城門：塔の絵を、城壁のマスから右へ少しはみ出して貼る
+        X, Y = min(xs) * CELL, max(ys) * CELL
+        later(Y + CELL + 1, lambda X=X, Y=Y: put(P_GATE_CITY, X - CELL * .45, 0, CELL * 2.0, bottom=Y + CELL + 10))
+    else:  # 第7話の正門（2マス）
+        X0, X1, Y = min(xs) * CELL, (max(xs) + 1) * CELL, max(ys) * CELL
+        later(Y + CELL * .8, lambda X0=X0, X1=X1, Y=Y: put(P_GATE, X0 - CELL * .25, 0, X1 - X0 + CELL * .5, bottom=Y + CELL * .86))
+# 倉庫の建物（D）：横長は横長の倉庫、縦長は妻側から見た細長い倉庫
+for i, comp in enumerate(components('D')):
+    xs = [c[0] for c in comp]; ys = [c[1] for c in comp]
+    X0, X1, Y0, Y1 = min(xs) * CELL, (max(xs) + 1) * CELL, min(ys) * CELL, (max(ys) + 1) * CELL
+    if X1 - X0 >= Y1 - Y0:
+        im = P_BARN if i % 2 == 0 else P_BARN.transpose(Image.FLIP_LEFT_RIGHT)
+        later(Y1, lambda im=im, X0=X0, X1=X1, Y1=Y1: put(im, X0 - 2, 0, X1 - X0 + 4, bottom=Y1 + 2))
+    else:
+        im = P_TALL if i % 2 == 0 else P_TALL2
+        later(Y1, lambda im=im, X0=X0, X1=X1, Y1=Y1: put(im, X0 - 4, 0, X1 - X0 + 8, bottom=Y1 + 2))
+# 大倉庫・穀物倉庫（B、2マス）
+for comp in components('B'):
+    xs = [c[0] for c in comp]; ys = [c[1] for c in comp]
+    X0, X1, Y1 = min(xs) * CELL, (max(xs) + 1) * CELL, (max(ys) + 1) * CELL
+    later(Y1, lambda X0=X0, X1=X1, Y1=Y1: put(P_GRANARY, X0 - 4, 0, X1 - X0 + 8, bottom=Y1 + 2))
+    if STAGE == 'E7':  # 入口の脇に、赤い印の爆薬の樽
+        def bar(X0=X0, Y1=Y1):
+            global sd
+            sd = ImageDraw.Draw(base)
+            for k, dx in enumerate((8, 22, 106, 120)): barrel(X0 + dx, Y1 + 8 + (k % 2) * 4, 7, (150, 40, 34))
+        later(Y1 + 20, bar)
+# 木箱と樽（第7話の資材の山）
 if STAGE == 'E7':
     for x, y in cells('M'):
-        X, Y = x * CELL, y * CELL; r = np.random.default_rng(700 + x * 13 + y)
-        crate(X + 6, Y + 8, 24); crate(X + 32, Y + 14, 22); crate(X + 14, Y + 34, 22)
-        barrel(X + 46, Y + 46, 9); barrel(X + 12, Y + 22 + int(r.integers(26, 32)), 8)
-        crate(X + 18, Y + 18, 18)
-    # 大倉庫の入口の脇に、赤い印の爆薬の樽
-    for comp in components('B'):
-        x0 = min(c[0] for c in comp) * CELL; y1 = (max(c[1] for c in comp) + 1) * CELL
-        for k, dx in enumerate((10, 24, 100, 114)):
-            barrel(x0 + dx, y1 + 6 + (k % 2) * 4, 7, (150, 40, 34))
-# 橋（Q）：水の上に石の橋。両側に欄干
+        X, Y = x * CELL, y * CELL
+        def crates(X=X, Y=Y):
+            global sd
+            sd = ImageDraw.Draw(base)
+            r = np.random.default_rng(700 + X + Y)
+            crate(X + 6, Y + 8, 24); crate(X + 32, Y + 14, 22); crate(X + 14, Y + 34, 22)
+            barrel(X + 46, Y + 46, 9); barrel(X + 12, Y + 22 + int(r.integers(26, 32)), 8)
+            crate(X + 18, Y + 18, 18)
+        later(Y + CELL, crates)
+# 橋（Q）：橋げたの上の絵を90度回して、縦に渡す
 for x, y in cells('Q'):
     X, Y = x * CELL, y * CELL
     vert = at(x - 1, y) in 'WR' or at(x + 1, y) in 'WR'
-    if vert:
-        sd.rectangle([X + 12, Y - 6, X + CELL - 10, Y + CELL + 6], fill=(30, 40, 60))
-        stone_block(X + 10, Y - 6, X + CELL - 12, Y + CELL + 4, 900 + x, brick=12)
-        sd.rectangle([X + 16, Y - 6, X + CELL - 18, Y + CELL + 4], fill=(150, 140, 120))
-        for yy in range(Y - 4, Y + CELL + 4, 8): sd.line([X + 16, yy, X + CELL - 18, yy], fill=(122, 114, 98))
-    else:
-        stone_block(X - 6, Y + 10, X + CELL + 4, Y + CELL - 12, 950 + y, brick=12)
-        sd.rectangle([X - 6, Y + 16, X + CELL + 4, Y + CELL - 18], fill=(150, 140, 120))
+    im = P_BRIDGE.rotate(-90, expand=True) if vert else P_BRIDGE
+    if vert: later(Y, lambda im=im, X=X, Y=Y: put(im, X + CELL * .1, Y - 8, CELL * .8, CELL + 16))
+    else: later(Y, lambda im=im, X=X, Y=Y: put(im, X - 8, Y + CELL * .1, CELL + 16, CELL * .8))
+# 第8話：北の運河の岸に、荷揚げ場の石段と小舟（飾り）
+if STAGE == 'E8':
+    later(CELL * 1.3, lambda: put(P_DOCK, CELL * 7.2, 0, CELL * 1.7, bottom=CELL * 1.35))
+for _, _, fn in sorted(draws, key=lambda t: (t[0], t[1])): fn()
+img = base.convert('RGB')
 # 第7話は夕方：少し暗く、赤みのある光
 if STAGE == 'E7':
     a = np.asarray(img).astype(float)

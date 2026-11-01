@@ -1849,8 +1849,8 @@ const STAGES={
   // 決まったターン数が過ぎたら負け（ST.turnLimit：そのターンの敵フェイズが終わったら倉庫が爆破される。会話は loseBy.time）
   turnLimit:6,
   terName:{B:'兵站倉庫',M:'資材の山',D:'倉庫',G:'正門'},
-  // 敷地の中で戦うと砦の背景（資材の山の上も）。塀の外の野原はふつうの平地
-  battleBg:{M:'fort'},
+  // 倉庫の敷地（夕方）の戦闘背景。塀の外の林だけは森の背景
+  battleBg:{P:'depot',M:'depot',G:'depot',H:'depot',B:'depot'},
   goal:'勝利：6ターン以内にベルトルト機を撃破／敗北：6ターン目の敵フェイズが終わる・カラドリウス撃墜',
   roster:[
    ['zekt_b','ally',2,10],['caladrius','ally',4,10],['lance','ally',5,10],['zekt_o','ally',7,10],['schutze','ally',3,11],['cannon','ally',4,11],['truck','ally',6,11],
@@ -3200,7 +3200,7 @@ const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',cal
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
 const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort',R:'water',S:'water',X:'fort',D:'fort',H:'fort',G:'fort',Q:'water'};
-const BATTLE_BG={};for(const f of[...Object.values(BATTLE_BG_FILE),'bandit','ford','castle_night'])if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
+const BATTLE_BG={};for(const f of[...Object.values(BATTLE_BG_FILE),'bandit','ford','castle_night','depot'])if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
 // 話ごとに地形の戦闘背景を差し替える（ST.battleBg。第2話は谷の道も岩の谷、砦は盗賊の砦の背景）
 const battleBgOf=t=>BATTLE_BG[(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t]];
 function playBattle(att,def,strikes){

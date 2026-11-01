@@ -1,6 +1,6 @@
 # 帝国編 第7話「兵站局の判」 マス（マップのタイル）の指示文
 
-> 今のマップ（`assets/stage_e7_map.png`）の塀・門・倉庫・木箱は、`tools/build_map.py` で仮に描いたもの。下の絵ができたら差し替える。
+> できあがり：1と2はユーザーが第8話の分とまとめて描いた `docs/ref/e78-tiles-a.jpg`（と別案の `e78-tiles-b.jpg`）。塀・正門・倉庫（横長・縦長）・大倉庫は `tools/build_map.py` がそこから切り抜いて貼る（縦の塀は横の塀の絵を90度回す）。崩れた塀の穴と木箱・樽は絵がないので、今も `build_map.py` で描く。戦闘の背景は `docs/ref/battle-depot.jpg` → `assets/bg/battle_depot.jpg`（使う。第7話の battleBg の depot）。
 
 添付：`docs/ref/fantasy-tiles.jpg`（今の地形タイルの資料。この形式と絵柄で描くと、森・山・村とそろう）
 切り抜きはこちらでするので、資料の文字や区切りはあってよい。
