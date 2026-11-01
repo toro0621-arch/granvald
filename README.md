@@ -12,7 +12,7 @@ BGM はすべて OpenTracks（旧 DOVA-SYNDROME、https://opentracks.com/ ）の
 - 第5話、戦闘後の野営地から最後まで：「Radix」 — `assets/bgm/radix.dat`
 - 第6話、宮殿の大広間の場面：「山岳を目指して」 — `assets/bgm/palace.dat`
 - リディアたちの場面（第6話の後宮の庭）：「ロバンチェ」 — `assets/bgm/lidia.dat`
-- 暁の同盟の敵フェイズ（第8話）：（曲名を確認中） — `assets/bgm/dawn.dat`
+- 暁の同盟の敵フェイズ（第8話）：「炎神の吐息」 — `assets/bgm/dawn.dat`
 
 どれも音量をそろえるために再エンコードしています。
 OpenTracks の規約で「音源ファイルを容易にアクセス・複製できる状態での利用」が禁止されているため、mp3 はそのまま置かず、`tools/pack_bgm.py` で変換した `.dat` を置いてゲーム内で元に戻して再生しています（ローカルで `index.html` を直接開いた場合は BGM が鳴りません。ローカルで鳴らすときは `python3 -m http.server` などで開いてください）。
