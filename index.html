@@ -465,62 +465,64 @@ const ROAD_E6=[
  ".....#....",
  "....##....",
  "....#....."];
-// 帝国編 第7話「兵站局の判」：北に古い兵站倉庫（B、2マス）。倉庫のまわりに資材の山（M）。味方は南から
+// 帝国編 第7話「兵站局の判」：石の塀（X）で囲まれた古い兵站倉庫の敷地。南の正門（G）と、塀の崩れた穴（H）が西と東に1つずつ。
+// 敷地の中は倉庫の建物（D、通れない）が並び、そのあいだが通路。いちばん奥の大倉庫（B、2マス）にベルトルト。資材の山（M）は木箱と樽。味方は塀の外の南から
 const MAP_E7=[
- "FFPPBBPPFF",
- "FPPPPPPPPF",
- "PPMPPPPMPP",
- "PPPPPPPPPP",
- "FPPMPPMPPF",
- "PPPPPPPPPP",
- "PFPPPPPPFP",
- "PPPPPPPPPP",
- "FPPPFFPPPF",
- "PPPPPPPPPP",
+ "PXDDBBDDXP",
+ "PXPPPPPPXP",
+ "FXMPPPPMXF",
+ "PXPDPPDPHP",
+ "PXPDPPDPXP",
+ "PXPDPPDPXP",
+ "PHMPPPPMXP",
+ "PXDDPPDDXP",
+ "FXPMPPMPXF",
+ "PXXXGGXXXP",
  "PPPPPPPPPP",
  "FFPPPPPPFF"];
-// 南から倉庫へ続く道（見た目だけ）
+// 道は描かない（敷地の中は踏み固めた土）
 const ROAD_E7=[
  "..........",
- "....##....",
- "....#.....",
- "....#.....",
- "....#.....",
- "....#.....",
- "....#.....",
- "....#.....",
- "...##.....",
- "...#......",
- "...#......",
- "...#......"];
-// 帝国編 第8話「夜明けの印」：北に運河（W）と北の橋へ続く道。運河沿いの穀物倉庫（B、2マス）と倉庫街（C）。南に林
-const MAP_E8=[
- "WWWWPPWWWW",
- "PPPPPPPPPP",
- "FPCCBBCCPF",
- "PPCPPPPCPP",
- "PPPPPPPPPP",
- "FPPPPPPPPF",
- "PPFPPPPFPP",
- "PPPPPPPPPP",
- "FPPPFPPPPF",
- "PFPPPPPFPP",
- "FFPPPPPPFF",
- "FFFPPPPFFF"];
-// 南の林から倉庫へ、倉庫から北の橋へ続く道（見た目だけ）
-const ROAD_E8=[
- "....##....",
- "....##....",
  "..........",
- "....##....",
- "....#.....",
- "....#.....",
- "....#.....",
- "....##....",
- ".....#....",
- ".....#....",
- ".....#....",
- ".....#...."];
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ "..........",
+ ".........."];
+// 帝国編 第8話「夜明けの印」：北に運河（W）と北の橋（Q）。運河沿いの穀物倉庫（B、2マス）と倉庫街（C）。西の端は帝都の東の城壁（X）と城門（G）。
+// まん中を運河の支流（R、渡れない）が横切り、渡れるのは橋（Q）2本だけ。同盟は支流の南から来る。南に林
+const MAP_E8=[
+ "XWWWWWQWWW",
+ "XPPPPPPPPP",
+ "XPCCBBCCPP",
+ "GPCPPPPCPP",
+ "XPPPPPPPPP",
+ "XPPPPPPPPP",
+ "XRQRRRRQRR",
+ "XPPPPPPPPP",
+ "XPFPPPPFPP",
+ "XPPPPPPPPP",
+ "XFPPFPPPFF",
+ "XFFPPPPFFF"];
+// 南の林から2本の橋をわたって倉庫へ、倉庫から北の橋と城門へ続く道（見た目だけ）
+const ROAD_E8=[
+ "......#...",
+ ".######...",
+ ".#........",
+ "##........",
+ "..######..",
+ "..#....#..",
+ "..........",
+ "..#....#..",
+ "..#....#..",
+ "..#....#..",
+ "..........",
+ ".........."];
 // 今のステージの地形（loadStage で切り替える）
 let MAP=MAP_S1,ROAD=ROAD_S1;
 const TER={
@@ -534,7 +536,14 @@ const TER={
  E:{n:'帝国基地',c:1,d:.20,e:15,heal:true},
  // 帝国編 第3話：川（R）は渡れない。浅瀬（S）だけ歩いて渡れるが、足を取られる
  R:{n:'川',c:99,d:0,e:-10},
- S:{n:'浅瀬',c:2,d:0,e:-10}
+ S:{n:'浅瀬',c:2,d:0,e:-10},
+ // 帝国編 第7話：塀（X）と倉庫の建物（D）は通れない。崩れた塀の穴（H）は狭くて足を取られる。門（G）
+ // 帝国編 第8話：橋（Q）。運河の支流は川（R）と同じく渡れない
+ X:{n:'塀',c:99,d:0,e:0},
+ D:{n:'建物',c:99,d:0,e:0},
+ H:{n:'崩れた塀',c:2,d:.10,e:5},
+ G:{n:'門',c:1,d:.10,e:5},
+ Q:{n:'橋',c:1,d:0,e:-5}
 };
 function W(name,type,pow,min,max,o={}){return{name,type,pow,min,max,en:o.en||0,maxAmmo:o.ammo||0,ammo:o.ammo||0,will:o.will||0,hit:o.hit||0,fx:o.fx||(type==='格'?'slash':'beam')}}
 const SPIRITS={
@@ -1839,17 +1848,21 @@ const STAGES={
   music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E7,road:ROAD_E7,bg:'assets/stage_e7_map.png',leader:'caladrius',bossOnly:true,
   // 決まったターン数が過ぎたら負け（ST.turnLimit：そのターンの敵フェイズが終わったら倉庫が爆破される。会話は loseBy.time）
   turnLimit:6,
-  terName:{B:'兵站倉庫',M:'資材の山'},
+  terName:{B:'兵站倉庫',M:'資材の山',D:'倉庫',G:'正門'},
+  // 敷地の中で戦うと砦の背景（資材の山の上も）。塀の外の野原はふつうの平地
+  battleBg:{M:'fort'},
   goal:'勝利：6ターン以内にベルトルト機を撃破／敗北：6ターン目の敵フェイズが終わる・カラドリウス撃墜',
   roster:[
    ['zekt_b','ally',2,10],['caladrius','ally',4,10],['lance','ally',5,10],['zekt_o','ally',7,10],['schutze','ally',3,11],['cannon','ally',4,11],['truck','ally',6,11],
-   // 倉庫の中（入口）にベルトルト。倉庫から動かない（倉庫は回復地形）。両脇を護衛が固める
+   // 奥の大倉庫の入口にベルトルト。倉庫から動かない（倉庫は回復地形）。両脇を護衛が固める
    ['logi','foe',4,0,{guard:true,guardRange:1,guardTurn:99}],
    ['depotz','foe',3,1,{guard:true,guardRange:2,guardTurn:4}],['depotz','foe',5,1,{guard:true,guardRange:2,guardTurn:4}],
-   // 帳簿から消えた「廃棄済み」のゼクト
-   ['depotz','foe',2,2],['depotz','foe',7,2],['depotz','foe',3,3],['depotz','foe',6,3],['depotz','foe',1,4],['depotz','foe',8,4],['depotz','foe',4,6],['depotz','foe',5,6],
+   // 正門の内側の木箱の陰で待ち構える2機（門に近づくまで動かない）
+   ['depotz','foe',3,8,{guard:true,guardRange:2,guardTurn:99}],['depotz','foe',6,8,{guard:true,guardRange:2,guardTurn:99}],
+   // 帳簿から消えた「廃棄済み」のゼクト：まん中の通路と、東西の通路
+   ['depotz','foe',4,6],['depotz','foe',5,6],['depotz','foe',2,4],['depotz','foe',7,4],['depotz','foe',2,2],['depotz','foe',7,2],
    // 2ターン目の敵フェイズに、倉庫の奥から
-   ['depotz','foe',5,0,{off:true,arrive:2}],['depotz','foe',3,0,{off:true,arrive:2}],['depotz','foe',6,0,{off:true,arrive:2}],['depotz','foe',2,1,{off:true,arrive:2}]],
+   ['depotz','foe',4,2,{off:true,arrive:2}],['depotz','foe',5,2,{off:true,arrive:2}],['depotz','foe',2,1,{off:true,arrive:2}],['depotz','foe',7,1,{off:true,arrive:2}]],
   pre:[
    {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'teito'},
    {who:'',text:'反乱の首謀者ブルクハルト男爵は、峠で命を狙われながらも、帝都へ送り届けられた。',narr:1},
@@ -2073,13 +2086,13 @@ const STAGES={
    {who:'',text:'伸ばしすぎた手は、腕ごと失う。',narr:1},
    {who:'',text:'その言葉の意味を、エルンストはまもなく知ることになる。',narr:1},
    {who:'',text:'次回、第8話「夜明けの印」',narr:1}],
-  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは倉庫の入口から動かず、倉庫の中で傷も直す。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'},
+  loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは奥の倉庫の入口から動かず、傷も直す。正門は守りが固い。西と東の塀の崩れた穴からも入れるが、遠回りになる。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'},
  // 帝国編 第8話。台本は docs/scenario/empire-08.md
  e8:{id:'e8',name:'夜明けの印',label:'帝国編 第8話',ep:'第8話',lv:8,syn:'帝都の麦の倉庫を次々と焼く「暁の同盟」。取り締まりに回されたファルケン大隊は、新月の夜、運河沿いの倉庫で共和国の機兵をそろえた部隊と向き合う。',
   music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E8,road:ROAD_E8,bg:'assets/stage_e8_map.png',leader:'caladrius',
   // 新月の夜の戦い。どこで戦っても夜の背景
-  battleBg:{P:'castle_night',F:'castle_night',C:'castle_night',B:'castle_night',W:'castle_night'},
-  terName:{B:'穀物倉庫',C:'倉庫街',W:'運河'},
+  battleBg:{P:'castle_night',F:'castle_night',C:'castle_night',B:'castle_night',W:'castle_night',Q:'castle_night',G:'castle_night'},
+  terName:{B:'穀物倉庫',C:'倉庫街',W:'運河',R:'運河',X:'城壁',G:'城門'},
   // 撃墜されずに退く機体（ST.retreat：{key, below（最大HPに対する割合）, lines}）。退いたら勝ち（ボスのとき）
   retreat:{key:'esta_cap',below:.35,lines:[
    {who:'同盟の隊長',text:'……ここまでか。全機、撤収！　動けなくなった機体の者は、機体を捨てて第二の退き道へ！　捕まった者は、何も話すな！'},
@@ -2088,14 +2101,14 @@ const STAGES={
    {who:'同盟の隊長',text:'ファルケン。……あんたとは、また会いそうだ。'}]},
   goal:'勝利：同盟の隊長機を退かせる（HPを3分の1ほどまで削る）／敗北：カラドリウス撃墜',
   roster:[
-   // 倉庫の前で待ち伏せ
-   ['caladrius','ally',4,3],['lance','ally',5,3],['zekt_b','ally',3,4],['zekt_o','ally',6,4],['cannon','ally',4,2],['schutze','ally',5,2],['truck','ally',7,3],
-   // 暁の同盟の部隊：前衛（盾）、後衛（砲）、隊長
-   ['esta','foe',3,6],['esta','foe',4,6],['esta','foe',5,6],['esta','foe',6,6],
+   // 倉庫の前で待ち伏せ（運河の支流の北）
+   ['caladrius','ally',4,4],['lance','ally',5,4],['zekt_b','ally',3,5],['zekt_o','ally',6,5],['cannon','ally',4,3],['schutze','ally',5,3],['truck','ally',7,4],
+   // 暁の同盟の部隊：支流の南。前衛（盾）が2本の橋をねらい、後衛（砲）が支流ごしに撃つ
+   ['esta','foe',2,7],['esta','foe',3,7],['esta','foe',6,7],['esta','foe',7,7],
    // 隊長は隊列のいちばん後ろ（南の林の手前）で指揮をとる（3ターン目まで、味方が2マス以内に来るまで動かない）
-   ['esta_cap','foe',5,11,{guard:true,guardRange:2,guardTurn:3}],['esta_mortar','foe',3,8],['esta_mortar','foe',6,8],['esta','foe',4,9],['esta','foe',6,10],
-   // 2ターン目の敵フェイズに、荷車の護衛が左右から倉庫の裏へ回り込む
-   ['esta','foe',0,9,{off:true,arrive:2}],['esta','foe',9,9,{off:true,arrive:2}]],
+   ['esta_cap','foe',5,11,{guard:true,guardRange:2,guardTurn:3}],['esta_mortar','foe',3,9],['esta_mortar','foe',6,9],['esta','foe',4,10],['esta','foe',6,10],
+   // 2ターン目の敵フェイズに、荷車の護衛が小舟で運河の下流（東）から、倉庫の裏の荷揚げ場へ回り込む
+   ['esta','foe',9,1,{off:true,arrive:2}],['esta','foe',9,2,{off:true,arrive:2}]],
   pre:[
    {who:'',text:'大陸暦598年、夏。',narr:1,bg:'map',mark:'teito'},
    {who:'',text:'廃棄されたはずの機兵を盗賊や男爵に流していたのは、軍務省の兵站局長だった。',narr:1},
@@ -2309,7 +2322,7 @@ const STAGES={
    {who:'',text:'帝都の外には、夜明けの印を掲げた部隊が潜んでいる。',narr:1},
    {who:'',text:'その向こうに、南の共和国の影を見ながら、ファルケン大隊は帝都を発った。',narr:1},
    {who:'',text:'帝都編　完',narr:1}],
-  loseHint:'同盟の隊長機のHPを3分の1ほどまで削れば、部隊ごと退いていく。前衛の盾は固いので、砲で後ろから削ろう。'}
+  loseHint:'同盟の隊長機のHPを3分の1ほどまで削れば、部隊ごと退いていく。運河の支流を渡れるのは2本の橋だけ。前衛の盾は固いので、橋の出口で待ち受けて砲で削ろう。'}
 };
 // エピソード一覧に出す話の順。番外編（s1）は非公開（データは残す。ユーザーの希望）
 const STAGE_ORDER=['e1','e2','e3','e4','e5','e6','e7','e8'];
@@ -3167,7 +3180,7 @@ const ATK_KIND={grand:'格',sylph:'射',bulwark:'射',raven:'格',zekt:'射',cal
 // 必殺技＝使うのに気力が要る武器。カットインを入れる
 const isSpecial=w=>(w.will||0)>0;
 // 戦闘画面の背景画（戦うマス＝攻撃を受ける側のマスの地形で選ぶ）。元は docs/ref/battle-bg.jpg を6つに切り分けたもの
-const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort',R:'water',S:'water'};
+const BATTLE_BG_FILE={P:'plain',F:'forest',M:'mountain',K:'mountain',W:'water',C:'village',B:'fort',E:'fort',R:'water',S:'water',X:'fort',D:'fort',H:'fort',G:'fort',Q:'water'};
 const BATTLE_BG={};for(const f of[...Object.values(BATTLE_BG_FILE),'bandit','ford','castle_night'])if(!BATTLE_BG[f])BATTLE_BG[f]=img(`assets/bg/battle_${f}.jpg`);
 // 話ごとに地形の戦闘背景を差し替える（ST.battleBg。第2話は谷の道も岩の谷、砦は盗賊の砦の背景）
 const battleBgOf=t=>BATTLE_BG[(ST.battleBg&&ST.battleBg[t])||BATTLE_BG_FILE[t]];
@@ -3458,7 +3471,7 @@ async function enemyAct(e){
   }else if(!guard){
     let tgt=null,td=1e9;for(const p of alive('ally')){const d=dist(p,e);if(d<td){td=d;tgt=p}}
     // 渡れない地形（川）があるステージでは、まっすぐの距離ではなく、地形をたどった道のりで近づく（川岸で止まらないように）
-    const pd=MAP.some(r=>r.includes('R'))?pathDist(tgt):null;
+    const pd=MAP.some(r=>[...r].some(c=>TER[c].c>=99))?pathDist(tgt):null;
     if(tgt){let bt=null,bd=1e9;for(const t of r.tiles){const d=(pd?pd[t.y][t.x]:Math.abs(t.x-tgt.x)+Math.abs(t.y-tgt.y))-terOf(t.x,t.y).e*.02;if(d<bd){bd=d;bt=t}}
       if(bt)await animateMove(e,r.path(bt.x,bt.y))}
   }
