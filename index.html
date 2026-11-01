@@ -2872,7 +2872,13 @@ const MAP_PLACES={
  teito:{x:54.8,y:17.0,label:'帝都'}
 };
 const BG_SIZE={map:[848,1264]};
-for(const f of Object.values(BG))new Image().src=f;
+// 背景画は起動時に全部読んでおく（Image を持っておかないと、スマホでは読み込みが途中で捨てられることがある）。
+// 読み込みに失敗したら img() が読み直す。読み直したときは URL が変わるので、表示には読めた URL（bgUrl）を使う
+const BG_IMG={};for(const[k,f]of Object.entries(BG))BG_IMG[k]=img(f);
+const bgReady=k=>{const i=BG_IMG[k];return !!(i&&i.complete&&i.naturalWidth)};
+const bgUrl=k=>bgReady(k)?BG_IMG[k].src:BG[k];
+// 背景画が読み終わるまで待つ（最長 ms ミリ秒）。会話の最初の背景が真っ黒のまま出ないように
+const waitBg=(k,ms=6000)=>new Promise(r=>{if(!k||!BG_IMG[k]||bgReady(k))return r();const t=setTimeout(r,ms);img(BG[k],()=>{clearTimeout(t);r()})});
 // 会話ログ：流れた会話を覚えておき、会話中の「ログ」ボタンや設定から読み返せる（話を始めるたびに空にする）
 let DLG_LOG=[];
 function showLog(){
@@ -2882,12 +2888,14 @@ function showLog(){
 }
 $('dLogBtn').onclick=e=>{e.stopPropagation();snd('sel');showLog()};
 $('dLogClose').onclick=e=>{e.stopPropagation();snd('cancel');$('dLog').hidden=true};
-function dialog(lines,o={}){
+async function dialog(lines,o={}){
+  // 最初に出す背景画がまだ読めていなければ、読み終わるまで少し待つ（大陸の地図が黒いまま出ないように）
+  const first=lines.find(l=>'bg' in l);await waitBg((first&&first.bg)||o.bg);
   return new Promise(res=>{
     const d=$('dialog'),mk=$('dMark');let i=0,bg=o.bg||null,mark=null;
     // 行に solid:1 があれば、マップの上の会話でもその行だけマップを隠して背景を出す
     let solid=!!o.solid;
-    const setBg=()=>{d.classList.toggle('solid',solid);d.classList.toggle('onmap',!solid);const url=solid&&bg&&BG[bg];d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
+    const setBg=()=>{d.classList.toggle('solid',solid);d.classList.toggle('onmap',!solid);const url=solid&&bg&&BG[bg]&&bgUrl(bg);if(url&&!bgReady(bg)){const want=bg;img(BG[bg],()=>{if(!d.hidden&&bg===want)setBg()})}d.classList.toggle('hasbg',!!url);const whole=url&&BG_WHOLE.includes(bg);d.style.backgroundImage=url?(whole?`url(${url})`:`linear-gradient(#000b,#0000 45%),url(${url})`):'';d.style.backgroundRepeat=whole?'no-repeat':'';if(!whole){d.style.backgroundSize='';d.style.backgroundPosition='';d.classList.remove('side')}layout()};
     // 地図（BG_WHOLE）の置き方：縦向きは文字枠（画面の上）の下の空いたところに収める。横向きで右に文字枠を置く幅があれば、地図を左、文字枠を右に並べる
     let box=null;
     const layout=()=>{const url=solid&&bg&&BG[bg],sz=BG_SIZE[bg];box=null;
