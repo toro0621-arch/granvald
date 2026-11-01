@@ -1,6 +1,6 @@
 # 帝国編 第8話「夜明けの印」 キャラ（顔グラ）の指示文
 
-> できあがり：`docs/ref/empire-08-faces.png` → `assets/faces/mb_captain.png`（同盟の隊長）・`elsa.png`・`hans.png`・`comrade_mother.png`（全員使う。名前の札はパネルの下に描かれたので、頭は欠けずに切れた。`python3 tools/faces_e8.py`）
+> できあがり：`docs/ref/empire-08-faces.png` → `assets/faces/mb_captain.png`（同盟の隊長）・`elsa.png`・`hans.png`・`comrade_mother.png`（全員使う。名前の札はパネルの下に描かれたので、頭は欠けずに切れた。`python3 tools/faces_all.py`）
 
 添付：`docs/ref/empire-07-faces.png`（第7話の顔グラの資料。この形式で描くと絵柄がそろう）
 切り抜きはこちらでするので、資料の文字やパネルはあってよい。
