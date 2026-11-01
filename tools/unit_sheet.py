@@ -51,9 +51,14 @@ POCKETS = {
     'eisenwacht': [(285, 166)],
     'eisenwacht_attack': [(177, 107), (169, 167), (173, 192)],
     'eisenwacht_down': [(88, 74), (23, 108), (18, 130)],
+    # エスタ：戦闘用・歩行・正面・背面の絵の、腕と胴の間
+    'esta': [(254, 181), (136, 184), (245, 157)],
+    'esta_walk': [(90, 115), (77, 136), (150, 122), (167, 172)],
+    'esta_down': [(92, 147), (85, 115), (38, 103), (29, 120)],
+    'esta_up': [(22, 109), (74, 84), (79, 107)],
 }
 # 絵ごとの判定のゆるさ（ドット絵は背景の残りが少し暗めなので、明るさの下限を下げる）
-POCKET_OPTS = {'schutze_idle': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_attack': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_down': {'pale_min': 130, 'sat_max': 75}}
+POCKET_OPTS = {'esta_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_down': {'pale_min': 130, 'sat_max': 75}, 'esta_up': {'pale_min': 130, 'sat_max': 75}, 'schutze_idle': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_attack': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_down': {'pale_min': 130, 'sat_max': 75}}
 # 別の絵にそろえる（名前 → {種類: 使う種類}）。ゼクト・ランスの待機は歩行の絵に統一（ユーザーの希望）
 SAME = {'lance': {'idle': 'walk'}}
 BIG = (318, 140, 752, 556)
