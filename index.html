@@ -2089,7 +2089,7 @@ const STAGES={
   loseHint:'6ターン目の敵フェイズが終わると倉庫が爆破される。ベルトルトは奥の倉庫の入口から動かず、傷も直す。正門は守りが固い。西と東の塀の崩れた穴からも入れるが、遠回りになる。周りのゼクトは無理に全部倒さず、道を開けて一気に押し込もう。'},
  // 帝国編 第8話。台本は docs/scenario/empire-08.md
  e8:{id:'e8',name:'夜明けの印',label:'帝国編 第8話',ep:'第8話',lv:8,syn:'帝都の麦の倉庫を次々と焼く「暁の同盟」。取り締まりに回されたファルケン大隊は、新月の夜、運河沿いの倉庫で共和国の機兵をそろえた部隊と向き合う。',
-  music:{pre:'story',start:'crisis',end:'story'},startSolid:true,map:MAP_E8,road:ROAD_E8,bg:'assets/stage_e8_map.png',leader:'caladrius',
+  music:{pre:'story',start:'crisis',end:'story',foe:'dawn'},startSolid:true,map:MAP_E8,road:ROAD_E8,bg:'assets/stage_e8_map.png',leader:'caladrius',
   // 新月の夜の戦い。どこで戦っても夜の背景
   battleBg:{P:'castle_night',F:'castle_night',C:'castle_night',B:'castle_night',W:'castle_night',Q:'castle_night',G:'castle_night'},
   terName:{B:'穀物倉庫',C:'倉庫街',W:'運河',R:'運河',X:'城壁',G:'城門'},
@@ -2769,7 +2769,7 @@ function snd(type){
 // farewell＝第5話でディートリヒが撃破されてから息を引き取るまで（会話の行の music で流す）
 // radix＝第5話の戦闘後、討伐軍の野営地の場面から最後まで
 // palace＝第6話の宮殿の場面（勲章の式の大広間）、lidia＝リディアたちの場面（第6話の後宮の庭）
-const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio(),radix:new Audio(),palace:new Audio(),lidia:new Audio()};
+const BGM={player:new Audio(),enemy:new Audio(),story:new Audio(),crisis:new Audio(),farewell:new Audio(),radix:new Audio(),palace:new Audio(),lidia:new Audio(),dawn:new Audio()};
 const BGM_KEY=new TextEncoder().encode('granvald-bgm-2026');
 function loadBgm(name){
   return fetch(`assets/bgm/${name}.dat`).then(r=>{if(!r.ok)throw new Error(r.status);return r.arrayBuffer()}).then(buf=>{
@@ -3403,7 +3403,8 @@ function playBattle(att,def,strikes){
 async function endPlayerPhase(){
   if(busy||over)return;
   busy=true;sel=null;reach=null;info=null;mode='busy';closeSheet();phase='enemy';renderConsole();
-  bgm('enemy');
+  // 敵フェイズの曲は、ステージの music.foe があればそれ（第8話の暁の同盟は dawn）
+  bgm((ST.music&&ST.music.foe)||'enemy');
   await banner('ENEMY PHASE','TURN '+turn,'#ff5163');
   await phaseEvents('foe');
   startOfPhase('foe');
