@@ -2887,7 +2887,9 @@ const BG_IMG={};for(const[k,f]of Object.entries(BG))BG_IMG[k]=img(f);
 const bgReady=k=>{const i=BG_IMG[k];return !!(i&&i.complete&&i.naturalWidth)};
 const bgUrl=k=>bgReady(k)?BG_IMG[k].src:webpOf(BG[k]);
 // 背景画が読み終わるまで待つ（最長 ms ミリ秒）。会話の最初の背景が真っ黒のまま出ないように
-const waitBg=(k,ms=8000)=>new Promise(r=>{if(!k||!BG_IMG[k]||bgReady(k))return r();need(BG[k]);const t=setTimeout(r,ms);img(BG[k],()=>{clearTimeout(t);r()})});
+// 同じ背景画は1回だけ待つ（話の始めと会話の始めで2回待たないように。待ちきれなかったときは、読み終わったところで背景が出る）
+const BG_WAITED=new Set();
+const waitBg=(k,ms=8000)=>new Promise(r=>{if(!k||!BG_IMG[k]||bgReady(k)||BG_WAITED.has(k))return r();BG_WAITED.add(k);need(BG[k]);const t=setTimeout(r,ms);img(BG[k],()=>{clearTimeout(t);r()})});
 // 会話ログ：流れた会話を覚えておき、会話中の「ログ」ボタンや設定から読み返せる（話を始めるたびに空にする）
 let DLG_LOG=[];
 function showLog(){
