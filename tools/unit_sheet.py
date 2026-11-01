@@ -60,9 +60,15 @@ POCKETS = {
     'esta_mortar_walk': [(145, 243)],
     'esta_mortar_idle': [(96, 136), (167, 137), (74, 176), (174, 181)],
     'esta_mortar_down': [(40, 87), (24, 128), (87, 99), (94, 134)],
+    # エスタ（隊長機）：戦闘用・待機・歩行・正面・背面の、両腕と胴の間
+    'esta_cap': [(250, 166), (132, 180)],
+    'esta_cap_idle': [(83, 124), (143, 122)],
+    'esta_cap_walk': [(87, 169), (170, 122)],
+    'esta_cap_down': [(78, 98), (28, 99), (22, 134), (84, 131)],
+    'esta_cap_up': [(22, 129), (91, 136)],
 }
 # 絵ごとの判定のゆるさ（ドット絵は背景の残りが少し暗めなので、明るさの下限を下げる）
-POCKET_OPTS = {'esta_mortar_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_mortar_idle': {'pale_min': 140, 'sat_max': 70}, 'esta_mortar_down': {'pale_min': 130, 'sat_max': 75}, 'esta_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_down': {'pale_min': 130, 'sat_max': 75}, 'esta_up': {'pale_min': 130, 'sat_max': 75}, 'schutze_idle': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_attack': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_down': {'pale_min': 130, 'sat_max': 75}}
+POCKET_OPTS = {'esta_cap_idle': {'pale_min': 140, 'sat_max': 70}, 'esta_cap_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_cap_down': {'pale_min': 130, 'sat_max': 75}, 'esta_cap_up': {'pale_min': 130, 'sat_max': 75}, 'esta_mortar_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_mortar_idle': {'pale_min': 140, 'sat_max': 70}, 'esta_mortar_down': {'pale_min': 130, 'sat_max': 75}, 'esta_walk': {'pale_min': 140, 'sat_max': 70}, 'esta_down': {'pale_min': 130, 'sat_max': 75}, 'esta_up': {'pale_min': 130, 'sat_max': 75}, 'schutze_idle': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_attack': {'pale_min': 140, 'sat_max': 70}, 'eisenwacht_down': {'pale_min': 130, 'sat_max': 75}}
 # 別の絵にそろえる（名前 → {種類: 使う種類}）。ゼクト・ランスの待機は歩行の絵に統一（ユーザーの希望）
 SAME = {'lance': {'idle': 'walk'}}
 BIG = (318, 140, 752, 556)
