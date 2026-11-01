@@ -252,7 +252,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 <div id="dialog" class="ov dlg" hidden>
   <div id="dMark" hidden><span class="ring"></span><span class="lbl"></span></div>
   <div class="msg" style="max-width:600px"><img class="face" id="dFace" alt="" hidden><div class="mtx"><div class="who" id="dWho"></div><div class="txt" id="dTxt"></div></div></div>
-  <div class="skip"><span>タップで次へ</span><button class="logbtn" id="dLogBtn" type="button">ログ</button></div>
+  <div class="skip"><span>タップで次へ</span><button class="logbtn" id="dLogBtn" type="button">ログ</button><button class="logbtn" id="dSkipBtn" type="button">スキップ</button></div>
 </div>
 <!-- 会話ログ（これまでの会話を読み返す） -->
 <div id="dLog" class="ov" hidden><div class="logbox"><div class="sh-title"><span>会話ログ</span></div><div id="dLogList"></div><div class="sh-actions"><button class="btn" id="dLogClose" type="button">閉じる</button></div></div></div>
@@ -2929,6 +2929,13 @@ async function dialog(lines,o={}){
     const onRs=()=>layout();addEventListener('resize',onRs);
     const show=()=>{const l=lines[i];if(l.do)l.do();DLG_LOG.push({who:l.who,text:l.text});if(DLG_LOG.length>600)DLG_LOG.shift();if(l.music)bgm(l.music);solid=!!(o.solid||l.solid)&&!l.onmap;/* 行に onmap:1 があれば、その行はマップを見せる */if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;setBg();setFace($('dFace'),l.narr?'':l.who);$('dWho').textContent=l.who;$('dWho').hidden=!l.who;$('dTxt').textContent=l.text;d.classList.toggle('narr',!!l.narr);if(!d.hidden)layout()};
     show();d.hidden=false;layout();
+    // スキップ：今の会話を飛ばす。「作戦目標」の行があればそこで止める（勝利条件は読ませる）。
+    // 飛ばした行の do（マップの機体を消すなど）・曲・背景の切り替えはそのまま行い、会話ログにも残す
+    $('dSkipBtn').onclick=e=>{e.stopPropagation();
+      const t=lines.findIndex((l,k)=>k>i&&l.who==='作戦目標'),end=t<0?lines.length:t;
+      for(let k=i+1;k<end;k++){const l=lines[k];if(l.do)l.do();if(l.music)bgm(l.music);if('bg' in l){bg=l.bg;mark=null}if('mark' in l)mark=l.mark;DLG_LOG.push({who:l.who,text:l.text})}
+      if(DLG_LOG.length>600)DLG_LOG.splice(0,DLG_LOG.length-600);
+      i=end-1;d.onclick()};
     d.onclick=()=>{i++;snd('sel');if(i>=lines.length){d.hidden=true;d.onclick=null;d.classList.remove('hasbg','side','onmap');d.style.backgroundImage='';d.style.backgroundSize='';d.style.backgroundPosition='';mk.hidden=true;removeEventListener('resize',onRs);res()}else show()};
   });
 }
