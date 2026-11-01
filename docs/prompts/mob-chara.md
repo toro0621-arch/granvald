@@ -3,6 +3,8 @@
 これまで、名前のない兵士（モブ）には顔グラがなかった。戦闘中にモブが話す（攻撃のときのひとこと）と、顔の枠が空いて違和感があった（2026-11-01 ユーザーの指摘）。
 1人の顔を、同じ役の全員で使い回す（例：男爵家の騎士は全員同じ顔）。
 
+> できあがり：`docs/ref/mob-faces-a.png` → `assets/faces/bandit.png`・`baron_knight.png`・`soldier.png`・`hitman.png`、`docs/ref/mob-faces-b.png` → `dawn_soldier.png`・`dawn_gunner.png`・`official.png`・`hagen.png`（全員使う。`python3 tools/faces_all.py`）。同盟の後衛（迫撃砲の機兵）のパイロット名は「同盟の砲手」にした。
+
 添付：`docs/ref/empire-08-faces.png`（第8話の顔グラの資料。この形式で描くと絵柄がそろう。名前の札がパネルの下にあるので、頭が欠けずに切れる）
 切り抜きはこちらでするので、資料の文字やパネルはあってよい。
 

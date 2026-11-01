@@ -756,7 +756,7 @@ const TPL={
  // 後衛＝肩の迫撃砲と小銃
  esta_mortar:{name:'エスタ（砲）',kind:'drone',hp:2200,en:110,armor:700,mob:70,move:4,
   col:{main:'#3a3a40',sub:'#b8a070',acc:'#e8862a',eye:'#7dff7a'},
-  pilot:{name:'同盟兵',melee:100,shoot:135,hit:130,eva:100,skill:115,sp:0,spirits:[]},
+  pilot:{name:'同盟の砲手',melee:100,shoot:135,hit:130,eva:100,skill:115,sp:0,spirits:[]},
   lines:['砲撃、始め！','前衛を援護する！'],
   weapons:[W('小銃','射',1100,1,3,{fx:'bullet'}),W('迫撃砲','射',1700,2,5,{fx:'shell'})]},
  // 同盟の隊長の機体（ボス）。noKill：撃墜されない（HPが1で止まる）。HPが半分を切ると退く（ST.retreat）
@@ -2853,7 +2853,7 @@ function openSheet(html){sheet.innerHTML=`<div class="in">${html}</div>`;sheet.h
 function banner(text,sub,color){return new Promise(r=>{const b=$('banner');b.innerHTML=`<div class="b" style="color:${color}">${text}<small>${sub}</small></div>`;b.hidden=false;snd('phase');setTimeout(()=>{b.hidden=true;r()},1250)})}
 // 会話を1行ずつ表示する。narr はナレーション（名前なし）。solid:true はマップを隠す（戦闘前・クリア後の場面）
 // パイロットの顔グラ（設定画から切り抜いた assets/faces/*.png）。名前で引く
-const FACE={'同盟の隊長':'mb_captain','エルザ':'elsa','ハンス':'hans','戦友の母':'comrade_mother','シュタール':'stahl','ユリウス':'julius','ベルトルト':'berthold','皇帝':'emperor','マリアンネ':'marianne','リディア':'lidia','ザルグ':'zarg','ヴェルナ':'werner','フェリクス':'felix','近衛の小隊長':'guard','刺客の頭':'assassin','ヴォルフ':'wolf','ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'baron','ディートリヒ':'dietrich','ヨハン':'johann','農民兵':'peasant','レオ':'leo','ゲルト':'gert','懲罰兵':'penal','エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara','伝令':'messenger','村人':'villager','村長':'elder',
+const FACE={'盗賊兵':'bandit','男爵家の騎士':'baron_knight','砲兵':'baron_knight','帝国兵':'soldier','護送兵':'soldier','兵站局の兵':'soldier','若い伝令':'soldier','刺客':'hitman','同盟兵':'dawn_soldier','同盟の砲手':'dawn_gunner','兵站局の役人':'official','儀典官':'official','ハーゲンの部族兵':'hagen','同盟の隊長':'mb_captain','エルザ':'elsa','ハンス':'hans','戦友の母':'comrade_mother','シュタール':'stahl','ユリウス':'julius','ベルトルト':'berthold','皇帝':'emperor','マリアンネ':'marianne','リディア':'lidia','ザルグ':'zarg','ヴェルナ':'werner','フェリクス':'felix','近衛の小隊長':'guard','刺客の頭':'assassin','ヴォルフ':'wolf','ニーナ':'nina','補給兵':'supply','ブルクハルト男爵':'baron','ディートリヒ':'dietrich','ヨハン':'johann','農民兵':'peasant','レオ':'leo','ゲルト':'gert','懲罰兵':'penal','エルンスト':'ernst','ブルーノ':'bruno','オットー':'otto','マティアス':'mattias','ボルツ':'boltz','カスパー':'kasper','クラーラ':'clara','伝令':'messenger','村人':'villager','村長':'elder',
  '鷹野 迅':'jin','天城 ミオ':'mio','岩瀬 ゴウ':'gou','風間 リク':'riku','総帥ザルグ':'zarg'};
 const faceSrc=n=>FACE[n]?`assets/faces/${FACE[n]}.png`:null;
 const faceUrl=n=>{const f=faceSrc(n),i=f&&IMG_CACHE[f];return i&&i.complete&&i.naturalWidth?i.src:f&&webpOf(f)};
@@ -3651,7 +3651,7 @@ $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();ret
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 // 古い版がキャッシュから出ていたら、新しい版を開き直す（tools/bump_version.py。GitHub Pages は index.html を最大10分キャッシュさせる）
-const APP_VER='20261101224929';
+const APP_VER='20261101235317';
 fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():null).then(t=>{t=t&&t.trim();
   if(t&&t!==APP_VER&&new URLSearchParams(location.search).get('v')!==t){const u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.toString())}}).catch(()=>{});
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);

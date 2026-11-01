@@ -53,6 +53,15 @@ F = {
  'elsa':           dict(s='empire-08-faces', ht=135, ch=400, cx=590, w=280, lim=114, px=(404, 751)),
  'hans':           dict(s='empire-08-faces', ht=125, ch=435, cx=960, w=285, lim=125, px=(780, 1135)),
  'comrade_mother': dict(s='empire-08-faces', ht=150, ch=365, cx=1335, w=300, lim=112, px=(1160, 1515)),
+    # モブ兵士（名札はパネルの下。1人の顔を同じ役の全員で使い回す。index.html の FACE）
+    'bandit':       dict(s='mob-faces-a', ht=135, ch=405, cx=190, w=300, lim=116, px=(24, 371)),
+    'baron_knight': dict(s='mob-faces-a', ht=130, ch=395, cx=580, w=260, lim=116, px=(404, 751)),
+    'soldier':      dict(s='mob-faces-a', ht=135, ch=425, cx=960, w=280, lim=116, px=(784, 1131)),
+    'hitman':       dict(s='mob-faces-a', ht=140, ch=410, cx=1345, w=265, lim=116, px=(1164, 1511)),
+    'dawn_soldier': dict(s='mob-faces-b', ht=138, ch=410, cx=190, w=260, lim=116, px=(24, 371)),
+    'dawn_gunner':  dict(s='mob-faces-b', ht=142, ch=415, cx=590, w=285, lim=116, px=(404, 751)),
+    'official':     dict(s='mob-faces-b', ht=130, ch=390, cx=950, w=265, lim=116, px=(784, 1131)),
+    'hagen':        dict(s='mob-faces-b', ht=138, ch=380, cx=1360, w=290, lim=116, px=(1164, 1511)),
 }
 
 def box_of(p):
