@@ -153,6 +153,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 @keyframes ban{0%{opacity:0;transform:translateX(-40px)}20%,75%{opacity:1;transform:none}100%{opacity:0;transform:translateX(40px)}}
 #toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:70;background:var(--panel2);border:1px solid var(--line);padding:8px 14px;border-radius:6px;font-size:13px;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px)}
 /* タイトル画面：全面の背景（canvas）の上に、ロゴ・「TAP TO START」・メニュー */
+/* 話を始めるとき、絵を読み終えるまで画面を黒で隠す（起動したときの仮のマップが一瞬見えないように） */
+#loading{position:fixed;inset:0;z-index:9999;background:#000;display:flex;align-items:center;justify-content:center;color:#7f8fa6;font-size:14px;letter-spacing:.2em}
 #title{justify-content:space-between;padding:max(4vh,env(safe-area-inset-top,0px)) 16px max(3vh,env(safe-area-inset-bottom,0px));background:#000;overflow:hidden}
 .t-logo{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;width:100%}
 /* ロゴの絵は背景が黒なので、黒い画面にそのままなじむ。画面の幅と高さの両方に収める */
@@ -255,6 +257,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 <!-- 会話ログ（これまでの会話を読み返す） -->
 <div id="dLog" class="ov" hidden><div class="logbox"><div class="sh-title"><span>会話ログ</span></div><div id="dLogList"></div><div class="sh-actions"><button class="btn" id="dLogClose" type="button">閉じる</button></div></div></div>
 
+<div id="loading" hidden>読み込み中…</div>
 <div id="title" class="ov">
   <div class="t-logo"><img src="assets/title-logo.webp" onerror="this.onerror=null;this.src='assets/title-logo.jpg'" alt="機甲戦線グランヴァルド"></div>
   <div class="t-press" id="tPress">TAP TO START</div>
@@ -3606,8 +3609,10 @@ async function loadStageAssets(id){
   for(const s of[a.map,...a.spr,...a.faces,...a.bgs,...a.bbg])if(s)need(s);
 }
 async function startGame(id){
+  $('loading').hidden=false;
   await loadStageAssets(id);
   loadStage(id);setup();DLG_LOG=[];resize();mode='busy';busy=true;renderConsole();
+  $('loading').hidden=true;
   // 曲はステージのボタンを押したところから、頭から流す（タイトル画面は無音）
   for(const a of Object.values(BGM))a.currentTime=0;
   // 曲：ステージの music（pre＝戦闘前の会話、start＝開始時の会話）。なければ味方フェイズの曲
@@ -3627,7 +3632,7 @@ function renderStageList(){
   $('stageList').innerHTML=`<div class="t-head">エピソード</div>`+STAGE_ORDER.map(id=>{const st=STAGES[id];
     return`<button class="btn ep" data-stage="${id}"><span class="no">${st.ep}</span>「${st.name}」<small>${st.syn}</small></button>`}).join('');
 }
-function playEpisode(id){snd('ok');unlockBgm();$('title').hidden=true;clearSuspend();startGame(id)}
+function playEpisode(id){snd('ok');unlockBgm();$('loading').hidden=false;$('title').hidden=true;clearSuspend();startGame(id)}
 $('stageList').onclick=e=>{const b=e.target.closest('[data-stage]');if(!b)return;
   // 中断データがあるときは、消えることを確かめてから
   if(readSuspend())confirmSheet(`「${STAGES[b.dataset.stage].name}」を最初から始めますか？<br><small style="color:var(--mute)">中断している戦闘のデータは消えます。</small>`,'始める',()=>{closeSheet();playEpisode(b.dataset.stage)},closeSheet);
