@@ -615,7 +615,7 @@ const TPL={
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  zekt_o:{name:'ゼクト',kind:'drone',hp:2200,en:100,armor:800,mob:80,move:5,spr:'zekt',
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#c9a23a',eye:'#ff3344'},
-  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['応急修理','不動']},
+  pilot:{name:'オットー',melee:110,shoot:125,hit:130,eva:115,skill:110,sp:30,spirits:['応急修理','先読み']},
   lines:['ね、狙います……！','落ち着いて、確実に。'],
   weapons:[W('バトルアックス','格',1300,1,1,{}),W('ライフル','射',1400,1,3,{fx:'bullet'})]},
  truck:{name:'整備車両',kind:'truck',hp:3000,en:100,armor:1000,mob:50,move:4,repair:true,selfRepair:true,
@@ -642,7 +642,7 @@ const TPL={
  // レオ（懲罰部隊）のゼクト。色あせた灰色（ゼクトの絵に色を重ねる）。第3話からゼクト・ランス
  leo:{name:'ゼクト',kind:'drone',hp:3000,en:100,armor:900,mob:85,move:5,spr:'zekt',tint:'#b4b2aa',
   col:{main:'#8a8a84',sub:'#4a4a46',acc:'#d8b23a',eye:'#ff3344'},
-  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','強行軍']},
+  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','先読み']},
   lines:['まっすぐ行って、ぶっ飛ばす！','どけぇっ！','借りは返すぜ！'],
   weapons:[W('バトルアックス','格',1400,1,1,{}),W('ライフル','射',1300,1,3,{fx:'bullet'})]},
  // 懲罰部隊の兵のゼクト（2機。操作できる味方）
@@ -673,7 +673,7 @@ const TPL={
  // レオのゼクト・ランス（突撃槍と増加装甲）
  lance:{name:'ゼクト・ランス',kind:'drone',hp:2600,en:100,armor:950,mob:85,move:5,
   col:{main:'#7d8ea8',sub:'#3c4350',acc:'#d8b23a',eye:'#ff3344'},
-  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','強行軍']},
+  pilot:{name:'レオ',melee:160,shoot:115,hit:140,eva:130,skill:125,sp:40,spirits:['応急修理','先読み']},
   lines:['まっすぐ行って、ぶち抜く！','どけぇっ！','槍で聞くぜ！'],
   weapons:[W('突撃槍','格',1500,1,1,{hit:5}),W('ライフル','射',1300,1,3,{fx:'bullet'}),W('ランスチャージ','格',2600,1,1,{en:30,will:110,fx:'punch'})]},
  // 男爵家の騎士（横流しのゼクトに、男爵家のえんじ色を重ねる）
@@ -3651,7 +3651,7 @@ $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();ret
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
 // 古い版がキャッシュから出ていたら、新しい版を開き直す（tools/bump_version.py。GitHub Pages は index.html を最大10分キャッシュさせる）
-const APP_VER='20261101224610';
+const APP_VER='20261101224929';
 fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():null).then(t=>{t=t&&t.trim();
   if(t&&t!==APP_VER&&new URLSearchParams(location.search).get('v')!==t){const u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.toString())}}).catch(()=>{});
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
