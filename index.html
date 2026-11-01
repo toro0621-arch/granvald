@@ -3650,6 +3650,10 @@ $('btnContinue').onclick=()=>{const d=readSuspend();if(!d){refreshContinue();ret
   snd('ok');unlockBgm();loadStageAssets(d.stage);restore(d);$('title').hidden=true;resize();buildTerrain();renderConsole();bgm('player');toast(`${STAGES[d.stage].ep}「${STAGES[d.stage].name}」TURN ${d.turn} から再開`)};
 // スマホではアドレスバーの出入りなどで resize が何度も来る。マス目の大きさが変わらないときは作り直さない（resize の中で判定）
 window.addEventListener('resize',()=>resize());
+// 古い版がキャッシュから出ていたら、新しい版を開き直す（tools/bump_version.py。GitHub Pages は index.html を最大10分キャッシュさせる）
+const APP_VER='20261101223123';
+fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():null).then(t=>{t=t&&t.trim();
+  if(t&&t!==APP_VER&&new URLSearchParams(location.search).get('v')!==t){const u=new URL(location.href);u.searchParams.set('v',t);location.replace(u.toString())}}).catch(()=>{});
 loadStage('s1');setup();resize();renderConsole();renderStageList();titleArt();refreshContinue();requestAnimationFrame(loop);
 // ここから後に作る絵（新しく読む絵）は、作ったときにすぐ読み始める。地形のタイルと共通の絵は今のうちに読む
 IMG_LAZY=false;for(const t of Object.values(TER_FILE))need(`assets/sprites/tile_${t}.png`);
